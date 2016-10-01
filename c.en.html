@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Rather Bearable C for Intel 8080</title>
+<link href="bdsm.css" rel="stylesheet" type="text/css" media="screen">
+<script type="text/javascript">
+function setlang() {
+    var lang = navigator.language;
+    var body = document.getElementById("hot");
+    if (body.lang == null || body.lang == "") {
+        body.lang=lang;
+    }
+}
+</script>
+</head>
+<body id="hot" onload="setlang(); return false;">
+<div id="header" lang="ru">Вполне сносный Си для КР580ВМ80А</div>
+<div id="header" lang="en">Rather Bearable C for Intel 8080</div>
+<div id="page">
+<form action="bdsm.cgi" method="post">
+<div class="info" lang="en">
+<br>
+This is a web interface to BDS&nbsp;C compiler. It may be used to compile
+a small C program for Intel 8080. The entire source must be 
+contained in a single file. The compilation result will be available
+for downloading as a file named MAIN.COM, good for running in CP/M.<br>
+<br>
+Translation of an average program takes 7&ndash;10 seconds.<br>
+<br>
+To set compiler options:
+<blockquote>#pragma cflags</blockquote>
+To set linker options:
+<blockquote>#pragma ldflags</blockquote>
+To run:
+<blockquote>#pragma run [args]</blockquote>
+<br>
+Software used:<br>
+BDS C &ndash; [<a href="http://www.bdsoft.com/resources/bdsc.html">link</a>]<br>
+SIMH &ndash; [<a href="http://simh.trailing-edge.com/">link</a>]<br>
+</div><!-- info-en -->
+
+<div class="info" lang="ru">
+<br>
+Это &mdash; веб-интерфейс к компилятору BDS&nbsp;C. С его
+помощью можно скомпилировать небольшую программу на Си 
+для процессора КР580, или 8080. Весь
+исходник должен помещаться в одном файле. Результат трансляции
+будет доступен для скачивания в виде файла MAIN.COM, который
+можно запустить в среде CP/M.<br>
+<br>
+Обычно на трансляцию небольшой программы требуется 7&ndash;10 секунд.<br>
+<br>
+Опции компилятора задаются директивой
+<blockquote>#pragma cflags</blockquote>
+Опции линкера задаются директивой 
+<blockquote>#pragma ldflags</blockquote>
+Чтобы запустить:
+<blockquote>#pragma run [параметры]</blockquote>
+<br>
+Используемые программы:<br>
+BDS C &ndash; [<a href="http://www.bdsoft.com/resources/bdsc.html">ссылка</a>]<br>
+SIMH &ndash; [<a href="http://simh.trailing-edge.com/">ссылка</a>]<br>
+</div><!-- info-ru -->
+
+<textarea name="main.c" id="mainc" rows="30" style="width:70%">
+/* http://www.de.ioccc.org/2001/anonymous.ten.c */
+#define PLURAL(bottles) bottles==1?"bottle":"bottles"
+
+void sing(bottles) 
+int bottles;
+{
+  printf("%d green %s, standing on the wall.\n", bottles, PLURAL(bottles));
+}
+
+int main(argc, argv)
+int argc;
+char **argv;
+ {
+  int bottles;
+
+  bottles = atoi(argv[1]);
+
+  if (argc < 2 || bottles <1 || bottles > 20) {
+    printf("I need a realistic quantity of bottles\n");
+  }
+
+  while(bottles) {
+    sing(bottles);
+    sing(bottles);
+    printf("And if one green bottle should accidently fall,\nThere'd be ");
+    sing(--bottles);
+    printf("\n");
+  }
+
+  return 0;
+}
+
+#pragma cflags -o
+#pragma ldflags -sw
+#pragma run 5
+
+</textarea>
+<div class="hordiv"></div>
+<span lang="ru"><input class="baton" type="submit" value="Компилировать"/></span>
+<span lang="en"><input class="baton" type="submit" value="Compile"/></span>
+</form>
+<div>&nbsp;<br><br></div>
+</div><!-- page -->
+</body>
+</html>

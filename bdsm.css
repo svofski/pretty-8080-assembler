@@ -1,0 +1,80 @@
+body {
+background-color: white;
+font-family: monofur, Courier New, monospace;
+margin-right:2em;
+margin-left:0.5em;
+font-size:small;
+}
+
+.hordiv { width:80%; text-align: left; border-bottom:1px solid lightgray;}
+
+#mainc {
+font-family:monospace; font-size:100%;
+margin:0px 0px 0px 0px;
+padding:0px 0px 0px 5px;
+width:100%;
+border: 1px solid black;
+border-top: 1px dotted darkgray;
+border-left: 1px solid darkgray;
+border-bottom: 0px;
+}
+
+div#header {
+background-color:maroon;
+color:white;
+font-family:Gill Sans,Franklin Gothic Medium,sans-serif;
+font-size:150%;
+font-weight:bold;
+padding:5px 0.2em 2px;
+}
+
+
+div#page {
+margin-right:0em;
+padding-left:0em;
+background-color: #f8f8f8;
+}
+
+#page > * {
+margin-left:0em;
+}
+
+.baton {
+cursor:pointer;
+font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
+border: 1px solid black; display: inline-block;
+font-weight:bold;
+font-variant: small-caps;
+letter-spacing: 0.4ex;
+padding-left:10px;
+padding-right:10px;
+padding-top:2px;
+color: white;
+background-color: black;
+color: white;
+background-color: black;
+margin-top:0.65ex;
+user-select:none;
+-moz-user-select: none;
+-khtml-user-select: none;
+}
+
+div.info {
+float: right;
+width:25%;
+margin-right:1em;
+font-family: Gill Sans, Franklin Gothic Medium, sans-serif;
+}
+
+blockquote {
+margin-top:0ex;
+margin-bottom:1ex;
+margin-left:2em;
+font-family: monofur, Courier New, monospace;
+}
+
+:lang(en) *[lang=ru] { display: none; }
+:lang(en) *[lang=en] { display: inherit; }
+:lang(ru) *[lang=en] { display: none; }
+:lang(ru) *[lang=ru] { display: inherit; }
+

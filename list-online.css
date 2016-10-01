@@ -1,0 +1,286 @@
+html { }
+body {font-size:small; background-color: white; font-family: Monaco, Lucida Console, monospace;}
+.hordiv { width:80%; text-align: left; border-bottom:2px solid black;}
+.code { font-family: Monaco, Lucida Console, monospace; }
+.cmt { font-style: italic; color: blue;}
+pre { margin-top:0ex; margin-bottom:0.4ex; font-family: Monaco, Lucida Console, monospace;}
+.highlight0 { border:none; background-color: transparent; }
+.highlight1 { background-color: wheat; border: 1px dotted red; margin:-1px -1px -1px -1px; border-radius: 10px;}
+.highlight2 { background-color: white; border: 2px solid red; margin:-2px -2px -2px -2px; border-radius: 5px;}
+.highlight3 { background-color: yellow; border: 1px solid pink; margin:-1px -1px -1px -1px; border-radius: 3px;}
+
+.srchl0 { border:none; background-color: transparent; }
+.srchl1 { background-color: wheat; border: 1px dotted red; margin:-1px -1px -1px -1px; border-radius:5px;}
+.srchl2 { background-color: white; border: 2px solid red; margin:-2px -2px -2px -2px;border-radius: 5px;}
+.srchl3 { background-color: yellow; border: 1px solid pink; margin:-1px -1px -1px -1px; border-radius: 3px;}
+
+.errorline { background-color: pink; }
+
+.d1 { padding-right:0.5em; background-color: #f0f0f0; display:inline;}
+.d0 { padding-right:0.5em; background-color: #e0ffff; display:inline;}
+
+#header {
+font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
+font-size:150%;
+font-weight:bold;
+background-color:maroon;
+color:white;
+padding:5px 5px 2px 5px;
+border-bottom: 1px dotted darkgray;
+user-select:none;
+-moz-user-select: none;
+-khtml-user-select: none;
+}
+
+#toolbar {
+float:right;
+font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
+font-size:150%;
+font-weight:bold;
+background:transparent;
+color:white;
+padding:0px 1em 2px 1em;
+opacity:0;
+user-select:none;
+-moz-user-select: none;
+-khtml-user-select: none;
+}
+
+.baton { 
+cursor:pointer;
+font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
+border: 1px solid black; display: inline-block;
+font-weight:bold; 
+font-variant: small-caps;
+font-size: large;
+letter-spacing: 0.4ex;
+padding-left:10px;
+padding-right:10px;
+padding-top:2px;
+padding-bottom: 0.25ex;
+color: white;
+background-color: black;
+color: white;
+background-color: black;
+margin-top:0.65ex;
+user-select:none;
+-moz-user-select: none;
+-khtml-user-select: none;
+}
+
+.baton.disabled {
+	pointer-events: none;
+	opacity: 0.5;
+}
+
+#textinput { 
+overflow:hidden;
+white-space:nowrap;
+display: block;
+width: 100%;
+position:relative;
+}
+
+#source {
+font-family:Monaco, Lucida Console, monospace; font-size:100%;
+margin:0px 0px 0px 0px;
+padding:0px 0px 0px 5px;
+width:100%;
+border: 1px solid black;
+border-top: 1px dotted darkgray;
+}
+#ta { 
+display: table-cell;
+float:left;
+width:39%;
+direction:ltr;
+}
+#list {
+direction:ltr;
+float:right;
+border: 1px solid black;
+border-top: 1px dotted darkgray;
+vertical-align:top; width:40em; 
+padding-left:1ex;
+overflow:scroll;
+display:table-cell;
+width:60%;
+}
+.uarr1 {
+margin-top:-4px;
+margin-bottom:-4px;
+top:8px;
+font-family:monospace; font-size:90%; font-weight:bold; position:relative;
+color:#fff0f0;
+opacity:0;
+}
+.uarr2{
+margin-top:-4px;
+margin-bottom:-4px;
+top:2px;
+font-family:monospace; font-size:90%; font-weight:bold; position:relative;
+color:#ffa0a0;
+opacity:0.4;
+}
+.uarr3 {
+margin-top:-4px;
+margin-bottom:-4px;
+top:-1px;
+font-family:monospace; font-size:90%; font-weight:bold; position:relative;
+color:#b00000;
+opacity:0.8;
+}
+.darr1 {
+margin-top:-4px;
+margin-bottom:-4px;
+top:-6px;
+font-family:monospace; font-size:90%; font-weight:bold; position:relative;
+color:#fff0f0;
+opacity:0;
+}
+.darr2{
+margin-top:-4px;
+margin-bottom:-4px;
+top:0px;
+font-family:monospace; font-size:90%; font-weight:bold; position:relative;
+color:#ffa0a0;
+opacity:0.4;
+}
+.darr3 {
+margin-top:-4px;
+margin-bottom:-4px;
+font-family:monospace; font-size:90%; font-weight:bold; position:relative;
+top:2px;
+color:#b00000;
+opacity:0.8;
+}
+
+#backrefpopup {
+border:5px solid #ffff7d;
+background:#ffff7d;
+font-size:90%;
+font-family:Monaco, Lucida Console, monospace;
+opacity:0.9;
+max-width:30em;
+overflow:hidden;
+}
+
+.brmenuitem {
+padding-top:0.5ex;
+padding-bottom:0.5ex;
+padding-left:1em;
+padding-right:1em;
+background:transparent;
+cursor:pointer;
+user-select:none;
+-moz-user-select: none;
+-khtml-user-select: none;
+}
+.brmenuitem:hover {
+background:maroon;
+color:white;
+}
+
+span.l {
+cursor:default;
+font-weight:bold;
+}
+
+span.t1 {
+padding-right:1em;padding-left:0.4em;
+border-right:1px solid lightgray;
+cursor:pointer;
+}
+span.t2 {
+padding-right:1em;padding-left:0.4em;
+cursor:pointer;
+}
+span.t1:hover { background:#ffff7d; }
+span.t2:hover { background:#ffff7d; }
+
+
+#emulator {
+	width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    right: 0;
+	display: none;
+}
+
+#emulator:before {
+    content: "#";
+    background: black;
+    opacity: 0.5;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#emulator.visible {
+	display: block;
+}
+
+#emulator-vert {
+	position: relative;
+	top: 2%;
+}
+
+#emulator-box {
+width: 100vw;
+    height: 75vw;
+    max-height: 77vh;
+    max-width: 100vh;
+    /* border: 1px dotted #111; */
+    margin: auto;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0px 0px 19px 9px rgba(0,0,0,0.75);
+}
+
+#emulator-container {
+    position: absolute;
+    top: 1.35em;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#emulator-iframe {
+	width: 100%;
+	height: 100%;
+	border: 0px;
+}
+
+#emulator-controls {
+	background: #222;
+	border-bottom: 1px dotted orange;
+	height: 1.33em;
+}
+
+#ruslat {
+    display: inline;
+    font-weight: 900;
+    color: #622;
+    margin-left: 1ex;
+    margin-right: 0.5ex;
+}
+
+#ruslat.on {
+    color: #f30;
+    text-shadow: 0px 0px 6px rgba(255, 100, 25, 1);
+}
+
+#emulator-controls #close {
+color: orange;
+display: block;
+float: right;
+padding-right: 1ex;
+padding-left: 1ex;
+}
+#emulator-controls #close:hover {
+background-color: #942;
+color: red;
+}

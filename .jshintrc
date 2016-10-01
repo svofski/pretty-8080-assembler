@@ -1,0 +1,7 @@
+{
+    "esversion": 6,
+    "strict": "global",
+    "browser": true,
+    "devel": true,
+    "predef": ["Soundnik", "AYWrapper", "TimerWrapper", "zip", "Filesystem"]
+}

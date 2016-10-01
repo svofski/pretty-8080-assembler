@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru">
+<head>
+<!-- revision
+Rev.L: Worker + Base64
+-->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>Pretty 8080 Assembler</title>
+<script type="text/javascript" src="encodings.js"></script>
+<script type="text/javascript" src="main.js"></script>
+
+<link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
+<!-- styleSheets[1] -->
+<style type="text/css">
+.rga { color: blue; }
+.rgb { color: blue; }
+.rgc { color: blue; }
+.rgd { color: blue; }
+.rge { color: blue; }
+.rgh { color: blue; }
+.rgl { color: blue; }
+.rgm { color: blue; }
+.rgsp { color: blue; }
+.rpb { color: blue; }
+.rpd { color: blue; }
+.rph { color: blue; }
+.rpsp { color: blue; }
+</style>
+
+</head>
+<body id='main' onload="loaded(); return false;">
+
+<div id="toolbar" 
+onclick="scrollBack(); return false;"
+onmouseover="magicToolbar(0); return false;"
+onmouseout="magicToolbar(2); return false;"
+>
+&#x25c0;
+</div>
+
+<div id="header" 
+onmouseover="magicToolbar(0); return false;"
+onmouseout="magicToolbar(2); return false;"
+>
+Прекрасный ассемблер КР580ВМ80А
+</div>
+<div id="textinput">
+<div id="emulator">
+<div id="emulator-vert">
+<div id="emulator-box">
+<div id="emulator-controls">
+<span id="ruslat">&#8226;</span>
+<span id="close">×</span>
+</div>
+<div id="emulator-container"></div>
+</div>
+</div>
+</div>
+
+<div id="list">…</div>
+<div id="ta">
+<textarea id="source" rows="30" cols="80"
+onkeydown="return keydown(event);" 
+onkeypress="keypress(event);return true;">
+        ; 8080 assembler code
+        .hexfile test.hex
+        .binfile test.com
+        ; try "hex" for downloading in hex format
+        .download bin  
+        .objcopy gobjcopy
+        .postbuild echo "Hooray!"
+        ;.nodump
+bdos    equ 5
+intv    equ 38h
+        .org 100h
+        jmp begin
+        db 27
+msg:
+        db 'Assembled by Pretty 8080 Assembler',0dh,0ah,'$'
+yeah: 	; large binary strings can be defined using base64
+        db64 TG9uZyBiaW5hcnkgaW5pdGlhbGl6YXRpb24gc2VjdGlvbnMgY2FuIGJlIGRlZmluZWQgdXNpbmcgYmFzZTY0LWVuY29kZWQgc3RyaW5ncyENCiQ=
+begin:
+        lxi d, msg
+        mvi c, 9
+        call bdos
+        call delay
+        mvi c, 9
+        lxi d, yeah
+        call bdos
+        ret
+
+delay:
+        mvi a, 33
+        hlt
+        dcr a
+        jnz .-2
+        ret
+</textarea></div>
+</div>
+<div id="messagepane">
+</div>
+<div style="height:0.5ex"><br/></div>
+<div id="buttbr" class="hordiv"></div>
+<form action="hex2bin.cgi" method="post">
+<div>
+<input type="text" id="hex" name="hex" style="display:none;"/>
+<input type="text" id="formbinname" name="formbinname" style="display:none;"/>
+<input type="text" id="formhexname" name="formhexname" style="display:none;"/>
+<input type="text" id="downloadformat" name="downloadformat" style="display:none;"/>
+<input type="submit" class="baton" id="baton" name="baton" value="Translate"/>
+<div class="baton" id="run">Run</div>
+</div>
+</form>
+
+</body>
+</html>
