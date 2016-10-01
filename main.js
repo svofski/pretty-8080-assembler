@@ -1,5 +1,7 @@
+/*jshint sub:true*/
+
 "use strict";
-<!--
+
 //
 // Pretty 8080 Assembler
 // 
@@ -51,7 +53,7 @@
 // TODO: evaluation should ignore precedence, it's all left-to-right
 //
 
-//var assembler = new Assembler();
+var assembler;//new Assembler();
 var assemblerWorker = new Worker('assembler.js');
 
 // -- global DOM elements
@@ -98,7 +100,7 @@ function _arrayBufferToBase64(buffer) {
         binary += String.fromCharCode(bytes[i]);
     }
     return window.btoa(binary);
-};
+}
 
 function generateDataURI() {
   var encoded = _arrayBufferToBase64(assembler.mem);
@@ -116,7 +118,7 @@ function getListHeight() {
 function gotoLabel(label) {
     var sought = asmcache.textlabels.indexOf(label.toLowerCase());
     var element = document.getElementById("label" + sought);
-    if (element != undefined) {
+    if (element !== undefined) {
         startHighlighting(sought, element);
         element = element.parentNode;
         var destination = element.offsetTop - getListHeight()/2;
@@ -127,7 +129,7 @@ function gotoLabel(label) {
 
 function getReferencedLabel(lineno) {
     var refto = asmcache.references[lineno];
-    if (refto != undefined) {
+    if (refto !== undefined) {
         var sought = asmcache.textlabels.indexOf(refto.toLowerCase());
         return document.getElementById("label" + sought);
     }
@@ -135,12 +137,12 @@ function getReferencedLabel(lineno) {
 }
 
 function getReferencingLines(lineno) {
-    var refs = new Array();
-    var fullrefs = new Array();
+    var refs = [];
+    var fullrefs = [];
     var label = asmcache.textlabels[lineno];
-    if (label != undefined) {
+    if (label !== undefined) {
         for(var i = 0; i < asmcache.references.length; i++) {
-            if (asmcache.references[i] == label) {
+            if (asmcache.references[i] === label) {
                 var element = document.getElementById("code" + i);
                 refs[refs.length] = element;
                 element = document.getElementById("l" + i);
@@ -194,11 +196,11 @@ function assemble() {
 						}
 					});
 			}
-	} else {
+	} else if (assembler) {
 			assembler.assemble(src);
 			list.innerHTML += assembler.listingText;
 
-			list.scrollTop = savedScroll;
+			list.scrollTop = list.savedScroll;
 			updateSizes();
 			last_src = src;
 			autotranslate = false;
@@ -218,12 +220,14 @@ function cock(timeout) {
     if (autotranslate) {
         clearTimeout(autotranslate);
     }
-    autotranslate = setTimeout('assemble()', timeout);
+    autotranslate = setTimeout(function() {
+        assemble();
+    }, timeout);
 }
 
 
 function keydown(e) {
-    if (e.keyCode == 9) {
+    if (e.keyCode === 9) {
         var obj = document.getElementById('source');
         var savedScroll = obj.scrollTop;
         /* Find the Start and End Position */
@@ -231,9 +235,9 @@ function keydown(e) {
         var end   = obj.selectionEnd;
 
         /* Remember obj is a textarea or input field */
-        obj.value = obj.value.substr(0, start)
-               + "\t"
-               + obj.value.substr(end, obj.value.length);
+        obj.value = obj.value.substr(0, start) + 
+                "\t" +
+                obj.value.substr(end, obj.value.length);
         obj.setSelectionRange(start+1,start+1);
         obj.scrollTop = savedScroll;
 
@@ -251,7 +255,7 @@ function scrollMark(location) {
 
 // gobak i sosak
 function scrollBack() {
-    if (scrollHistory.length == 0) return;
+    if (scrollHistory.length === 0) return;
 
     var dest = scrollHistory[scrollHistory.length - 1];
     scrollHistory.length = scrollHistory.length - 1;
@@ -268,7 +272,7 @@ var highlightTimeout = false;
 var highlightTimeout2 = false;
 var highlightLabel = false;
 var highlightLineNo = false;
-var highlightLines = new Array();
+var highlightLines = [];
 var highlightArrow = false;
 var highlightOrigin = false;
 var highlightDir = false;
@@ -283,11 +287,11 @@ var backrefLabel = "?";
 var referencingLinesFull = [];
 
 function startHighlighting(lineno, label) {
-    if (highlightTimeout == false) {
+    if (highlightTimeout === false) {
          highlightLineNo = lineno;
          highlightOrigin = document.getElementById('code'+lineno);
-         highlightTimeout = setTimeout('highlightStage1()', 500);
-         if (label != undefined) {
+         highlightTimeout = setTimeout(function() { highlightStage1(); }, 500);
+         if (label !== undefined) {
             highlightLabel = label;
          } else {
             highlightLabel = false;
@@ -318,7 +322,7 @@ function highlightStage1() {
     if (!highlightLabel) {
         highlightLabel = getReferencedLabel(highlightLineNo);
     }
-    if (highlightLabel != undefined) {
+    if (highlightLabel !== undefined) {
         var listElement = document.getElementById('list');
         var scrollTop = listElement.scrollTop;
         var height = getListHeight();
@@ -327,17 +331,17 @@ function highlightStage1() {
         var labelTop = highlightLabel.parentNode.offsetTop;
         var labelHeight = highlightLabel.offsetHeight;
 
-        if (highlightArrow == false && (labelTop-labelHeight) <= scrollTop) {
+        if (highlightArrow === false && (labelTop-labelHeight) <= scrollTop) {
             highlightArrow = document.createElement('span');
             highlightArrow.innerHTML = '&#x25b2;'; //uarr
             highlightDir = 'uarr';
-        } else if (highlightArrow == false && labelTop > scrollTop+height) {
+        } else if (highlightArrow === false && labelTop > scrollTop+height) {
             highlightArrow = document.createElement('span');
             highlightArrow.innerHTML = '&#x25bc;'; //darr
             highlightDir = 'darr';
         }
 
-        if (highlightArrow != false) {
+        if (highlightArrow !== false) {
             highlightArrow.className = highlightDir+1;
 
             highlightOrigin.insertBefore(highlightArrow, highlightOrigin.firstChild);
@@ -353,40 +357,40 @@ function highlightStage1() {
 
         highlightLabel.className += ' highlight1';
     } 
-    highlightTimeout = setTimeout('highlightStage2()', 50);
+    highlightTimeout = setTimeout(function() { highlightStage2(); }, 50);
 }
 
 function highlightStage2() {
-    if (highlightLabel != undefined) {
+    if (highlightLabel !== undefined) {
         highlightLabel.className = highlightLabel.className.replace('highlight1', 'highlight2');
     }
-    if (highlightArrow != false) {
+    if (highlightArrow !== false) {
         highlightArrow.className = highlightDir + 2;
     }
-    highlightTimeout = setTimeout('highlightStage3()', 100);
+    highlightTimeout = setTimeout(function() { highlightStage3(); }, 100);
 }
 
 function highlightStage3() {
-    if (highlightLabel != undefined) {
+    if (highlightLabel !== undefined) {
         highlightLabel.className = highlightLabel.className.replace('highlight2', 'highlight3');
     }
-    if (highlightArrow != false) {
+    if (highlightArrow !== false) {
         highlightArrow.className = highlightDir + 3;
     }
 }
 
 function endHighlighting(lineno) {
-    if (lineno == -2) {
-         highlightTimeout2 = setTimeout('endHighlighting(-1)', 1000);
+    if (lineno === -2) {
+         highlightTimeout2 = setTimeout(function() { endHighlighting(-1); }, 1000);
          highlightStage1();
          return;
-    } else if (lineno == -1) {
+    } else if (lineno === -1) {
         highlightDelayed = false;
         highlightTimeout2 = false;
     } else {
         if (highlightDelayed) {
-            if (highlightTimeout2 == false) {
-                highlightTimeout2 = setTimeout('endHighlighting(-2)', 350);
+            if (highlightTimeout2 === false) {
+                highlightTimeout2 = setTimeout(function() { endHighlighting(-2); }, 350);
             }
             return;
         }
@@ -394,8 +398,8 @@ function endHighlighting(lineno) {
 
     clearTimeout(highlightTimeout);
     highlightTimeout = false;
-    if (highlightLabel != undefined) {
-        if (highlightLabel.className != undefined) {
+    if (highlightLabel !== undefined) {
+        if (highlightLabel.className !== undefined) {
             highlightLabel.className = highlightLabel.className.replace(/ .*/, '');
         }
         highlightLabel = undefined;
@@ -405,8 +409,8 @@ function endHighlighting(lineno) {
     }
     highlightLines.length = 0;
 
-    if (highlightArrow != false) {
-        if (highlightArrow.parentNode != null) {
+    if (highlightArrow !== false) {
+        if (highlightArrow.parentNode !== null) {
             highlightArrow.parentNode.removeChild(highlightArrow);
         }
         highlightArrow = false;
@@ -421,15 +425,15 @@ function formatBackrefText(element) {
     formatBackrefText.spaces = "         ";
     var label = "";
     var text = "";
-	var label, text, adr;
+	var adr;
     for (var i = 0; i < element.childNodes.length; i++) {
         var child = element.childNodes[i];
-        if (child.id == undefined) continue;
-        if (child.id.indexOf("label") == 0) {
+        if (child.id === undefined) continue;
+        if (child.id.indexOf("label") === 0) {
             label = child.innerHTML;
-        } else if (child.id.indexOf("code") == 0) {
+        } else if (child.id.indexOf("code") === 0) {
             text = child.innerHTML;
-        } else if (child.className == "adr") {
+        } else if (child.className === "adr") {
             adr = child.innerHTML;
         }
     }
@@ -443,15 +447,15 @@ function formatBackrefText(element) {
 
 function showBackrefReturn(on) {
     var sosak = document.getElementById('backrefgoback');
-    if (sosak != undefined) {
+    if (sosak !== undefined) {
         sosak.style.display= on ? 'block' : 'none';
     }
     return false;
 }
 
 function backrefHintLine(n) {
-    if (n == -1) {
-        if (backrefHintLine.unhint != undefined) {
+    if (n === -1) {
+        if (backrefHintLine.unhint !== undefined) {
             backrefHintLine.unhint.className = null;
             backrefHintLine.unhint = undefined;
         }
@@ -459,7 +463,7 @@ function backrefHintLine(n) {
     }
     backrefHintLine(-1);
     var line = document.getElementById(n);
-    if (line != undefined) {
+    if (line !== undefined) {
         backrefHintLine.unhint = line.childNodes[line.childNodes.length-1];
         backrefHintLine.unhint.className = 'srchl3';
     }
@@ -470,12 +474,12 @@ function startBackrefWindow(lineno) {
         highlightLines = getReferencingLines(lineno);
         highlightOrigin = document.getElementById('code'+lineno);
         backrefLabel = document.getElementById('label'+lineno);
-        setTimeout('startBackrefWindow(-1)', 250);
+        setTimeout(function() { startBackrefWindow(-1); }, 250);
         return;
     }
-    if (backrefTimeout == false &&
+    if (backrefTimeout === false &&
         highlightLines.length > 0) {
-        backrefTimeout = setTimeout('showBackref(0)', 500);
+        backrefTimeout = setTimeout(function() { showBackref(0); }, 500);
         backrefLeft = backrefLabel.offsetLeft;
         backrefTop = highlightOrigin.offsetTop + 4;
         backrefTop += backrefLabel.offsetHeight;
@@ -488,7 +492,7 @@ function startBackrefWindow(lineno) {
 
 
 function showBackref(n) {
-    if (n == 0) {
+    if (n === 0) {
         endHighlighting(0);
         var list = document.getElementById('list');
         var height = getListHeight();
@@ -539,27 +543,27 @@ function showBackref(n) {
         showBackref(1);
     }
 
-    if (n == 1) {
+    if (n === 1) {
         if (backrefWindow.style.opacity >= 0.9) {
             backrefTimeout = false;
         } else {
-            showBackref.opacity += .3;
+            showBackref.opacity += 0.3;
             backrefWindow.style.opacity = showBackref.opacity;
-            setTimeout('showBackref(1);', 50);
+            setTimeout(function() { showBackref(1); }, 50);
         }
     }
 
     // start hiding
-    if (n == -1) {
+    if (n === -1) {
         clearTimeout(backrefTimeout);
-        backrefTimeout = setTimeout('showBackref(-2)', 100);
+        backrefTimeout = setTimeout(function() { showBackref(-2); }, 100);
         backrefHintLine(-1);
     }
 
-    if (n == -2) {
+    if (n === -2) {
         clearTimeout(backrefTimeout);
         backrefTimeout = false;
-        if (backrefWindow != false) {
+        if (backrefWindow !== false) {
             backrefWindow.style.display = 'none';
         }
     }
@@ -586,7 +590,7 @@ function mouseout(lineno) {
 function getRuleset(selector) {
     var rules = document.styleSheets[1].cssRules;
     for (var i = 0; i < rules.length; i++) {
-        if (rules[i].selectorText == selector) {
+        if (rules[i].selectorText === selector) {
             return rules[i];
         }
     }
@@ -598,7 +602,7 @@ function rgmouseover(className) {
 
     for (var i = 0; i < list.length; i++) {
         var ruleset = getRuleset("."+list[i]);
-        if (ruleset != undefined) {
+        if (ruleset !== undefined) {
             ruleset.style["color"] = "#ff3020";
         }
     }
@@ -609,7 +613,7 @@ function rgmouseout(className) {
 
     for (var i = 0; i < list.length; i++) {
         var ruleset = getRuleset("."+list[i]);
-        if (ruleset != undefined) {
+        if (ruleset !== undefined) {
             ruleset.style["color"] = "blue";
         }
     }
@@ -617,11 +621,13 @@ function rgmouseout(className) {
 
 
 function boo() {
-    document.write('<h1>Unfortunately&#0133;</h1>');
-    document.write('<p>The <b>Pretty 8080 Assembler</b> only works in Internet Browsers.</p>');
-    document.write('<p>You\'re using Microsoft Internet Explorer, which was called an "internet browser" by mistake.</p>');
-    document.write('<p>Please upgrade and come back with a Firefox, Iceweasel, Konqueror, Safari, Chrome or even Opera.</p>');
-    document.write('<p>Or try b2m\'s <a href="http://bashkiria-2m.narod.ru/i8080.html">Good i8080 Assembler</a>.</p>');
+    //var d = document.createElement('div');
+    document.body.innerHTML = 
+                '<h1>Unfortunately&#0133;</h1>' +
+                '<p>The <b>Pretty 8080 Assembler</b> only works in Internet Browsers.</p>' +
+                '<p>You\'re using Microsoft Internet Explorer, which was called an "internet browser" by mistake.</p>' +
+                '<p>Please upgrade and come back with a Firefox, Iceweasel, Konqueror, Safari, Chrome or even Opera.</p>' +
+                '<p>Or try b2m\'s <a href="http://bashkiria-2m.narod.ru/i8080.html">Good i8080 Assembler</a>.</p>';
 }
 
 var emulator_sideload;
@@ -660,7 +666,7 @@ function load_vector06js() {
 						if (emulator_sideload) {
 							emulator_sideload({'name':asmcache.binFileName, 'mem':asmcache.mem});
 						}
-					}
+					};
 			};
 			assemblerWorker.addEventListener('message', binaryMessageListener, false);
 	}
@@ -686,14 +692,17 @@ function ruslat(on) {
 	if (!ruslat_light) {
 		ruslat_light = document.getElementById("ruslat");
 	}
-	if (!on && blksbr && blinkCount > 0 && --blinkCount == 0) {
-		setTimeout('blksbr(false); blksbr = null;', 0);
+	if (!on && blksbr && blinkCount > 0 && --blinkCount === 0) {
+		setTimeout(function() { 
+            blksbr(false); 
+            blksbr = null; 
+        }, 0);
 	}
 	ruslat_light.className = on ? "on" : "";
 }
 
 function loaded() {
-    if (navigator.appName == 'Microsoft Internet Explorer' || 
+    if (navigator.appName === 'Microsoft Internet Explorer' || 
         navigator.appVersion.indexOf('MSIE') != -1) {
         boo();
         return false;
@@ -740,41 +749,41 @@ var toolbarTimeout = false;
 function magicToolbar(n) {
     var tulba = document.getElementById('toolbar');
 
-    if (n == 0) {
-        if (scrollHistory.length == 0) {
+    if (n === 0) {
+        if (scrollHistory.length === 0) {
             // force hiding if no history
             n = 2;
         } else {
             tulba.style.cursor = 'pointer';
             clearTimeout(toolbarTimeout);
-            toolbarTimeout = setTimeout('magicToolbar(1);', 100);
+            toolbarTimeout = setTimeout(function() { magicToolbar(1); }, 100);
         }
     }
 
-    if (n == 1) {
+    if (n === 1) {
         toolbarOpacity += 0.2;
         tulba.style.opacity = toolbarOpacity;
         if (Math.abs(toolbarOpacity - 1.0) > 0.05) {
             clearTimeout(toolbarTimeout);
-            toolbarTimeout = setTimeout('magicToolbar(1);', 50);
+            toolbarTimeout = setTimeout(function() { magicToolbar(1); }, 50);
         }
     }
 
-    if (n == 2) {
+    if (n === 2) {
         tulba.style.cursor = 'default';
         if (toolbarOpacity > 0) {
             clearTimeout(toolbarTimeout);
-            toolbarTimeout = setTimeout('magicToolbar(3);', 50);
+            toolbarTimeout = setTimeout(function() { magicToolbar(3); }, 50);
         }
     }
 
-    if (n == 3) {
+    if (n === 3) {
         toolbarOpacity -= 0.4;
         if (toolbarOpacity < 0) toolbarOpacity = 0;
         tulba.style.opacity = toolbarOpacity;
         if (toolbarOpacity > 0) {
             clearTimeout(toolbarTimeout);
-            toolbarTimeout = setTimeout('magicToolbar(3);', 50);
+            toolbarTimeout = setTimeout(function() { magicToolbar(3); }, 50);
         }
     }
 }
@@ -802,13 +811,13 @@ var languages =
 
 function i18n() {
     var lang = navigator.language;
-    if (lang != undefined) lang = lang.split('-')[0];
+    if (lang !== undefined) lang = lang.split('-')[0];
 
     var explang = document.URL.split('?')[1];
-    if (explang != undefined) lang = explang;
+    if (explang !== undefined) lang = explang;
 
     var messages = languages[lang];
-    if (messages == undefined) messages = languages["en"];
+    if (messages === undefined) messages = languages["en"];
 
     var m_header = messages[0];
     var m_button = messages[1];
@@ -820,7 +829,7 @@ function i18n() {
     //baton.innerHTML = m_button;
     baton.value = m_button;
 
-    if (lang == 'he' || lang == 'fa') {
+    if (lang === 'he' || lang === 'fa') {
         header.style.textAlign = 'right';
         baton.style.cssFloat = 'right';
         baton.style.clear = 'right';
@@ -829,5 +838,3 @@ function i18n() {
         document.getElementById('list').style.cssFloat = 'left';
     }
 }
-
--->

@@ -1,5 +1,8 @@
+/*jshint sub:true*/ 		// object['prop'] is ok 
+/*jshint evil: true */ 		// eval is okay
+/*globals self: false */ 	// self is defined by worker scope
+
 "use strict";
-<!--
 //
 // Pretty 8080 Assembler
 // 
@@ -58,26 +61,26 @@ function Util() {
 Util.char8 = function(val) {
     if (val > 32 && val < 127) return String.fromCharCode(val);
     return '.';
-}
+};
 
 Util.hex8 = function(val) {
     if (val < 0 || val > 255)  return "??";
 
     var hexstr = "0123456789ABCDEF";
     return hexstr[(val & 0xf0) >> 4] + hexstr[val & 0x0f];
-}
+};
 
 Util.hex16 = function(val) {
 	return Util.hex8((val & 0xff00) >> 8) + Util.hex8(val & 0x00ff);
-}
+};
 
 Util.isWhitespace = function(c) {
     return c=='\t' || c == ' ';// this is too slow c.match(/\s/);
-}
+};
 
 Util.toTargetEncoding = function(str, encoding) {
 	return toEncoding(str, encoding);
-}
+};
 
 function Assembler() {
 		this.debug = false;
@@ -92,14 +95,14 @@ function Assembler() {
 
 
 		this.LabelsCount = 0;
-		this.labels = new Object();
+		this.labels = {};
 
-		this.resolveTable = Array(); // label negative id, resolved address
-		this.mem = Array();
-		this.textlabels= Array();
-		this.references = Array();
-		this.errors = Array();
-		this.regUsage = Array();
+		this.resolveTable = []; // label negative id, resolved address
+		this.mem = [];
+		this.textlabels= [];
+		this.references = [];
+		this.errors = [];
+		this.regUsage = [];
 		this.listingText = "";
 }
 
@@ -217,8 +220,8 @@ Assembler.opsRp = {
 
 Assembler.prototype.clearLabels = function() {
     this.LabelsCount = 0;
-    this.labels = new Object();
-}
+    this.labels = [];
+};
 
 Assembler.DecimalDigits = "0123456789";
 
@@ -231,13 +234,12 @@ Assembler.prototype.resolveNumber = function(identifier) {
     }
 
     if (first === '$') {
-		var test = new Number("0x" + identifier.substr(1, identifier.length-1)).valueOf();
+		let test = Number("0x" + identifier.substr(1, identifier.length-1));
 		return test;
     }
 
 	if (Assembler.DecimalDigits.indexOf(identifier[0]) != -1) {
-        var test;
-		test = new Number(identifier);
+		let test = Number(identifier);
 		if (!isNaN(test)) {
 			return test.valueOf();
 		}
@@ -275,21 +277,20 @@ Assembler.prototype.resolveNumber = function(identifier) {
         }
 	}
 	return -1;
-}
+};
 
 Assembler.prototype.referencesLabel = function(identifier, linenumber) {
-    var identifier = identifier.toLowerCase();
-    if (this.references[linenumber] == undefined) {
-        this.references[linenumber] = identifier;
+    if (this.references[linenumber] === undefined) {
+        this.references[linenumber] = identifier.toLowerCase();
     }
-}
+};
 
 Assembler.prototype.markLabel = function(identifier_, address, linenumber, override, updateReference) {
     var id = identifier_.replace(/\$([0-9a-fA-F]+)/, '0x$1'); 		// make sure that $ in hexes is replaced
     id = id.replace(/(^|[^'])(\$|\.)/, ' '+address+' '); 	// substitute $/. with address
 	var result = this.resolveNumber(id.trim());
 	if (result === -1) {
-			if (linenumber == undefined) {
+			if (linenumber === undefined) {
 				this.LabelsCount++;
 				address = -1 - this.LabelsCount;
 			}
@@ -297,7 +298,7 @@ Assembler.prototype.markLabel = function(identifier_, address, linenumber, overr
 			id = id.toLowerCase();
 			
 			var found = this.labels[id];
-			if (found != undefined) {
+			if (found !== undefined) {
 				if (address >= 0) {
 					this.resolveTable[-found] = address;
 				} else {
@@ -309,7 +310,7 @@ Assembler.prototype.markLabel = function(identifier_, address, linenumber, overr
 				this.labels[id] = address;
 			}
 
-			if (linenumber != undefined) {
+			if (linenumber !== undefined) {
 				this.textlabels[linenumber] = id;
 			}
 			if (updateReference) {
@@ -318,7 +319,7 @@ Assembler.prototype.markLabel = function(identifier_, address, linenumber, overr
 			result = address;
  	}			
 	return result;
-}
+};
 
 Assembler.prototype.setmem16 = function(addr, immediate) {
 	if (immediate >= 0) {
@@ -328,14 +329,14 @@ Assembler.prototype.setmem16 = function(addr, immediate) {
 		this.mem[addr] = immediate;
 		this.mem[addr+1] = immediate;
 	}
-}
+};
 
 Assembler.prototype.setmem8 = function(addr, immediate) {
 	this.mem[addr] = immediate < 0 ? immediate : immediate & 0xff;
-}
+};
 
 Assembler.parseRegisterPair = function(s) {
-    if (s != undefined) {
+    if (s !== undefined) {
         s = s.split(';')[0].toLowerCase();
     	if (s == 'b' || s == 'bc') return 0;
     	if (s == 'd' || s == 'de') return 1;
@@ -343,16 +344,16 @@ Assembler.parseRegisterPair = function(s) {
           	if (s == 'sp'|| s == 'psw' || s == 'a') return 3;
     }
 	return -1;
-}
+};
 
 Assembler.registers = "bcdehlma";
 // b=000, c=001, d=010, e=011, h=100, l=101, m=110, a=111
 Assembler.parseRegister = function(s) {
-    if (s == undefined) return -1;
+    if (s === undefined) return -1;
     if (s.length > 1) return -1;
     s = s.toLowerCase();
 	return Assembler.registers.indexOf(s[0]);
-}
+};
 
 
 Assembler.prototype.tokenDBDW = function(s, addr, length, linenumber) {
@@ -372,24 +373,24 @@ Assembler.prototype.tokenDBDW = function(s, addr, length, linenumber) {
     }
 
     return size;
-}
+};
 
 Assembler.prototype.tokenString = function(s, addr, linenumber) {
     for (var i = 0; i < s.length; i+=1) {
         this.setmem8(addr+i, s.charCodeAt(i));
     }
     return s.length;
-}
+};
 
 Assembler.prototype.parseDeclBase64 = function(args, addr, linenumber) {
 	var text = args.slice(1).join(' ');
-	var raw = atob(text)
+	var raw = atob(text);
 	var length = raw.length;
 	for (var i = 0; i < length; i += 1) {
 		this.setmem8(addr + i, raw.charCodeAt(i));
 	}
 	return length;
-}
+};
 
 Assembler.prototype.parseDeclDB = function(args, addr, linenumber, dw) {
     var text = args.slice(1).join(' ');
@@ -408,7 +409,7 @@ Assembler.prototype.parseDeclDB = function(args, addr, linenumber, dw) {
 				arg_start = i + 1;
                 break;
             } else if (char === ',') {
-				var len = this.tokenDBDW(text.substring(arg_start, i), addr + nbytes, dw, linenumber);
+				let len = this.tokenDBDW(text.substring(arg_start, i), addr + nbytes, dw, linenumber);
                 if (len < 0) {
                     return -1;
                 }
@@ -423,7 +424,7 @@ Assembler.prototype.parseDeclDB = function(args, addr, linenumber, dw) {
             if (char === cork) {
                 cork = '\0';
                 mode = 0;
-                var len = this.tokenString(text.substring(arg_start, i), addr+nbytes, linenumber);
+                let len = this.tokenString(text.substring(arg_start, i), addr+nbytes, linenumber);
                 if (len < 0) {
                     return -1;
                 }
@@ -439,7 +440,7 @@ Assembler.prototype.parseDeclDB = function(args, addr, linenumber, dw) {
     nbytes += len;
 
     return nbytes;
-}
+};
 
 Assembler.prototype.getExpr = function(arr) {
     var ex = arr.join(' ').trim();
@@ -447,31 +448,31 @@ Assembler.prototype.getExpr = function(arr) {
         return ex;
     }
     return ex.split(';')[0];
-}
+};
 
 Assembler.prototype.useExpr = function(s, addr, linenumber) {
     var expr = this.getExpr(s);
-    if (expr == undefined || expr.trim().length == 0) return false;
+    if (expr === undefined || expr.trim().length === 0) return false;
 
     var immediate = this.markLabel(expr, addr);
 	this.referencesLabel(expr, linenumber);
     return immediate;
-}
+};
 
 Assembler.prototype.setNewEncoding = function(encoding) {
 	try {
 		var encoded = Util.toTargetEncoding('test', encoding);
-		targetEncoding = encoding;
+		this.targetEncoding = encoding;
 	} catch(err) {
 		return -1;
 	}
 	return -100000;
-}
+};
 
 Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
     var parts = s.split(/\s+/);
 		
-	for (var i = 0; i < parts.length; i++) {
+	for (let i = 0; i < parts.length; i++) {
 		if (parts[i][0] == ';') {
 			parts.length = i;
 			break;
@@ -487,13 +488,13 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		var opcs;
 	    var mnemonic = parts[0].toLowerCase();
 
-        if (mnemonic.length == 0) {
+        if (mnemonic.length === 0) {
             parts = parts.slice(1);
             continue;
         }
 
 		// no operands
-		if ((opcs = Assembler.ops0[mnemonic]) != undefined) {
+		if ((opcs = Assembler.ops0[mnemonic]) !== undefined) {
 			this.mem[addr] = opcs;
             if (mnemonic == "xchg") {
                 regusage = ['#', 'h', 'l', 'd', 'e'];
@@ -508,7 +509,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 		
 		// immediate word
-		if ((opcs = Assembler.opsIm16[mnemonic]) != undefined) {
+		if ((opcs = Assembler.opsIm16[mnemonic]) !== undefined) {
 			this.mem[addr] = opcs;
 
             immediate = this.useExpr(parts.slice(1), addr, linenumber);
@@ -527,10 +528,10 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 		
 		// register pair <- immediate
-		if ((opcs = Assembler.opsRpIm16[mnemonic]) != undefined) {
-			var subparts = parts.slice(1).join(" ").split(",");
+		if ((opcs = Assembler.opsRpIm16[mnemonic]) !== undefined) {
+			let subparts = parts.slice(1).join(" ").split(",");
 			if (subparts.length < 2) return -3;
-			var rp = Assembler.parseRegisterPair(subparts[0]);
+			let rp = Assembler.parseRegisterPair(subparts[0]);
 			if (rp == -1) return -3;
 
 			this.mem[addr] = opcs | (rp << 4);
@@ -548,7 +549,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 
 		// immediate byte		
-		if ((opcs = Assembler.opsIm8[mnemonic]) != undefined) {
+		if ((opcs = Assembler.opsIm8[mnemonic]) !== undefined) {
 			this.mem[addr] = opcs;
             immediate = this.useExpr(parts.slice(1), addr, linenumber);
             this.setmem8(addr+1, immediate);
@@ -562,8 +563,8 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 
 		// single register, im8
-		if ((opcs = Assembler.opsRegIm8[mnemonic]) != undefined) {
-			var subparts = parts.slice(1).join(" ").split(",");
+		if ((opcs = Assembler.opsRegIm8[mnemonic]) !== undefined) {
+			let subparts = parts.slice(1).join(" ").split(",");
 			if (subparts.length < 2) {
 				result = -2;
 				break;
@@ -587,14 +588,14 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 				
 		// dual register (mov)
-		if ((opcs = Assembler.opsRegReg[mnemonic]) != undefined) {
-			subparts = parts.slice(1).join(" ").split(",");
+		if ((opcs = Assembler.opsRegReg[mnemonic]) !== undefined) {
+			let subparts = parts.slice(1).join(" ").split(",");
 			if (subparts.length < 2) {
 				result = -1;
 				break;
 			}
-			var reg1 = Assembler.parseRegister(subparts[0].trim());
-			var reg2 = Assembler.parseRegister(subparts[1].trim());
+			let reg1 = Assembler.parseRegister(subparts[0].trim());
+			let reg2 = Assembler.parseRegister(subparts[1].trim());
 			if (reg1 == -1 || reg2 == -1) {
 				result = -1;
 				break;
@@ -606,8 +607,8 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 
 		// single register
-		if ((opcs = Assembler.opsReg[mnemonic]) != undefined) {
-			reg = Assembler.parseRegister(parts[1]);
+		if ((opcs = Assembler.opsReg[mnemonic]) !== undefined) {
+			let reg = Assembler.parseRegister(parts[1]);
 			if (reg == -1) {
 				result = -1;
 				break;
@@ -628,8 +629,8 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 		
 		// single register pair
-		if ((opcs = Assembler.opsRp[mnemonic]) != undefined) {
-			rp = Assembler.parseRegisterPair(parts[1]);
+		if ((opcs = Assembler.opsRp[mnemonic]) !== undefined) {
+			let rp = Assembler.parseRegisterPair(parts[1]);
 			if (rp == -1) {
 				result = -1;
 				break;
@@ -654,7 +655,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		
 		// rst
 		if (mnemonic == "rst") {
-			n = this.resolveNumber(parts[1]);
+			let n = this.resolveNumber(parts[1]);
 			if (n >= 0 && n < 8) {
 				this.mem[addr] = 0xC7 | n << 3;
 				result = 1;
@@ -665,7 +666,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 		
 		if (mnemonic == ".org" || mnemonic == "org") {
-            var n = this.evaluateExpression(parts.slice(1).join(' '), addr);
+            let n = this.evaluateExpression(parts.slice(1).join(' '), addr);
 			if (n >= 0) {
 				result = -100000-n;
 			} else {
@@ -675,7 +676,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 
         if (mnemonic == ".binfile") {
-            if (parts[1] != undefined && parts[1].trim().length > 0) {
+            if (parts[1] !== undefined && parts[1].trim().length > 0) {
                 this.binFileName = parts[1];
             }
             result = -100000;
@@ -683,7 +684,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
         }
 
         if (mnemonic == ".hexfile") {
-            if (parts[1] != undefined && parts[1].trim().length > 0) {
+            if (parts[1] !== undefined && parts[1].trim().length > 0) {
                 this.hexFileName = parts[1];
             }
             result = -100000;
@@ -691,7 +692,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
         }
 
         if (mnemonic == ".download") {
-            if (parts[1] != undefined && parts[1].trim().length > 0) {
+            if (parts[1] !== undefined && parts[1].trim().length > 0) {
                 this.downloadFormat = parts[1].trim();
             }
             result = -100000;
@@ -723,15 +724,15 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 
         // assign immediate value to label
         if (mnemonic == ".equ" || mnemonic == "equ") {
-            if (labelTag == undefined) return -1;
-            var value = this.evaluateExpression(parts.slice(1).join(' '), addr);
+            if (labelTag === undefined) return -1;
+            let value = this.evaluateExpression(parts.slice(1).join(' '), addr);
             this.markLabel(labelTag, value, linenumber, true);
 			result = 0;
 			break;
         }
 
 		if (mnemonic == ".encoding") {
-    		var encoding = parts.slice(1).join(' ');	
+    		let encoding = parts.slice(1).join(' ');	
 			return this.setNewEncoding(encoding);
 		}
 
@@ -748,9 +749,9 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 			break;
         }
         if (mnemonic == 'ds' || mnemonic == '.ds') {
-            var size = this.evaluateExpression(parts.slice(1).join(' '), addr);
+            let size = this.evaluateExpression(parts.slice(1).join(' '), addr);
             if (size >= 0) {
-                for (var i = 0; i < size; i++) {
+                for (let i = 0; i < size; i++) {
                     this.setmem8(addr+i, 0);
                 }
                 result = size;
@@ -769,7 +770,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 		}
 
         // nothing else works, it must be a label
-        if (labelTag == undefined) {
+        if (labelTag === undefined) {
             var splat = mnemonic.split(':');
             labelTag = splat[0];
             this.markLabel(labelTag, addr, linenumber);
@@ -787,7 +788,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 			this.regUsage[linenumber] = regusage;
 	}
 	return result;
-}
+};
 
 
 // -- output --
@@ -804,7 +805,7 @@ Assembler.prototype.labelList = function() {
     };
 
     var sorted = [];
-    for (var i in this.labels) {
+    for (let i in this.labels) {
         sorted[sorted.length] = i;
     }
     sorted.sort();
@@ -814,13 +815,13 @@ Assembler.prototype.labelList = function() {
     result += '<pre class="labeltable">';
     var col = 1;
     for (var j = 0; j < sorted.length; j++) {
-        var i = sorted[j];
+        let i = sorted[j];
         var label = this.labels[i];
 
         // hmm? 
-        if (label == undefined) continue;
-        if (i.length == 0) continue; // resolved expressions
-        var resultClass = (col%4 == 0 ? 't2' : 't1');
+        if (label === undefined) continue;
+        if (i.length === 0) continue; // resolved expressions
+        var resultClass = (col%4 === 0 ? 't2' : 't1');
         if (label < 0) resultClass += ' errorline';
 
         result += "<span class='" + resultClass +  
@@ -828,25 +829,25 @@ Assembler.prototype.labelList = function() {
         result += ">";
         result += f(i,label);
         result += "</span>";
-        if (col % 4 == 0) result += "<br/>";
+        if (col % 4 === 0) result += "<br/>";
         col++;
     }
     result += "</pre>";
     
     return result;
-}
+};
 
 Assembler.prototype.dumpspan = function(org, mode) {
     var result = "";
     var nonempty = false;
     var conv = mode ? Util.char8 : Util.hex8;
     for (var i = org; i < org+16; i++) {
-        if (this.mem[i] != undefined) nonempty = true;
+        if (this.mem[i] !== undefined) nonempty = true;
         if (mode == 1) {
             result += conv(this.mem[i]);
         } else {
-            result += (i > org && i%8 == 0) ? "-" : " ";
-            if (this.mem[i] == undefined) {
+            result += (i > org && i%8 === 0) ? "-" : " ";
+            if (this.mem[i] === undefined) {
                 result += '  ';
             }
             else if (this.mem[i] < 0) {
@@ -858,13 +859,13 @@ Assembler.prototype.dumpspan = function(org, mode) {
     }
 
     return nonempty ? result : false;
-}
+};
 
 Assembler.prototype.dump = function() {
 	var org;
-	for (org = 0; org < this.mem.length && this.mem[org] == undefined; org++);
+	for (org = 0; org < this.mem.length && this.mem[org] === undefined; org++);
 	
-	if (org % 16 != 0) org = org - org % 16;
+	if (org % 16 !== 0) org = org - org % 16;
 	
     var result = "<pre>Memory dump:</pre>";
     result += '<div class="hordiv"></div>';
@@ -893,7 +894,7 @@ Assembler.prototype.dump = function() {
     }
 
     return result;
-}
+};
 
 Assembler.prototype.intelHex = function() {
     var i, j;
@@ -907,7 +908,7 @@ Assembler.prototype.intelHex = function() {
     r += 'cat &gt;' + this.hexFileName + ' &lt;&lt;X<br/>';
     //r += 'ed<br>i<br>';
     for (i = 0; i < this.mem.length;) {
-        for (j = i; j < this.mem.length && this.mem[j] == undefined; j++);
+        for (j = i; j < this.mem.length && this.mem[j] === undefined; j++);
         i = j;
         if (i >= this.mem.length) break; 
 
@@ -916,7 +917,7 @@ Assembler.prototype.intelHex = function() {
         var cs = 0;
 
         var rec = "";
-        for (j = 0; j < 32 && this.mem[i+j] != undefined; j++) {
+        for (j = 0; j < 32 && this.mem[i+j] !== undefined; j++) {
            if (this.mem[i+j] < 0) this.mem[i+j] = 0;
            rec += Util.hex8(this.mem[i+j]); 
            cs += this.mem[i+j];
@@ -947,14 +948,14 @@ Assembler.prototype.intelHex = function() {
 
 	this.hexText = pureHex;
     return r;
-}
+};
 
 Assembler.prototype.getLabel = function(l) {
     return this.labels[l.toLowerCase()];
-}
+};
 
 Assembler.prototype.processRegUsage = function(instr, linenumber) {
-    if (this.regUsage[linenumber] != undefined) {
+    if (this.regUsage[linenumber] !== undefined) {
         // check indirects
         var indirectsidx = this.regUsage[linenumber].indexOf('#');
         var indirects = [];
@@ -967,9 +968,9 @@ Assembler.prototype.processRegUsage = function(instr, linenumber) {
         }
 
         if (indirects.length > 0) {
-            var regs = [''].concat(indirects).join("','rg").substr(2) + "'";
+            let regs = [''].concat(indirects).join("','rg").substr(2) + "'";
 
-            var rep1 = '<span ' + 
+            let rep1 = '<span ' + 
                 'onmouseover="return rgmouseover([' + regs + ']);" ' +
                 'onmouseout="return rgmouseout([' + regs + ']);" ' +
                 '>$1</span>';
@@ -978,45 +979,45 @@ Assembler.prototype.processRegUsage = function(instr, linenumber) {
 
         if (directs.length == 2) {
             // reg, reg 
-            var s1 = "rg" + directs[0];
-            var s2 = "rg" + directs[1];
-            var rep1 = '<span class="' + s1 + '" ' + 
+            let s1 = "rg" + directs[0];
+            let s2 = "rg" + directs[1];
+            let rep1 = '<span class="' + s1 + '" ' + 
                 'onmouseover="return rgmouseover(\'' + s1 + '\');" ' +
                 'onmouseout="return rgmouseout(\'' + s1 + '\');" ' +
                 '>$2</span>';
-            var rep2 = '<span class="' + s2 + '" ' + 
+            let rep2 = '<span class="' + s2 + '" ' + 
                 'onmouseover="return rgmouseover(\'' + s2 + '\');" ' +
                 'onmouseout="return rgmouseout(\'' + s2 + '\');" ' +
                 '>$3</span>';
-            var replace = '$1' + rep1 + ', ' + rep2;
+            let replace = '$1' + rep1 + ', ' + rep2;
             instr=instr.replace(/(.+\s)([abcdehlm])\s*,\s*([abcdehlm])/, replace);
         } else if (directs.length == 1) {
-            var rpname = directs[0];
+            let rpname = directs[0];
             if (rpname[0] == '@') {
                 rpname = rpname.substring(1);
                 // register pair
-                var s1 = "rg" + rpname;
-                var rep1 = '<span class="' + s1 + '" ' + 
+                let s1 = "rg" + rpname;
+                let rep1 = '<span class="' + s1 + '" ' + 
                     'onmouseover="return rgmouseover(\'' + s1 + '\');" ' +
                     'onmouseout="return rgmouseout(\'' + s1 + '\');" ' +
                     '>$2</span>';
-                var replace = '$1'+rep1;
+                let replace = '$1'+rep1;
                 instr=instr.replace(/([^\s]+[\s]+)([bdh]|sp)/, replace);
             } else {
                 // normal register
-                var s1 = "rg" + rpname;
-                var rep1 = '<span class="' + s1 + '" ' + 
+                let s1 = "rg" + rpname;
+                let rep1 = '<span class="' + s1 + '" ' + 
                     'onmouseover="return rgmouseover(\'' + s1 + '\');" ' +
                     'onmouseout="return rgmouseout(\'' + s1 + '\');" ' +
                     '>$2</span>';
-                var replace = '$1'+rep1;
+                let replace = '$1'+rep1;
                 instr=instr.replace(/([^\s]+[\s]+)([abcdehlm])/, replace);
             }
         }
     }
     
     return instr;
-}
+};
 
 Assembler.prototype.listing = function(text,lengths,addresses) { 
     var result = [];
@@ -1056,7 +1057,7 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
         var width = 0;
 
         var len = lengths[i] > 4 ? 4 : lengths[i];
-        for (var b = 0; b < len; b++) {
+        for (let b = 0; b < len; b++) {
             hexes += Util.hex8(this.mem[addresses[i]+b]) + ' ';
             width += 3;
             if (this.mem[addresses[i]+b] < 0) unresolved = true;
@@ -1065,7 +1066,7 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
 
         result.push('<pre id="' + id + '"');
 
-        if (unresolved || this.errors[i] != undefined) {
+        if (unresolved || this.errors[i] !== undefined) {
             result.push(' class="errorline" ');
         }
 
@@ -1100,8 +1101,9 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
         // display only first and last lines of db thingies
         if (len < lengths[i]) {
             result.push('<br/>\t.&nbsp;.&nbsp;.&nbsp;<br/>');
+            var subresult = '';
             for (var subline = 1; subline*4 < lengths[i]; subline++) {
-                var subresult = '';
+                subresult = '';
                 subresult += Util.hex16(addresses[i]+subline*4) + '\t';
                 for (var sofs = 0; sofs < 4; sofs += 1) {
                     var adr = subline*4+sofs;
@@ -1132,11 +1134,11 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
 	}
 
     return result.join("");
-}
+};
 
 Assembler.prototype.error = function(line, text) {
     this.errors[line] = text;
-}
+};
 
 // assembler main entry point
 Assembler.prototype.assemble = function(src) {
@@ -1177,7 +1179,7 @@ Assembler.prototype.assemble = function(src) {
     this.resolveLabelsInMem();
     
     this.listingText = this.listing(inputlines, lengths, addresses);
-}
+};
 
 
 // scapegoat functionis for V8 because try/catch
@@ -1207,7 +1209,7 @@ Assembler.prototype.evalPrepareExpr = function(input, addr) {
         return null;
     }
 	return input;
-}
+};
 
 Assembler.prototype.evalInvoke = function(expr) {
     try {
@@ -1218,11 +1220,11 @@ Assembler.prototype.evalInvoke = function(expr) {
     }
 
     return -1;
-}
+};
 
-Assembler.prototype.evaluateExpression = function(input, addr) {
+Assembler.prototype.evaluateExpression = function(input, addr0) {
     var originput = input;
-	input = this.evalPrepareExpr(input, addr);
+	input = this.evalPrepareExpr(input, addr0);
 	if (!input) {
 		return -1;
 	}
@@ -1232,7 +1234,7 @@ Assembler.prototype.evaluateExpression = function(input, addr) {
         var qident = q[ident].trim();
         if (-1 != this.resolveNumber(qident)) continue;
         var addr = this.labels[qident];//.indexOf(qident);
-        if (addr != undefined) {
+        if (addr !== undefined) {
             //addr = this.labels[idx+1];
             if (addr >= 0) {
                 expr += 'var _' + qident + '=' + addr +';\n';
@@ -1253,12 +1255,12 @@ Assembler.prototype.evaluateExpression = function(input, addr) {
         });
     //console.log('expr=', expr);
 	return this.evalInvoke(expr.toLowerCase());
-}
+};
 
 Assembler.prototype.evaluateLabels = function() {
     for (var i in this.labels) {
         var label = this.labels[i];
-        if (label < 0 && this.resolveTable[-label] == undefined) {
+        if (label < 0 && this.resolveTable[-label] === undefined) {
             var result = this.evaluateExpression(i,-1);
             if (result >= 0) {
                 this.resolveTable[-label] = result;
@@ -1266,7 +1268,7 @@ Assembler.prototype.evaluateLabels = function() {
             }
         } 
     }
-}
+};
 
 Assembler.prototype.resolveLabelsInMem = function() {
     for (var i = 0, end_i = this.mem.length; i < end_i;) {
@@ -1274,29 +1276,29 @@ Assembler.prototype.resolveLabelsInMem = function() {
         if ((negativeId = this.mem[i]) < 0) {
             var newvalue = this.resolveTable[-negativeId];
 
-            if (newvalue != undefined) this.mem[i] = newvalue & 0xff;
+            if (newvalue !== undefined) this.mem[i] = newvalue & 0xff;
             i++;
             if (this.mem[i] == negativeId) {
-                if (newvalue != undefined) this.mem[i] = 0xff & (newvalue >> 8);
+                if (newvalue !== undefined) this.mem[i] = 0xff & (newvalue >> 8);
                 i++;
             }
         } else {
             i++;
         }
     }
-}
+};
  
 Assembler.prototype.resolveLabelsTable = function(nid) {   
    for (var i in this.labels) {
         var label = this.labels[i];
         if (label < 0) {
             var addr = this.resolveTable[-label];
-            if (addr != undefined) {
+            if (addr !== undefined) {
                 this.labels[i] = addr;
             }
         }
     }
-}
+};
 
 var asm = new Assembler();
 self.addEventListener('message', function(e) {
