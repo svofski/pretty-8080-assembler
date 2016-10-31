@@ -1315,7 +1315,7 @@ self.addEventListener('message', function(e) {
 			 'downloadFormat':asm.downloadFormat,
 		 	});
 	} else if (cmd == 'getmem') {
-		self.postMessage({'mem': asm.mem,
+		self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
 						  'binFileName': asm.binFileName});
 	}
 }, false);
