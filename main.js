@@ -63,11 +63,11 @@ var scrollHistory = [];
 var inTheOpera = navigator.appName.indexOf('Opera') != -1;
 
 function Asmcache() {
-	this.binFileName = "";
-	this.mem = [];
-	this.references = [];
-	this.textlabels = [];
-	this.binFileName = "";
+    this.binFileName = "";
+    this.mem = [];
+    this.references = [];
+    this.textlabels = [];
+    this.binFileName = "";
 }
 var asmcache = new Asmcache();
 
@@ -105,9 +105,9 @@ function _arrayBufferToBase64(buffer) {
 }
 
 function generateDataURI() {
-  var encoded = _arrayBufferToBase64(assembler.mem);
-  var contentType = "application/octet-stream";
-  return "data:" + contentType + ";base64," + encoded;
+    var encoded = _arrayBufferToBase64(assembler.mem);
+    var contentType = "application/octet-stream";
+    return "data:" + contentType + ";base64," + encoded;
 }
 
 function getListHeight() {
@@ -168,45 +168,45 @@ function assemble() {
 
     var list = document.getElementById('list');
     //var savedScroll = list.scrollTop;
-	list.savedScroll = list.scrollTop;
+    list.savedScroll = list.scrollTop;
 
     backrefWindow = false;
 
-	if (assemblerWorker) {
-			last_src = src;
-			assemblerWorker.postMessage({'command': 'assemble', 'src': src});
-			if (!listing_listener_added) {
-				listing_listener_added = true;
-				assemblerWorker.addEventListener('message',
-					function(e) {
-						var listing = e.data['listing'];
-						if (listing) {
-								console.log('assembler worker done');
-								list.innerHTML = '';
-								list.innerHTML += e.data['listing'];
-								var references = e.data['references'];
-								var textlabels = e.data['textlabels'];
-								var hex = e.data['hex'];
-								var hexFileName = e.data['hexFileName'];
-								var binFileName = e.data['binFileName'];
-								var downloadFormat = e.data['downloadFormat'];
-								updateReferences(references, textlabels, hex, hexFileName,
-									binFileName, downloadFormat);
-								list.scrollTop = list.savedScroll;//savedScroll;
-								updateSizes();
-								autotranslate = false;
-						}
-					});
-			}
-	} else if (assembler) {
-			assembler.assemble(src);
-			list.innerHTML += assembler.listingText;
+    if (assemblerWorker) {
+        last_src = src;
+        assemblerWorker.postMessage({'command': 'assemble', 'src': src});
+        if (!listing_listener_added) {
+            listing_listener_added = true;
+            assemblerWorker.addEventListener('message',
+                    function(e) {
+                        var listing = e.data['listing'];
+                        if (listing) {
+                            console.log('assembler worker done');
+                            list.innerHTML = '';
+                            list.innerHTML += e.data['listing'];
+                            var references = e.data['references'];
+                            var textlabels = e.data['textlabels'];
+                            var hex = e.data['hex'];
+                            var hexFileName = e.data['hexFileName'];
+                            var binFileName = e.data['binFileName'];
+                            var downloadFormat = e.data['downloadFormat'];
+                            updateReferences(references, textlabels, hex, hexFileName,
+                                    binFileName, downloadFormat);
+                            list.scrollTop = list.savedScroll;//savedScroll;
+                            updateSizes();
+                            autotranslate = false;
+                        }
+                    });
+        }
+    } else if (assembler) {
+        assembler.assemble(src);
+        list.innerHTML += assembler.listingText;
 
-			list.scrollTop = list.savedScroll;
-			updateSizes();
-			last_src = src;
-			autotranslate = false;
-	}
+        list.scrollTop = list.savedScroll;
+        updateSizes();
+        last_src = src;
+        autotranslate = false;
+    }
 }
 
 
@@ -238,8 +238,8 @@ function keydown(e) {
 
         /* Remember obj is a textarea or input field */
         obj.value = obj.value.substr(0, start) + 
-                "\t" +
-                obj.value.substr(end, obj.value.length);
+            "\t" +
+            obj.value.substr(end, obj.value.length);
         obj.setSelectionRange(start+1,start+1);
         obj.scrollTop = savedScroll;
 
@@ -290,14 +290,14 @@ var referencingLinesFull = [];
 
 function startHighlighting(lineno, label) {
     if (highlightTimeout === false) {
-         highlightLineNo = lineno;
-         highlightOrigin = document.getElementById('code'+lineno);
-         highlightTimeout = setTimeout(function() { highlightStage1(); }, 500);
-         if (label !== undefined) {
+        highlightLineNo = lineno;
+        highlightOrigin = document.getElementById('code'+lineno);
+        highlightTimeout = setTimeout(function() { highlightStage1(); }, 500);
+        if (label !== undefined) {
             highlightLabel = label;
-         } else {
+        } else {
             highlightLabel = false;
-         }
+        }
     }
 }
 
@@ -353,7 +353,7 @@ function highlightStage1() {
             highlightArrow.style.width = '2em';
 
             highlightOrigin.setAttribute('onclick', 
-                'xscrollTo('+(labelTop-height/2)+'); return false;');
+                    'xscrollTo('+(labelTop-height/2)+'); return false;');
             highlightOrigin.style.cursor = 'pointer';
         }
 
@@ -383,9 +383,9 @@ function highlightStage3() {
 
 function endHighlighting(lineno) {
     if (lineno === -2) {
-         highlightTimeout2 = setTimeout(function() { endHighlighting(-1); }, 1000);
-         highlightStage1();
-         return;
+        highlightTimeout2 = setTimeout(function() { endHighlighting(-1); }, 1000);
+        highlightStage1();
+        return;
     } else if (lineno === -1) {
         highlightDelayed = false;
         highlightTimeout2 = false;
@@ -427,7 +427,7 @@ function formatBackrefText(element) {
     formatBackrefText.spaces = "         ";
     var label = "";
     var text = "";
-	var adr;
+    var adr;
     for (var i = 0; i < element.childNodes.length; i++) {
         var child = element.childNodes[i];
         if (child.id === undefined) continue;
@@ -480,7 +480,7 @@ function startBackrefWindow(lineno) {
         return;
     }
     if (backrefTimeout === false &&
-        highlightLines.length > 0) {
+            highlightLines.length > 0) {
         backrefTimeout = setTimeout(function() { showBackref(0); }, 500);
         backrefLeft = backrefLabel.offsetLeft;
         backrefTop = highlightOrigin.offsetTop + 4;
@@ -505,9 +505,9 @@ function showBackref(n) {
             backrefWindow.id = 'backrefpopup';
             backrefWindow.style.position = 'fixed';
             backrefWindow.setAttribute("onmouseover",
-                "clearTimeout(backrefTimeout);backrefTimeout=false;return false;");
+                    "clearTimeout(backrefTimeout);backrefTimeout=false;return false;");
             backrefWindow.setAttribute("onmouseout",
-                "showBackref(-1);return false;");
+                    "showBackref(-1);return false;");
             document.getElementById('list').appendChild(backrefWindow);
         }
         backrefWindow.style.left = backrefLeft + 'px';
@@ -519,26 +519,26 @@ function showBackref(n) {
             var labelTop = referencingLinesFull[src].offsetTop;
             var text = formatBackrefText(referencingLinesFull[src]);
             var scrollTo = labelTop - backrefTop + 18;
-                        
+
             backrefWindow.innerHTML += 
-              '<div onclick="xscrollTo('+scrollTo+');' +
-              'backrefHintLine(\'' + referencingLinesFull[src].id +'\');' +
-              'showBackrefReturn(1);' +
-              'return false;"' +
-              ' class="brmenuitem" ' +
-              '>' +
-              text + 
-              '</div>';
+                '<div onclick="xscrollTo('+scrollTo+');' +
+                'backrefHintLine(\'' + referencingLinesFull[src].id +'\');' +
+                'showBackrefReturn(1);' +
+                'return false;"' +
+                ' class="brmenuitem" ' +
+                '>' +
+                text + 
+                '</div>';
         }
         // append return
         var returnTo = list.scrollTop;
         backrefWindow.innerHTML += 
-              '<div id="backrefgoback" onclick="xscrollTo(' +returnTo+ ');'+
-                            'showBackref(-1);return false;"' +
-              ' class="brmenuitem" ' +
-              ' style="border-top:1px solid black;font-size:120%;">' +
-              '&nbsp;&#x25c0;&nbsp;' + backrefLabel.innerHTML +
-              '</div>';
+            '<div id="backrefgoback" onclick="xscrollTo(' +returnTo+ ');'+
+            'showBackref(-1);return false;"' +
+            ' class="brmenuitem" ' +
+            ' style="border-top:1px solid black;font-size:120%;">' +
+            '&nbsp;&#x25c0;&nbsp;' + backrefLabel.innerHTML +
+            '</div>';
         showBackrefReturn(0);
         backrefWindow.style.opacity = 0;
         showBackref.opacity = 0;
@@ -625,11 +625,11 @@ function rgmouseout(className) {
 function boo() {
     //var d = document.createElement('div');
     document.body.innerHTML = 
-                '<h1>Unfortunately&#0133;</h1>' +
-                '<p>The <b>Pretty 8080 Assembler</b> only works in Internet Browsers.</p>' +
-                '<p>You\'re using Microsoft Internet Explorer, which was called an "internet browser" by mistake.</p>' +
-                '<p>Please upgrade and come back with a Firefox, Iceweasel, Konqueror, Safari, Chrome or even Opera.</p>' +
-                '<p>Or try b2m\'s <a href="http://bashkiria-2m.narod.ru/i8080.html">Good i8080 Assembler</a>.</p>';
+        '<h1>Unfortunately&#0133;</h1>' +
+        '<p>The <b>Pretty 8080 Assembler</b> only works in Internet Browsers.</p>' +
+        '<p>You\'re using Microsoft Internet Explorer, which was called an "internet browser" by mistake.</p>' +
+        '<p>Please upgrade and come back with a Firefox, Iceweasel, Konqueror, Safari, Chrome or even Opera.</p>' +
+        '<p>Or try b2m\'s <a href="http://bashkiria-2m.narod.ru/i8080.html">Good i8080 Assembler</a>.</p>';
 }
 
 var emulator_sideload;
@@ -739,32 +739,32 @@ var blinkCount = 16;
 var ruslat_light;
 
 function registerHooks(hooks) {
-	for (var name in hooks) {
-		if (name === 'sideload') {
-			emulator_sideload = hooks[name];
-		}
-		if (name === 'blksbr') {
-			blksbr = hooks[name];
-		}
-	}
+    for (var name in hooks) {
+        if (name === 'sideload') {
+            emulator_sideload = hooks[name];
+        }
+        if (name === 'blksbr') {
+            blksbr = hooks[name];
+        }
+    }
 }
 
 function ruslat(on) {
-	if (!ruslat_light) {
-		ruslat_light = document.getElementById("ruslat");
-	}
-	if (!on && blksbr && blinkCount > 0 && --blinkCount === 0) {
-		setTimeout(function() { 
+    if (!ruslat_light) {
+        ruslat_light = document.getElementById("ruslat");
+    }
+    if (!on && blksbr && blinkCount > 0 && --blinkCount === 0) {
+        setTimeout(function() { 
             blksbr(false); 
             blksbr = null; 
         }, 0);
-	}
-	ruslat_light.className = on ? "on" : "";
+    }
+    ruslat_light.className = on ? "on" : "";
 }
 
 function loaded() {
     if (navigator.appName === 'Microsoft Internet Explorer' || 
-        navigator.appVersion.indexOf('MSIE') != -1) {
+            navigator.appVersion.indexOf('MSIE') != -1) {
         boo();
         return false;
     }
@@ -859,22 +859,22 @@ function magicToolbar(n) {
 // -- i18n --
 var languages = 
 {
-"en":["Pretty 8080 Assembler", "Make Beautiful Code"],
-"se":["Fin 8080 assembler", "Översätt den snygga"],
-"ru":["Прекрасный ассемблер КР580ВМ80А", "Транслировать прелесть"],
-"uk":["Прекрасний асемблер КР580ВМ80А", "Транслювати принаду"],
-"es":["Bonito ensamblador de 8080", "Crear código precioso"],
-"fr":["L'assembleur jolie de 8080", "Créer un beau programme"],
-"nl":["Fraaie 8080 Assembler", "Vertaal dit juweel"],
-"de":["Schöne 8080 Assembler","Übersetze diese Schatz"],
-"fi":["Siev&auml; 8080 assembleri", "Tee kaunista koodia"],
-"dk":["Smuk 8080 Assembler","Skriv pæn kode"],
-"cz":["Dobrý 8080 Assembler","Kompilaci drahé"],
-"tr":["Temiz montajcı kodu 8080","Güzel kodu yapmak"],
-"ja":["美しい 8080アセンブラ","美しい コードをしよう"],
-"he":["8080 יופי של שפת סף","לקודד יופי של קידוד"],
-// Persian translation by Ali Asadzadeh, thanks Ali!
-"fa":["یک اسمبلر جالب برای 8080","کامپایل کردن این کد زیبا"]
+    "en":["Pretty 8080 Assembler", "Make Beautiful Code"],
+    "se":["Fin 8080 assembler", "Översätt den snygga"],
+    "ru":["Прекрасный ассемблер КР580ВМ80А", "Транслировать прелесть"],
+    "uk":["Прекрасний асемблер КР580ВМ80А", "Транслювати принаду"],
+    "es":["Bonito ensamblador de 8080", "Crear código precioso"],
+    "fr":["L'assembleur jolie de 8080", "Créer un beau programme"],
+    "nl":["Fraaie 8080 Assembler", "Vertaal dit juweel"],
+    "de":["Schöne 8080 Assembler","Übersetze diese Schatz"],
+    "fi":["Siev&auml; 8080 assembleri", "Tee kaunista koodia"],
+    "dk":["Smuk 8080 Assembler","Skriv pæn kode"],
+    "cz":["Dobrý 8080 Assembler","Kompilaci drahé"],
+    "tr":["Temiz montajcı kodu 8080","Güzel kodu yapmak"],
+    "ja":["美しい 8080アセンブラ","美しい コードをしよう"],
+    "he":["8080 יופי של שפת סף","לקודד יופי של קידוד"],
+    // Persian translation by Ali Asadzadeh, thanks Ali!
+    "fa":["یک اسمبلر جالب برای 8080","کامپایل کردن این کد زیبا"]
 };
 
 function i18n() {
