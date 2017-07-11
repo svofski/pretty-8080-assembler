@@ -72,11 +72,12 @@ function Asmcache() {
 var asmcache = new Asmcache();
 
 function updateReferences(ref, tls, hex, hfn, bfn, df) {
-	asmcache.references = ref;
-	asmcache.textlabels = tls;
-	asmcache.hexText = hex;
-	asmcache.hexFileName = hfn;
-	asmcache.binFileName = bfn;
+    asmcache.references = ref;
+    asmcache.textlabels = tls;
+    asmcache.hexText = hex;
+    asmcache.hexFileName = hfn;
+    asmcache.binFileName = bfn;
+    asmcache.downloadFormat = df;
 
     var formData = document.getElementById('hex');
     formData.value = hex;
@@ -90,6 +91,7 @@ function updateReferences(ref, tls, hex, hfn, bfn, df) {
 
 var listing_listener_added = false;
 var binary_listener_added = false;
+var hex2bin_listener_added = false;
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -634,43 +636,101 @@ var emulator_sideload;
 
 var getmemCallback = function(e) {};
 
+var hex2binCallback = function(e) {};
+
 function binaryMessageListener(e) {
-	if (e.data['mem']) {
-			asmcache.binFileName = e.data['binFileName'];
-			asmcache.mem = e.data['mem'];
-			getmemCallback();
-	}
+    if (e.data['mem']) {
+        asmcache.binFileName = e.data['binFileName'];
+        asmcache.mem = e.data['mem'];
+        getmemCallback();
+    }
+}
+
+function hex2binMessageListener(e) {
+    if (e.data['download'] == true) {
+        asmcache.binFileName = e.data['binFileName'];
+        asmcache.mem = e.data['mem'];
+        hex2binCallback();
+    }
+}
+
+// Function to download data to a file
+function __download(data, filename, type) {
+    var a = document.createElement("a"),
+    file = new Blob([data], {type: type});
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        var url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+    }
+}
+
+/* Downloadable blob */
+function load_hex2bin() {
+    if (!hex2bin_listener_added) {
+        hex2bin_listener_added = true;
+        hex2binCallback = function() {
+            var data = new Uint8Array(asmcache.mem.length);
+            var start = 0;
+            var end = asmcache.mem.length;
+            if (asmcache.binFileName.endsWith("rom") ||
+                    asmcache.binFileName.endsWith("com")) {
+                start = 256;
+            }
+            for(var i = start, end = data.length; i < end; ++i) {
+                data[i] = 0xff & asmcache.mem[i];
+            }
+            __download(data.slice(start, end), asmcache.binFileName, 
+                    "application/octet-stream");
+        };
+        assemblerWorker.addEventListener('message', hex2binMessageListener, 
+                false);
+    }
+    if (asmcache.downloadFormat == "hex") {
+        var data = asmcache.hexText;
+        __download(data, asmcache.hexFileName, "text/plain");
+    } else {
+        assemblerWorker.postMessage({'command': 'getbin'});
+    }
 }
 
 function load_vector06js() {
-	if (!binary_listener_added) {
-			binary_listener_added = true;
-			getmemCallback = function() {
-					var emulator_pane = document.getElementById("emulator");
-					var container = document.getElementById("emulator-container");
-					var iframe = document.createElement("iframe");
-					iframe.src = "../scalar/vector06js?i+";
-					iframe.id = "emulator-iframe";
-					container.appendChild(iframe);
-					emulator_pane.className += " visible";
-					emulator_pane.onclick = function() {
-						container.removeChild(iframe);
-						emulator_pane.className = emulator_pane.className.replace(/ visible/g, "");
-						var run = document.getElementById("run");
-						run.className = run.className.replace(/ disabled/g, "");
-						blinkCount = 16;
-					};
+    if (!binary_listener_added) {
+        binary_listener_added = true;
+        getmemCallback = function() {
+            var emulator_pane = document.getElementById("emulator");
+            var container = document.getElementById("emulator-container");
+            var iframe = document.createElement("iframe");
+            iframe.src = "../scalar/vector06js?i+";
+            iframe.id = "emulator-iframe";
+            container.appendChild(iframe);
+            emulator_pane.className += " visible";
+            emulator_pane.onclick = function() {
+                container.removeChild(iframe);
+                emulator_pane.className = emulator_pane.className.replace(/ visible/g, "");
+                var run = document.getElementById("run");
+                run.className = run.className.replace(/ disabled/g, "");
+                blinkCount = 16;
+            };
 
-					iframe.onload = function() {
-						iframe.contentWindow.focus();
-						if (emulator_sideload) {
-							emulator_sideload({'name':asmcache.binFileName, 'mem':asmcache.mem});
-						}
-					};
-			};
-			assemblerWorker.addEventListener('message', binaryMessageListener, false);
-	}
-	assemblerWorker.postMessage({'command': 'getmem'});
+            iframe.onload = function() {
+                iframe.contentWindow.focus();
+                if (emulator_sideload) {
+                    emulator_sideload({'name':asmcache.binFileName, 'mem':asmcache.mem});
+                }
+            };
+        };
+        assemblerWorker.addEventListener('message', binaryMessageListener, false);
+    }
+    assemblerWorker.postMessage({'command': 'getmem'});
 }
 
 var blksbr;
@@ -721,14 +781,21 @@ function loaded() {
         source.oninput = keypress;
     }
 
-	var run = document.getElementById("run");
-	if (run) {
-		run.onclick = function() {
-			//console.log(generateDataURI());
-			load_vector06js();//generateDataURI());
-			run.className += " disabled";
-		};
-	}
+    var translate = document.getElementById("baton");
+    if (translate) {
+        translate.onclick = function() {
+            load_hex2bin();
+        };
+    }
+
+    var run = document.getElementById("run");
+    if (run) {
+        run.onclick = function() {
+            //console.log(generateDataURI());
+            load_vector06js();//generateDataURI());
+            run.className += " disabled";
+        };
+    }
 
     cock(100);
 }

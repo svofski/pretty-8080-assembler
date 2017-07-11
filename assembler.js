@@ -1302,20 +1302,26 @@ Assembler.prototype.resolveLabelsTable = function(nid) {
 
 var asm = new Assembler();
 self.addEventListener('message', function(e) {
-	var cmd = e.data['command'];
-	if (cmd == 'assemble') {
-		asm.assemble(e.data['src']);
-	  	self.postMessage(
-			{'listing':asm.listingText, 
-			 'textlabels':asm.textlabels,
-		 	 'references':asm.references,
-			 'hex':asm.hexText,
-			 'binFileName':asm.binFileName,
-			 'hexFileName':asm.hexFileName,
-			 'downloadFormat':asm.downloadFormat,
-		 	});
-	} else if (cmd == 'getmem') {
-		self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
-						  'binFileName': asm.binFileName});
-	}
+    var cmd = e.data['command'];
+    if (cmd == 'assemble') {
+        asm.assemble(e.data['src']);
+        self.postMessage(
+                {'listing':asm.listingText, 
+                    'textlabels':asm.textlabels,
+                    'references':asm.references,
+                    'hex':asm.hexText,
+                    'binFileName':asm.binFileName,
+                    'hexFileName':asm.hexFileName,
+                    'downloadFormat':asm.downloadFormat,
+                });
+    } else if (cmd == 'getmem') {
+        self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
+            'binFileName': asm.binFileName,
+            'download':false});
+    } else if (cmd == 'getbin') {
+        self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
+            'binFileName': asm.binFileName,
+            'download':true
+        });
+    }
 }, false);
