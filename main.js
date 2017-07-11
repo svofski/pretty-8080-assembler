@@ -709,7 +709,8 @@ function load_vector06js() {
             var emulator_pane = document.getElementById("emulator");
             var container = document.getElementById("emulator-container");
             var iframe = document.createElement("iframe");
-            iframe.src = "../scalar/vector06js?i+";
+            //iframe.src = "../scalar/vector06js?i+";
+            iframe.src="https://svofski.github.io/vector06js?i+";
             iframe.id = "emulator-iframe";
             container.appendChild(iframe);
             emulator_pane.className += " visible";
