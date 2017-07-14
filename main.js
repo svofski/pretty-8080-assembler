@@ -65,19 +65,21 @@ var inTheOpera = navigator.appName.indexOf('Opera') != -1;
 function Asmcache() {
     this.binFileName = "";
     this.mem = [];
+    this.org = 0;
     this.references = [];
     this.textlabels = [];
     this.binFileName = "";
 }
 var asmcache = new Asmcache();
 
-function updateReferences(ref, tls, hex, hfn, bfn, df) {
+function updateReferences(ref, tls, hex, hfn, bfn, df, org) {
     asmcache.references = ref;
     asmcache.textlabels = tls;
     asmcache.hexText = hex;
     asmcache.hexFileName = hfn;
     asmcache.binFileName = bfn;
     asmcache.downloadFormat = df;
+    asmcache.org = org || 256;
 
     var formData = document.getElementById('hex');
     formData.value = hex;
@@ -190,8 +192,9 @@ function assemble() {
                             var hexFileName = e.data['hexFileName'];
                             var binFileName = e.data['binFileName'];
                             var downloadFormat = e.data['downloadFormat'];
+                            var org = e.data['org'];
                             updateReferences(references, textlabels, hex, hexFileName,
-                                    binFileName, downloadFormat);
+                                    binFileName, downloadFormat, org);
                             list.scrollTop = list.savedScroll;//savedScroll;
                             updateSizes();
                             autotranslate = false;
@@ -642,6 +645,7 @@ function binaryMessageListener(e) {
     if (e.data['mem']) {
         asmcache.binFileName = e.data['binFileName'];
         asmcache.mem = e.data['mem'];
+        asmcache.org = e.data['org'];
         getmemCallback();
     }
 }
@@ -650,6 +654,7 @@ function hex2binMessageListener(e) {
     if (e.data['download'] == true) {
         asmcache.binFileName = e.data['binFileName'];
         asmcache.mem = e.data['mem'];
+        asmcache.org = e.data['org'];
         hex2binCallback();
     }
 }
@@ -679,12 +684,8 @@ function load_hex2bin() {
         hex2bin_listener_added = true;
         hex2binCallback = function() {
             var data = new Uint8Array(asmcache.mem.length);
-            var start = 0;
+            var start = asmcache.org;
             var end = asmcache.mem.length;
-            if (asmcache.binFileName.endsWith("rom") ||
-                    asmcache.binFileName.endsWith("com")) {
-                start = 256;
-            }
             for(var i = start, end = data.length; i < end; ++i) {
                 data[i] = 0xff & asmcache.mem[i];
             }
@@ -894,8 +895,7 @@ function i18n() {
     var baton = document.getElementById('baton');
 
     header.innerHTML = m_header;
-    //baton.innerHTML = m_button;
-    baton.value = m_button;
+    baton.innerHTML = m_button;
 
     if (lang === 'he' || lang === 'fa') {
         header.style.textAlign = 'right';

@@ -99,6 +99,7 @@ function Assembler() {
 
     this.resolveTable = []; // label negative id, resolved address
     this.mem = [];
+    this.org = undefined;
     this.textlabels= [];
     this.references = [];
     this.errors = [];
@@ -668,6 +669,9 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
         if (mnemonic == ".org" || mnemonic == "org") {
             let n = this.evaluateExpression(parts.slice(1).join(' '), addr);
             if (n >= 0) {
+                if (this.org === undefined || n < this.org) {
+                    this.org = n;
+                }
                 result = -100000-n;
             } else {
                 result = -1;
@@ -862,8 +866,9 @@ Assembler.prototype.dumpspan = function(org, mode) {
 };
 
 Assembler.prototype.dump = function() {
-    var org;
-    for (org = 0; org < this.mem.length && this.mem[org] === undefined; org++);
+    //var org;
+    //for (org = 0; org < this.mem.length && this.mem[org] === undefined; org++);
+    var org = this.org;
 
     if (org % 16 !== 0) org = org - org % 16;
 
@@ -1151,6 +1156,7 @@ Assembler.prototype.assemble = function(src) {
     this.clearLabels();
     this.resolveTable.length = 0;
     this.mem.length = 0;
+    this.org = undefined;
     this.references.length = 0;
     this.textlabels.lenth = 0;
     this.errors.length = 0;
@@ -1177,6 +1183,13 @@ Assembler.prototype.assemble = function(src) {
     this.resolveLabelsTable();
     this.evaluateLabels();
     this.resolveLabelsInMem();
+
+    /* If org was not defined explicitly, take first defined address */
+    if (this.org === undefined) {
+        var org;
+        for (org = 0; org < this.mem.length && this.mem[org] === undefined; org++);
+        this.org = org;
+    }
 
     this.listingText = this.listing(inputlines, lengths, addresses);
 };
@@ -1316,10 +1329,12 @@ self.addEventListener('message', function(e) {
                 });
     } else if (cmd == 'getmem') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
+            'org': asm.org,
             'binFileName': asm.binFileName,
             'download':false});
     } else if (cmd == 'getbin') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
+            'org': asm.org,
             'binFileName': asm.binFileName,
             'download':true
         });
