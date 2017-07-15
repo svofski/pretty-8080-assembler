@@ -54,6 +54,7 @@
 //
 
 importScripts('encodings.js');
+importScripts('tape.js');
 
 function Util() {
 }
@@ -87,6 +88,7 @@ function Assembler() {
     this.binFileName = 'test.com';
     this.hexFileName = 'test.hex';
     this.downloadFormat = 'bin';
+    this.tapeFormat = 'rk-bin';
     this.objCopy = 'gobjcopy';
     this.postbuild = '';
     this.doHexDump = true;
@@ -701,6 +703,17 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
             }
             result = -100000;
             break;
+        }
+
+        if (mnemonic == ".tape") {
+            if (parts[1] !== undefined && parts[1].trim().length > 0) {
+                this.tapeFormat = parts[1].trim();
+                var test = new TapeFormat(this.tapeFormat);
+                if (test.format) {
+                    result = -100000;
+                    break;
+                }
+            }
         }
 
         if (mnemonic == ".objcopy") {
@@ -1326,17 +1339,27 @@ self.addEventListener('message', function(e) {
                     'binFileName':asm.binFileName,
                     'hexFileName':asm.hexFileName,
                     'downloadFormat':asm.downloadFormat,
+                    'tapeFormat':asm.tapeFormat,
                 });
     } else if (cmd == 'getmem') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
             'binFileName': asm.binFileName,
+            'tapeFormat':asm.tapeFormat,
             'download':false});
     } else if (cmd == 'getbin') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
             'binFileName': asm.binFileName,
-            'download':true
+            'tapeFormat':asm.tapeFormat,
+            'download':'bin'
+        });
+    } else if (cmd == 'getwav') {
+        self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
+            'org': asm.org,
+            'binFileName': asm.binFileName,
+            'tapeFormat':asm.tapeFormat,
+            'download':e.data['mode']
         });
     }
 }, false);

@@ -9,6 +9,8 @@ Rev.L: Worker + Base64
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>Pretty 8080 Assembler</title>
 <script type="text/javascript" src="encodings.js"></script>
+<script type="text/javascript" src="makewav.js"></script>
+<script type="text/javascript" src="tape.js"></script>
 <script type="text/javascript" src="main.js"></script>
 
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
@@ -69,6 +71,8 @@ onkeypress="keypress(event);return true;">
         .binfile test.com
         ; try "hex" for downloading in hex format
         .download bin  
+        ; target for generated loadable wav-file: rk-bin
+        .tape rk-bin
         .objcopy gobjcopy
         .postbuild echo "Hooray!"
         ;.nodump
@@ -103,7 +107,6 @@ delay:
 </div>
 <div style="height:0.5ex"><br/></div>
 <div id="buttbr" class="hordiv"></div>
-<form action="hex2bin.cgi" method="post">
 <div>
 <input type="text" id="hex" name="hex" style="display:none;"/>
 <input type="text" id="formbinname" name="formbinname" style="display:none;"/>
@@ -112,8 +115,9 @@ delay:
 <!--<input type="submit" class="baton" id="baton" name="baton" value="Translate"/>-->
 <div class="baton" id="baton">Translate</div>
 <div class="baton" id="run">Run</div>
+<div class="baton" id="sounds">Wav&nbsp;&nbsp;
+    <span id="wav-dl">⬇</span>&nbsp;&nbsp;&nbsp;<span id="wav-play">▶</span></div>
 </div>
-</form>
 
 </body>
 </html>

@@ -94,6 +94,9 @@ function updateReferences(ref, tls, hex, hfn, bfn, df, org) {
 var listing_listener_added = false;
 var binary_listener_added = false;
 var hex2bin_listener_added = false;
+var play_listener_added = false;
+
+var player = undefined;
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -642,7 +645,7 @@ var getmemCallback = function(e) {};
 var hex2binCallback = function(e) {};
 
 function binaryMessageListener(e) {
-    if (e.data['mem']) {
+    if (e.data['mem'] && !e.data['download']) {
         asmcache.binFileName = e.data['binFileName'];
         asmcache.mem = e.data['mem'];
         asmcache.org = e.data['org'];
@@ -651,7 +654,7 @@ function binaryMessageListener(e) {
 }
 
 function hex2binMessageListener(e) {
-    if (e.data['download'] == true) {
+    if (e.data['download'] === 'bin') {
         asmcache.binFileName = e.data['binFileName'];
         asmcache.mem = e.data['mem'];
         asmcache.org = e.data['org'];
@@ -701,6 +704,79 @@ function load_hex2bin() {
     } else {
         assemblerWorker.postMessage({'command': 'getbin'});
     }
+}
+
+function play_audio(stream) {
+    var bob = new Blob([stream], {type:'audio/wav'});
+    var URLObject = window.webkitURL || window.URL;
+    var url = URLObject.createObjectURL(bob);
+    if (!player) {
+        player = document.createElement("AUDIO");
+    }
+    player.setAttribute("src", url);
+
+    player.play();
+    player.onended = function() {
+        stop_audio();
+    };
+
+    var button = document.getElementById("wav-play");
+    if (button) {
+        button.innerHTML = "◼";
+        button.onclick = function() {
+            stop_audio();
+        }
+    }
+}
+
+function stop_audio() {
+    if (player) {
+        player.pause();
+    }
+    var button = document.getElementById("wav-play");
+    if (button) {
+        button.innerHTML = "▶";
+        button.onclick = function() {
+            load_play("play");
+        }
+    }
+ }
+
+function load_play(moda) {
+    if (!play_listener_added) {
+        play_listener_added = true;
+        (function(asmcache) {
+            assemblerWorker.addEventListener('message',
+                    function (e) {
+                        var dlmode = e.data['download'];
+                        var stream;
+                        if (dlmode === 'wav' || dlmode === 'play') {
+                            asmcache.binFileName = e.data['binFileName'];
+                            asmcache.mem = e.data['mem'];
+                            asmcache.org = e.data['org'];
+                            asmcache.tapeFormat = e.data['tapeFormat'];
+                            var start = asmcache.org;
+                            var end = asmcache.mem.length;
+                            var data = new Uint8Array(asmcache.mem.length);
+                            for(var i = start, end = data.length; i < end; ++i) {
+                                data[i] = 0xff & asmcache.mem[i];
+                            }
+                            stream = TapeFormat(asmcache.tapeFormat).
+                                    format(data.slice(start, end), asmcache.org,
+                                        asmcache.binFileName);
+                        }
+                        if (dlmode === "wav") {
+                           __download(stream, asmcache.binFileName + ".wav",
+                                    "audio/wav");
+                        } else if (dlmode === "play") {
+                            /* start audio player */
+                            play_audio(stream);
+                        }
+                    },
+                    false)
+        })(asmcache);
+    }
+    assemblerWorker.postMessage({'command': 'getwav', 'mode': moda});
 }
 
 function load_vector06js() {
@@ -786,7 +862,7 @@ function loaded() {
     var translate = document.getElementById("baton");
     if (translate) {
         translate.onclick = function() {
-            load_hex2bin();
+            load_hex2bin('translate');
         };
     }
 
@@ -797,6 +873,21 @@ function loaded() {
             load_vector06js();//generateDataURI());
             run.className += " disabled";
         };
+    }
+
+    stop_audio();
+    //var play = document.getElementById("wav-play");
+    //if (play) {
+    //    play.onclick = function() {
+    //        load_play('play');
+    //    }
+    //}
+
+    var wavdl = document.getElementById("wav-dl");
+    if (wavdl) {
+        wavdl.onclick = function() {
+            load_play('wav');
+        }
     }
 
     cock(100);

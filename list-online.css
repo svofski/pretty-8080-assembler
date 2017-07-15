@@ -200,12 +200,12 @@ span.t2:hover { background:#ffff7d; }
 
 
 #emulator {
-	width: 100%;
+    width: 100%;
     height: 100%;
     position: absolute;
     left: 0;
     right: 0;
-	display: none;
+    display: none;
 }
 
 #emulator:before {
@@ -283,4 +283,30 @@ padding-left: 1ex;
 #emulator-controls #close:hover {
 background-color: #942;
 color: red;
+}
+
+span#wav-dl {
+    font-size: smaller;
+    color: pink;
+    box-shadow: inset 0 0px 0 white, inset 0 -2px 0 pink;
+    cursor: pointer;
+}
+
+span#wav-dl:hover {
+    color: white;
+    box-shadow: inset 0 0px 0 white, inset 0 -2px 0 white;
+}
+
+#wav-play {
+    font-size: smaller;
+    color: pink;
+    cursor: pointer;
+}
+
+#wav-play:hover {
+    color: white;
+}
+
+#sounds {
+cursor:default;
 }
