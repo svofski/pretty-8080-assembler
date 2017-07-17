@@ -71,8 +71,11 @@ onkeypress="keypress(event);return true;">
         .binfile test.com
         ; try "hex" for downloading in hex format
         .download bin  
-        ; target for generated loadable wav-file: rk-bin
-        .tape rk-bin
+        ; target for generated loadable wav-file:
+        ;   rk-bin          Радио-86РК 
+        ;   microsha-bin    Микроша
+        ;   v06c-rom        Вектор-06ц ROM
+        .tape v06c-rom 
         .objcopy gobjcopy
         .postbuild echo "Hooray!"
         ;.nodump

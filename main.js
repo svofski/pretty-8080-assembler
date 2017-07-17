@@ -714,7 +714,7 @@ function play_audio(stream) {
         player = document.createElement("AUDIO");
     }
     player.setAttribute("src", url);
-
+    player.volume = 0.25;
     player.play();
     player.onended = function() {
         stop_audio();
