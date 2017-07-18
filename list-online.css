@@ -310,3 +310,23 @@ span#wav-dl:hover {
 #sounds {
 cursor:default;
 }
+
+.ryba-item {
+    cursor: pointer;
+}
+
+#ryba-popup {
+border:5px solid #ffff7d;
+background:#ffff7d;
+font-size:90%;
+font-family:Monaco, Lucida Console, monospace;
+opacity:0.9;
+max-width:30em;
+overflow:hidden;
+position:fixed;
+}
+
+.ryba-item:hover {
+    background-color: red;
+}
+

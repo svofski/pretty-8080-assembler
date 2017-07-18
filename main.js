@@ -968,17 +968,117 @@ var languages =
     // Persian translation by Ali Asadzadeh, thanks Ali!
     "fa":["یک اسمبلر جالب برای 8080","کامپایل کردن این کد زیبا"]
 };
+// 🐟
+var rybas = 
+{
+    "rk": ["Радио-86РК", "hello-rk.asm"],
+
+    "microsha": ["Микроша", "hello-microsha.asm"],
+
+    "apogee": ["Апогей БК-01", "hello-apogee.asm"],
+
+    "partner": ["Партнер 01.01", "hello-partner.asm"],
+
+    "mikro80": ["Микро-80", "hello-micro80.asm"],
+    
+    "vector06c": ["Вектор-06ц", "hello-v06c.asm"],
+
+    "krista": ["Криста", "hello-krista.asm"],
+
+    "specialist": ["Специалист", "hello-spec.asm"],
+};
+
+function load_ryba(url) 
+{
+    console.log("Trying to load ", url);
+
+    var oReq = new XMLHttpRequest();
+    oReq.open("GET", url, true);
+    oReq.responseType = "text";
+
+    oReq.onload = function(oEvent) {
+        //console.log(oReq.response);
+        let status = oReq.status;
+        if (status >= 200 && status < 300 || status === 304) {
+            document.getElementById('source').value = oReq.response;
+            assemble();
+        }
+    };
+    oReq.onerror = function(oEvent) {
+        console.log("XMLHttpRequest error", oEvent);
+    };
+
+    oReq.send();
+}
+
+function create_ryba_menu()
+{
+    var menu = document.createElement("div");
+    menu.setAttribute("id", "ryba-popup");
+    for (var k in rybas) {
+        console.log("ryba ", k, rybas[k][0], rybas[k][1]);
+        var item = document.createElement("div");
+        //item.class = "ryba-item";
+        item.setAttribute("class", "ryba-item");
+        item.innerText = rybas[k][0];
+        (function(href) {
+            item.onclick = function() {
+                menu.parentElement.removeChild(menu);
+                load_ryba(href);
+            };
+        })(rybas[k][1]);
+        menu.onmouseleave = function() {
+            menu.parentElement.removeChild(menu);
+        };
+
+       menu.appendChild(item);
+    }
+    
+    var text = document.getElementById("source");
+    (function(text, menu) {
+        text.onclick = function(e) {
+            console.log("onclick in text", text, text.selectionStart,
+                    text.selectionEnd, e);
+            var s = text.selectionStart;
+            var p = s - 2;
+            var r1 = text.value.substring(s, s+2);
+            var r2 = text.value.substring(p, p+2)
+            if (r1 === "🐟" || r2 === "🐟") {
+                var parnt = document.getElementById("textinput");
+                parnt && parnt.appendChild(menu);
+
+                menu.style.left = (e.clientX - 25) + "px";
+                menu.style.top = (e.clientY - 25) + "px";
+             }
+        };
+    })(text, menu);
+}
 
 function i18n() {
     var lang = navigator.language;
     if (lang !== undefined) lang = lang.split('-')[0];
 
     var explang = document.URL.split('?')[1];
-    if (explang !== undefined) lang = explang;
-
     var messages = languages[lang];
-    if (messages === undefined) messages = languages["en"];
+    var ryba;
+    if (explang) {
+        var params = explang.split(',');
+        for (var i = 0; i < params.length; ++i) {
+            var forcedlang = languages[params[i]];
+            if (forcedlang) {
+                messages = forcedlang;
+            }
+            ryba = rybas[params[i]];
+        }
+    }
+    if (explang !== undefined) lang = explang;
+    if (!messages) messages = languages["en"];
 
+    if (ryba) {
+        load_ryba(document.URL.split('?')[0] + ryba[1]);
+    }
+
+    //var m_header = "🐟" + messages[0];
     var m_header = messages[0];
     var m_button = messages[1];
 
@@ -996,4 +1096,6 @@ function i18n() {
         document.getElementById('ta').style.cssFloat = 'right';
         document.getElementById('list').style.cssFloat = 'left';
     }
+
+    create_ryba_menu();
 }

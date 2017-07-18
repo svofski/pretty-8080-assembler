@@ -9,6 +9,7 @@ Rev.L: Worker + Base64
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <title>Pretty 8080 Assembler</title>
 <script type="text/javascript" src="encodings.js"></script>
+<script type="text/javascript" src="util.js"></script>
 <script type="text/javascript" src="makewav.js"></script>
 <script type="text/javascript" src="tape.js"></script>
 <script type="text/javascript" src="main.js"></script>
@@ -66,6 +67,7 @@ onmouseout="magicToolbar(2); return false;"
 <textarea id="source" rows="30" cols="80"
 onkeydown="return keydown(event);" 
 onkeypress="keypress(event);return true;">
+        ; 🐟  (try me)
         ; 8080 assembler code
         .hexfile test.hex
         .binfile test.com
@@ -110,7 +112,7 @@ delay:
 </div>
 <div style="height:0.5ex"><br/></div>
 <div id="buttbr" class="hordiv"></div>
-<div>
+<div id="buttons-below">
 <input type="text" id="hex" name="hex" style="display:none;"/>
 <input type="text" id="formbinname" name="formbinname" style="display:none;"/>
 <input type="text" id="formhexname" name="formhexname" style="display:none;"/>

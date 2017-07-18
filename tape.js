@@ -3,12 +3,14 @@
 function TapeFormat(fmt) {
     this.format = null;
     this.variant = null;
+    this.speed = 12;
     switch (fmt) {
         case 'rk-bin':
         case 'rk86-bin':
         case '86rk-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
+            this.speed = 12;
             break;
         case 'mikrosha-bin':
         case 'microsha-bin':
@@ -19,26 +21,20 @@ function TapeFormat(fmt) {
         case 'nekro-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'mikrosha';
+            this.speed = 12;
+            break;
+        case 'partner-bin':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'rk';
+            this.speed = 8;
             break;
         case 'v06c-rom':
             this.format = TapeFormat.prototype.v06c_rom;
+            this.speed = 8;
             break;
     }
     return this;
 }
-
-function Outil() {}
-
-Outil.hex8 = function(val) {
-    if (val < 0 || val > 255)  return "??";
-
-    var hexstr = "0123456789ABCDEF";
-    return hexstr[(val & 0xf0) >> 4] + hexstr[val & 0x0f];
-};
-
-Outil.hex16 = function(val) {
-    return Outil.hex8((val & 0xff00) >> 8) + Outil.hex8(val & 0x00ff);
-};
 
 /* 
  * Элемент  Размер, байт 
@@ -90,9 +86,9 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
         }
     }
 
-    console.log('checksum rk=', Outil.hex8(cs_hi&0377), Outil.hex8(cs_lo&0377));
-    console.log('checksum microsha=', Outil.hex8(csm_hi&0377), 
-            Outil.hex8(csm_lo&0377));
+    console.log('checksum rk=', Util.hex8(cs_hi&0377), Util.hex8(cs_lo&0377));
+    console.log('checksum microsha=', Util.hex8(csm_hi&0377), 
+            Util.hex8(csm_lo&0377));
 
     if (this.variant === 'mikrosha') {
         data[dptr++] = csm_hi & 0377;
@@ -112,7 +108,7 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     data[dptr++] = 0;
     data[dptr++] = 0;
 
-    var encoded = TapeFormat.prototype.biphase(data, 12);
+    var encoded = TapeFormat.prototype.biphase(data, this.speed || 12);
     var params = {sampleRate:22050, channels: 1};
     wav = new Wav(params);
     wav.setBuffer(encoded);
@@ -210,7 +206,7 @@ TapeFormat.prototype.v06c_rom = function(mem, org, name) {
         }
     }
 
-    var encoded = TapeFormat.prototype.biphase(data, 8);
+    var encoded = TapeFormat.prototype.biphase(data, this.speed || 8);
     var params = {sampleRate:22050, channels: 1};
     wav = new Wav(params);
     wav.setBuffer(encoded);
