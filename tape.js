@@ -1,9 +1,10 @@
 /* Tape stuff */
 
-function TapeFormat(fmt) {
+var TapeFormat = function(fmt, forfile) {
     this.format = null;
     this.variant = null;
     this.speed = 12;
+    this.forfile = forfile || false; /* true if no leaders, no sync bytes */
     switch (fmt) {
         case 'rk-bin':
         case 'rk86-bin':
@@ -33,6 +34,7 @@ function TapeFormat(fmt) {
             this.speed = 8;
             break;
     }
+    this.makewav = TapeFormat.prototype.makewav;
     return this;
 }
 
@@ -60,11 +62,13 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     var csm_lo = 0;
 
     var dptr = 0;
-    for (var i = 0; i < 256; ++i) {
-        data[dptr++] = 0;
+    if (!this.forfile) {
+        for (var i = 0; i < 256; ++i) {
+            data[dptr++] = 0;
+        }
+        data[dptr++] = 0xe6;
     }
 
-    data[dptr++] = 0xe6;
     data[dptr++] = (org >> 8) & 0377;
     data[dptr++] = org & 0377;
     data[dptr++] = ((org + mem.length - 1) >> 8) & 0377;
@@ -102,19 +106,29 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     /* rk86 checksum */
     data[dptr++] = cs_hi & 0377;
     data[dptr++] = cs_lo & 0377;
+    var end = dptr;
     data[dptr++] = 0;
     data[dptr++] = 0;
     data[dptr++] = 0;
     data[dptr++] = 0;
     data[dptr++] = 0;
+    if (this.forfile) {
+        this.data = data.slice(0, end);
+    } else {
+        this.data = data;
+    }
+    return this;
+};
 
-    var encoded = TapeFormat.prototype.biphase(data, this.speed || 12);
+TapeFormat.prototype.makewav = function()
+{
+    var encoded = TapeFormat.prototype.biphase(this.data, this.speed || 12);
     var params = {sampleRate:22050, channels: 1};
     wav = new Wav(params);
     wav.setBuffer(encoded);
     var stream = wav.getBuffer(encoded.length);
     return stream;
-};
+}
 
 TapeFormat.prototype.biphase = function(data, halfperiod) {
     var w = new Uint8Array(data.length * 8 * 2 * halfperiod);
@@ -205,11 +219,13 @@ TapeFormat.prototype.v06c_rom = function(mem, org, name) {
             data[dofs++] = 0377 & cs;
         }
     }
+    this.data = data;
+    return this;
 
-    var encoded = TapeFormat.prototype.biphase(data, this.speed || 8);
-    var params = {sampleRate:22050, channels: 1};
-    wav = new Wav(params);
-    wav.setBuffer(encoded);
-    var stream = wav.getBuffer(encoded.length + 256);
-    return stream;
+//    var encoded = TapeFormat.prototype.biphase(data, this.speed || 8);
+//    var params = {sampleRate:22050, channels: 1};
+//    wav = new Wav(params);
+//    wav.setBuffer(encoded);
+//    var stream = wav.getBuffer(encoded.length + 256);
+//    return stream;
 };

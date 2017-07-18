@@ -649,6 +649,7 @@ function binaryMessageListener(e) {
         asmcache.binFileName = e.data['binFileName'];
         asmcache.mem = e.data['mem'];
         asmcache.org = e.data['org'];
+        asmcache.tapeFormat = e.data['tapeFormat'];
         getmemCallback();
     }
 }
@@ -658,6 +659,7 @@ function hex2binMessageListener(e) {
         asmcache.binFileName = e.data['binFileName'];
         asmcache.mem = e.data['mem'];
         asmcache.org = e.data['org'];
+        asmcache.tapeFormat = e.data['tapeFormat'];
         hex2binCallback();
     }
 }
@@ -692,8 +694,16 @@ function load_hex2bin() {
             for(var i = start, end = data.length; i < end; ++i) {
                 data[i] = 0xff & asmcache.mem[i];
             }
-            __download(data.slice(start, end), asmcache.binFileName, 
-                    "application/octet-stream");
+            if (asmcache.downloadFormat === "tape") {
+                var stream = new TapeFormat(asmcache.tapeFormat, true).
+                    format(data.slice(start, end), asmcache.org,
+                            asmcache.binFileName);
+                __download(stream.data, asmcache.binFileName, 
+                        "application/octet-stream");
+            } else {
+                __download(data.slice(start, end), asmcache.binFileName, 
+                        "application/octet-stream");
+            }
         };
         assemblerWorker.addEventListener('message', hex2binMessageListener, 
                 false);
@@ -763,7 +773,7 @@ function load_play(moda) {
                             }
                             stream = TapeFormat(asmcache.tapeFormat).
                                     format(data.slice(start, end), asmcache.org,
-                                        asmcache.binFileName);
+                                        asmcache.binFileName).makewav();
                         }
                         if (dlmode === "wav") {
                            __download(stream, asmcache.binFileName + ".wav",
