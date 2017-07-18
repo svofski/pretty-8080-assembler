@@ -313,6 +313,8 @@ cursor:default;
 
 .ryba-item {
     cursor: pointer;
+    padding: 0.5em;
+    margin: 0.5em;
 }
 
 #ryba-popup {
@@ -327,6 +329,7 @@ position:fixed;
 }
 
 .ryba-item:hover {
-    background-color: red;
+    background-color: maroon;
+    color: white;
 }
 
