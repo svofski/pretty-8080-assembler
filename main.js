@@ -172,7 +172,6 @@ function assemble() {
     } 
 
     var list = document.getElementById('list');
-    //var savedScroll = list.scrollTop;
     list.savedScroll = list.scrollTop;
 
     backrefWindow = false;
@@ -196,8 +195,8 @@ function assemble() {
                             var binFileName = e.data['binFileName'];
                             var downloadFormat = e.data['downloadFormat'];
                             var org = e.data['org'];
-                            updateReferences(references, textlabels, hex, hexFileName,
-                                    binFileName, downloadFormat, org);
+                            updateReferences(references, textlabels, hex, 
+                                    hexFileName, binFileName, downloadFormat, org);
                             list.scrollTop = list.savedScroll;//savedScroll;
                             updateSizes();
                             autotranslate = false;
@@ -326,7 +325,6 @@ function xscrollTo(n, dontdelay) {
 }
 
 function highlightStage1() {
-    //highlightLines = getReferencingLines(highlightLineNo);
     if (!highlightLabel) {
         highlightLabel = getReferencedLabel(highlightLineNo);
     }
@@ -370,7 +368,8 @@ function highlightStage1() {
 
 function highlightStage2() {
     if (highlightLabel !== undefined) {
-        highlightLabel.className = highlightLabel.className.replace('highlight1', 'highlight2');
+        highlightLabel.className = highlightLabel.className.replace('highlight1', 
+                'highlight2');
     }
     if (highlightArrow !== false) {
         highlightArrow.className = highlightDir + 2;
@@ -380,7 +379,8 @@ function highlightStage2() {
 
 function highlightStage3() {
     if (highlightLabel !== undefined) {
-        highlightLabel.className = highlightLabel.className.replace('highlight2', 'highlight3');
+        highlightLabel.className = highlightLabel.className.replace('highlight2', 
+                'highlight3');
     }
     if (highlightArrow !== false) {
         highlightArrow.className = highlightDir + 3;
@@ -497,7 +497,6 @@ function startBackrefWindow(lineno) {
         }
     }
 }
-
 
 function showBackref(n) {
     if (n === 0) {
@@ -626,7 +625,6 @@ function rgmouseout(className) {
         }
     }
 }
-
 
 function boo() {
     //var d = document.createElement('div');
@@ -760,7 +758,7 @@ function load_play(moda) {
                     function (e) {
                         var dlmode = e.data['download'];
                         var stream;
-                        if (dlmode === 'wav' || dlmode === 'play') {
+                        if (dlmode === "wav" || dlmode === "play") {
                             asmcache.binFileName = e.data['binFileName'];
                             asmcache.mem = e.data['mem'];
                             asmcache.org = e.data['org'];
@@ -768,7 +766,8 @@ function load_play(moda) {
                             var start = asmcache.org;
                             var end = asmcache.mem.length;
                             var data = new Uint8Array(asmcache.mem.length);
-                            for(var i = start, end = data.length; i < end; ++i) {
+                            for(var i = start, end = data.length; i < end; ++i) 
+                            {
                                 data[i] = 0xff & asmcache.mem[i];
                             }
                             stream = TapeFormat(asmcache.tapeFormat).
@@ -803,7 +802,8 @@ function load_vector06js() {
             emulator_pane.className += " visible";
             emulator_pane.onclick = function() {
                 container.removeChild(iframe);
-                emulator_pane.className = emulator_pane.className.replace(/ visible/g, "");
+                emulator_pane.className = 
+                    emulator_pane.className.replace(/ visible/g, "");
                 var run = document.getElementById("run");
                 run.className = run.className.replace(/ disabled/g, "");
                 blinkCount = 16;
@@ -812,7 +812,8 @@ function load_vector06js() {
             iframe.onload = function() {
                 iframe.contentWindow.focus();
                 if (emulator_sideload) {
-                    emulator_sideload({'name':asmcache.binFileName, 'mem':asmcache.mem});
+                    emulator_sideload({'name':asmcache.binFileName, 
+                        'mem':asmcache.mem});
                 }
             };
         };
@@ -879,19 +880,12 @@ function loaded() {
     var run = document.getElementById("run");
     if (run) {
         run.onclick = function() {
-            //console.log(generateDataURI());
-            load_vector06js();//generateDataURI());
+            load_vector06js();
             run.className += " disabled";
         };
     }
 
     stop_audio();
-    //var play = document.getElementById("wav-play");
-    //if (play) {
-    //    play.onclick = function() {
-    //        load_play('play');
-    //    }
-    //}
 
     var wavdl = document.getElementById("wav-dl");
     if (wavdl) {
@@ -1088,7 +1082,6 @@ function i18n() {
         load_ryba(document.URL.split('?')[0] + ryba[1]);
     }
 
-    //var m_header = "🐟" + messages[0];
     var m_header = messages[0];
     var m_button = messages[1];
 
