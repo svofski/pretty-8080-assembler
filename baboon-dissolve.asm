@@ -1,11 +1,12 @@
-;Иван Городецкий, 04.10.2017
+                ; Иван Городецкий, 04.10.2017
 
-		.org 100h
 
                 .binfile babdis.com
                 .download bin
                 .tape v06c-rom
                 .nodump
+
+		.org 100h
 
 		di
 		xra	a
