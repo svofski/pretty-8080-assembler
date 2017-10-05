@@ -990,6 +990,8 @@ var rybas =
     "krista": ["Криста", "hello-krista.asm"],
 
     "specialist": ["Специалист", "hello-spec.asm"],
+
+    "baboon-dissolve": ["🐒", "baboon-dissolve.asm"],
 };
 
 function load_ryba(url) 
