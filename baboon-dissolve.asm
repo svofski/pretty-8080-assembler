@@ -2,7 +2,7 @@
 
 		.org 100h
 
-                .binfile baboon-dissolve.asm
+                .binfile babdis.com
                 .download bin
                 .tape v06c-rom
                 .nodump
