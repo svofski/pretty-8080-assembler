@@ -992,6 +992,8 @@ var rybas =
     "specialist": ["Специалист", "hello-spec.asm"],
 
     "baboon-dissolve": ["🐒", "baboon-dissolve.asm"],
+
+    "line-bresenham": ["—————", "line-bresenham.asm"],
 };
 
 function load_ryba(url) 
