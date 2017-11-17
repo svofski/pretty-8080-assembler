@@ -1075,7 +1075,7 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
         }
         var padding = '';
         for (var b = 0; b < remainder.length && Util.isWhitespace(remainder[b]); b++) {
-            padding += ' '; 
+            padding += remainder[b]; // copy to preserve tabs
         }
         result.push(padding);
         remainder = remainder.substring(b);

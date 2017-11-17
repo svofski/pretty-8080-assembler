@@ -328,7 +328,7 @@ function highlightStage1() {
     if (!highlightLabel) {
         highlightLabel = getReferencedLabel(highlightLineNo);
     }
-    if (highlightLabel !== undefined) {
+    if (highlightLabel) {
         var listElement = document.getElementById('list');
         var scrollTop = listElement.scrollTop;
         var height = getListHeight();
@@ -367,7 +367,7 @@ function highlightStage1() {
 }
 
 function highlightStage2() {
-    if (highlightLabel !== undefined) {
+    if (highlightLabel) {
         highlightLabel.className = highlightLabel.className.replace('highlight1', 
                 'highlight2');
     }
@@ -378,7 +378,7 @@ function highlightStage2() {
 }
 
 function highlightStage3() {
-    if (highlightLabel !== undefined) {
+    if (highlightLabel) {
         highlightLabel.className = highlightLabel.className.replace('highlight2', 
                 'highlight3');
     }
@@ -406,7 +406,7 @@ function endHighlighting(lineno) {
 
     clearTimeout(highlightTimeout);
     highlightTimeout = false;
-    if (highlightLabel !== undefined) {
+    if (highlightLabel) {
         if (highlightLabel.className !== undefined) {
             highlightLabel.className = highlightLabel.className.replace(/ .*/, '');
         }
