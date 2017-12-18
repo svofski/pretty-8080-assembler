@@ -2,7 +2,7 @@
 		; Тест и бенчмарк
 		; 
 		; Для запуска бенчмарка нажать УС / СС / РУСЛАТ
-                ; (в среднем 220 линий в секунду)
+                ; (в среднем 257 лиинй в секунду)
 		;
 		; Точка входа процедуры рисования: 
 		; 	line
@@ -19,6 +19,7 @@
 		.org 100h
 
 		di
+; ---
 start:
 		xra	a
 		out	10h
@@ -256,24 +257,24 @@ line_x		.db 0
 line_dx 	.db 0
 line_dy		.db 0
 
-SetPixelModeOR:
-		mvi a,0B6h			;ora m
-		sta SetPixelMode_g1
-		sta SetPixelMode_g2
-		sta SetPixelMode_s2
-		mvi a,0F6h			;ori D8
-		sta SetPixelMode_s1
-		ret
-
 SetPixelModeXOR:
-		mvi a,0AEh			;xra m
-		sta SetPixelMode_g1
+		lxi h,0A9AEh		;A9 - xra c; AE - xra m
+		jmp SetPixelModeOR1
+		
+SetPixelModeOR:
+		lxi h,0B1B6h		;B1 - ora c; B6 - ora m
+SetPixelModeOR1:
+		mov a,l
 		sta SetPixelMode_g2
-		sta SetPixelMode_s2
-		mvi a,0EEh			;xri D8
+		sta SetPixelMode_g3
+		sta SetPixelMode_g4
+		sta SetPixelMode_s3
+		mov a,h
+		sta SetPixelMode_g1
 		sta SetPixelMode_s1
+		sta SetPixelMode_s2
 		ret
-
+		
 PixelMask:
 		.db 10000000b
 		.db 01000000b
@@ -285,258 +286,8 @@ PixelMask:
 		.db 00000001b
 line:		; вычислить line_dx, line_dy и приращение Y
 		; line_dx >= 0, line_dy >= 0, line1_mod_yinc ? [-1,1]
-		call line_calc_dx 
-		call line_calc_dy
-
-		; проверяем крутизну склона:
-		; dy >= 0, dx >= 0
-		;  	dy <= dx 	?	пологий
-		;	dy > dx 	?	крутой
-		lhld line_dx 	                ; l = dx, h = dy
-		mov a, l 
-		cmp h				;если dy<=dx
-		jnc  line_gentle	        ;то склон пологий
-		
-		; если склон крутой,
-		; то меняем местами x0 и y0
-		lhld line_x0 		        ;  l = x, h = y
-		mov d, l 	 	        ;  d = y
-		mov e, h 	 	        ;  e = x
-		xchg		 	        ;  l = y, h = x
-		shld line_x0
-		; и меняем местами x1 и y1
-		lhld line_x1 		        ;  l = x, h = y
-		mov d, l 		        ;  d = y
-		mov e, h 		        ;  e = x
-		xchg			        ;  l = y, h = x
-		shld line_x1
-		; крутой склон: переводим стрелку на цикл S
-		mvi a,0C3h  ; jmp
-		.db 21h	    ; lxi h, - пропускаем переключение на line_gentle
-line_gentle:
-		; склон пологий: стрелка на цикле G
-		mvi a,011h
-		sta line1_switch
-		; если теперь получилось так, что x0 > x1,
-		; надо изменить направление рисования линии
-		lda line_x0
-		mov b, a		        ;b = x0
-		lda line_x1		        ;a = x1
-		cmp b
-		jnc line_ltr 	                ; x0 <= x1, не надо 
-                                                ; переворачивать 
-
-		; поменять концы линии местами
-		lhld line_x0	                ;l=x0, h=y0
-		xchg 			        ;e=x0, d=y0
-		lhld line_x1	                ;l=x1, h=y1
-		shld line_x0
-		xchg
-		shld line_x1
-
-line_ltr:	; пересчитать dx, dy
- 		; приращения, 
-		; начальные координаты
-		; потому что мы поменяли местами X и Y
-		call line_calc_dx
-		call line_calc_dy
-
-line1:
-		; начальное значение D
-		; D = 2 * dy - dx
-		lda line_dx
-		cma
-		mov e,a
-		mvi d,0FFh
-		inx d				; de = -dx
-
-		lhld line_dy
-		mvi h,0
-		dad h
-		shld line1_mod_dy_g+1		; сохранить 2*dy константой
-		shld line1_mod_dy_s+1		; сохранить 2*dy константой
-
-		dad d				; hl = 2 * dy - dx
-		push h				; поместить в стек значение D = 2 * dy - dx
-		xchg				; hl = -dx
-		
-		dad h
-		xchg				; de = -2*dx
-		lhld line1_mod_dy_g+1	        ; hl = 2*dy
-		dad d 				; hl = 2 * dy - 2 * dx
-		shld line1_mod_dydx_s+1		; сохранить как конст
-		shld line1_mod_dydx_g+1		; сохранить как конст
-
-	        ;! в стеке осталось значение D = 2 * dy - dx
-
-		; основной цикл рисования линии
-		; цикл раздвоен: одна версия для пологого склона (_g)
-		; вторая для крутого склона (_s)
-		; переключаются они при оценке крутизны записью 
-		; адреса в line1_switch
-		; -----------------------------		
-		lhld line_x
-		mov c,l		;для пологого это x (а для крутого цикла это y)
-		lda line_y	;для пологого это y (а для крутого цикла это x)
-
-		; переход внутрь тела цикла
-line1_switch	jmp line1_enter_s	; изменяемый код (lxi d если пологий/jmp если крутой)
-
-line1_enter_g
-		mov b,h		        ;line_dx
-		pop d		        ; de = 2 * dy - dx
-		sta line_yx_g+1
-		; подготовить начальное значение регистра c
-		mvi a, 111b 		; сначала вычисляем смещение 
-		ana c 			; пикселя в PixelMask (с = x)
-		adi PixelMask&255
-		mov l,a
-		mvi a,PixelMask>>8
-		aci 0
-		mov h,a			; hl - адрес маски в PixelMask
-		mvi a,11111000b
-		ana c
-		rrc
-		rrc
-		stc
-		rar
-		sta line_yx_g+2	        ; 0x80 | (x >> 3), l = y
-
-		xra a
-		cmp b		        ;dx=0?
-		mov a,m			; маска
-		jz setlastpixel_g	;если dx=0, то ставим одну точку
-		jmp line1_loop_g	;если dx<>0, то переход на обычное рисование линии
-
-		;------ пологий цикл (g/gentle) -----
-line1_then_g:
-line1_mod_dydx_g:		
-		lxi h, 0ffffh 		; изменяемый код: 2*(dy-dx)
-		dad d 			; D = D + 2*(dy-dx)
-		xchg
-		lxi h, line_yx_g+1	; hl = &line_y
-line1_mod_yinc_g:
-		inr m			; изменяемый код: line_y += yinc или line_y -= yinc
-		
-		mov a,c
-		rrc 			; сдвинуть вправо (следующий X)
-		jnc $+7 		; если не провернулся через край
-		lxi h,line_yx_g+2
-		inr m			;line_x += 1
-
-		dcr b			; dx -= 1
-		jz setlastpixel_g
-line1_loop_g:	; <--- точка входа в пологий цикл --->
-line_yx_g:
-		lxi h, 0 	        ; hl указывает в экран
-		mov c,a			; сохраняем значение бита
-SetPixelMode_g1:
-		xra m
-		mov m,a 		; записать в память
-
-		; if D > 0
-		xra a
-		ora d
-		jp line1_then_g
-line1_else_g: 	; else от if D > 0
-line1_mod_dy_g:
-		lxi h, 0ffffh 		; изменяемый код (2*dy)
-		dad d			; D = D + 2*dy
-		xchg
-
-		mov a,c
-		rrc 			; сдвинуть вправо (следующий X)
-		jnc $+7 		; если не провернулся через край
-		lxi h,line_yx_g+2
-		inr m			;line_x += 1
-		dcr b			; dx -= 1
-		jnz line1_loop_g
-		; --- конец тела пологого цикла ---
-setlastpixel_g:
-		lhld line_yx_g+1 ; hl указывает в экран
-SetPixelMode_g2:
-		xra m
-		mov m,a 		; записать в память
-
-		ret
-
-line1_enter_s:
-		sta set_x+1		; x
-		ani 111b 		; вычислить начальное значение адреса колонки ...
-		adi PixelMask&255
-		mov l,a
-		mvi a,PixelMask>>8
-		aci 0
-		mov h,a			; hl - адрес маски в PixelMask
-		mvi a,11111000b
-set_x
-		ani 0
-		rrc
-		rrc 
-		stc 
-		rar 
-		mov b,a				; координата x: 0x8000 | (a / 8)
-
-		lda line_x1
-		sta last_y_s1+1
-		sta last_y_s2+1
-		mov a,m 		; начальное значение пикселя
-		sta bit_set_s+1
-		pop h			; hl = 2 * dy - dx
-		jmp line1_loop_s
-
-		;------ крутой цикл (s/steep) -----
-line1_then_s:
-line1_mod_dydx_s:		
-		lxi d, 0ffffh 		; изменяемый код: 2*(dy-dx)
-		dad d 			; D = D + 2*(dy-dx)
-		inr c			; y = y + 1
-		lda bit_set_s+1		; one-hot бит пикселя
-line1_mod_xinc_s1:
-		rrc 			; изменяемый код: xincLo
-		sta bit_set_s+1 
-		jnc $+4
-line1_mod_xinc_s2:
-		inr b			; изменяемый код: xincHi
-		
-last_y_s1:
-		mvi a,0
-		cmp c
-		jz setlastpixel_s
-
-line1_loop_s:	; <--- точка входа в крутой цикл --->
-		ldax b
-SetPixelMode_s1:
-bit_set_s:
-		xri 0
-		stax b	 		; записать в память результат с измененным пикселем
-
-		; if D > 0
-		xra a
-		ora h
-		jp line1_then_s
-line1_else_s: 	; else от if D > 0
-line1_mod_dy_s:
-		lxi d, 0ffffh 		; изменяемый код (2*dy)
-		dad d 			; D = D + 2*dy
-		inr c			; y = y + 1
-last_y_s2:
-		mvi a,0
-		cmp c
-		jnz line1_loop_s
-		; --- конец тела крутого цикла ---
-setlastpixel_s:
-		lxi h, bit_set_s+1      ; указатель на текущую маску пикселя
-		ldax b
-SetPixelMode_s2:
-		xra m
-		stax b			; записать в память результат с измененным пикселем
-		ret
-		; --- конец line() ---
-		
 
 		; вычисление расстояния по X (dx)
-line_calc_dx:
 		; проверить, что x0 <= x1
 		lda line_x0
 		sta line_x
@@ -548,10 +299,19 @@ line_calc_dx:
 		;если x0 > x1, то пришли сюда
 		cma
 		inr a			; -(x1-x0)=x0-x1
-
+		sta line_dx		; сохранили |dx|
+		lhld line_x0
+		xchg
+		lhld line_x1
+		shld line_x0
+		mov a,l
+		sta line_x
+		xchg
+		shld line_x1
+		jmp line_calc_dy
+		
 line_x_positive:
-		sta line_dx		; сохранили dx (он положительный)
-		ret
+		sta line_dx		; сохранили |dx|
 
 		; вычисление расстояния по Y (dy)
 line_calc_dy:
@@ -566,29 +326,280 @@ line_calc_dy:
 		;если y0 > y1, то пришли сюда
 		cma
 		inr a			; -(y1-y0)= y0 - y1
-		sta line_dy		; сохранили dy (он положительный)
+		sta line_dy		; сохранили |dy|
 		
 		; приращение y = -1
-		mvi a, 035h 		; DCR M
-		sta line1_mod_yinc_g
-		mvi a, 005h			; dcr b
-		sta line1_mod_xinc_s2
-		mvi a, 007h 		; rlc
-		sta line1_mod_xinc_s1
-		ret
+		mvi a, 02Dh 		; dcr l
+		jmp set_line1_mod_yinc
 
 line_y_positive:
-		sta line_dy	; y1 - y0
-
-		mvi a, 034h 		; INR M
+		sta line_dy	        ; y1 - y0
+		mvi a, 02Ch 		; inr l
+set_line1_mod_yinc:
 		sta line1_mod_yinc_g
-		mvi a, 004h			; inr b
-		sta line1_mod_xinc_s2
-		mvi a, 00Fh 		; rrc
-		sta line1_mod_xinc_s1
+		sta line1_mod_yinc_s1
+		sta line1_mod_yinc_s2
+
+line_check_gs:
+		; проверяем крутизну склона:
+		; dy >= 0, dx >= 0
+		;  	dy <= dx 	?	пологий
+		;	dy > dx 	?	крутой
+		lhld line_dx 	                ; l = dx, h = dy
+		mov a, l 
+		cmp h				;если dy<=dx
+		jnc  line_gentle	        ;то склон пологий
+		
+		; крутой склон
+		; начальное значение D
+		; D = 2 * dx - dy
+		lda line_dy
+		cma
+		mov e,a
+		mvi d,0FFh
+		inx d				; de = -dy
+
+		lhld line_dx
+		mvi h,0
+		dad h
+		shld line1_mod_dx_s+1		; сохранить 2*dx константой
+		; сохранить 2*dx константой
+		mov a,l
+		sta line1_mod_dx_sLo+1		; сохранить 2*dx константой
+		mov a,h
+		sta line1_mod_dx_sHi+1		; сохранить 2*dx константой
+
+		dad d				; hl = 2 * dx - dy
+		push h				; поместить в стек значение D = 2 * dx - dy
+		xchg				; hl = -dy
+		
+		dad h				; hl = -2*dy
+line1_mod_dx_s:
+		lxi d,0				; de = 2*dx
+		dad d 				; hl = 2 * dx - 2 * dy
+		; сохранить как конст
+		mov a,l
+		sta line1_mod_dxdy_sLo+1
+		mov a,h
+		sta line1_mod_dxdy_sHi+1
+
+		lhld line_y	;h=x; l=y
+		xchg		;d=x; e=y
+		mvi a,111b
+		ana d
+		adi PixelMask&255
+		mov l,a
+		mvi a,PixelMask>>8
+		aci 0
+		mov h,a			; hl - адрес маски в PixelMask
+		mov c,m 		; начальное значение маски пикселя
+		
+		mvi a,11111000b
+		ana d
+		rrc
+		rrc 
+		stc 
+		rar 
+		xchg 		        ; l=y
+		mov h,a		        ; h=старший байт экранного адреса
+		pop d			; de = 2 * dx - dy
+
+		lda line_dy
+		mov b,a
+
+		;------ крутой цикл (s/steep) -----
+line1_loop_s:	; <--- точка входа в крутой цикл --->
+		mov a,m
+SetPixelMode_s1:
+		xra c
+		mov m,a	 		; записать в память результат с измененным пикселем
+
+		; if D > 0
+		xra a
+		ora d
+		jp line1_then_s
+line1_else_s: 	; else от if D > 0
+line1_mod_yinc_s2:
+		inr l			; y = y +/- 1
+		mov a,m
+SetPixelMode_s2:
+		xra c
+		mov m,a	 		; записать в память результат с измененным пикселем
+		dcr b
+		rz
+line1_mod_dx_sLo:
+		mvi a,0		        ; изменяемый код (2*dx) младший байт
+		add e
+		mov e,a
+line1_mod_dx_sHi:
+		mvi a,0		        ; изменяемый код (2*dx) старший байт
+		adc d
+		mov d,a
+		;в итоге de = de + 2*dx
+		jm line1_else_s
+
+line1_then_s:
+line1_mod_yinc_s1:
+		inr l			; y = y +/- 1
+		mov a,c
+		rrc 			; xincLo
+		mov c,a
+		jnc $+4
+		inr h			; xincHi
+SetPixelMode_s3:
+		xra m
+		mov m,a	 		; записать в память результат с измененным пикселем
+		dcr b
+		rz
+line1_mod_dxdy_sLo:
+		mvi a,0			; изменяемый код: 2*(dx-dy) младший байт
+		add e
+		mov e,a
+line1_mod_dxdy_sHi:
+		mvi a,0			; изменяемый код: 2*(dx-dy) старший байт
+		adc d
+		mov d,a
+		;в итоге de = de + 2*(dx-dy)
+		jm line1_else_s
+		jmp line1_then_s
+		; --- конец тела крутого цикла ---
+
+		
+line_gentle:
+		; склон пологий
+		; начальное значение D
+		; D = 2 * dy - dx
+		lda line_dx
+		cma
+		mov e,a
+		mvi d,0FFh
+		inx d				; de = -dx
+
+		lhld line_dy
+		mvi h,0
+		dad h
+		shld line1_mod_dy_g+1		; сохранить 2*dy константой
+		; сохранить 2*dy константой
+		mov a,l
+		sta line1_mod_dy_gLo+1
+		mov a,h
+		sta line1_mod_dy_gHi+1
+
+
+		dad d				; hl = 2 * dy - dx
+		push h				; поместить в стек значение D = 2 * dy - dx
+		xchg				; hl = -dx
+		
+		dad h				; hl = -2*dx
+line1_mod_dy_g:
+		lxi d,0
+		dad d 				; hl = 2 * dy - 2 * dx
+		mov a,l
+		sta line1_mod_dydx_gLo+1        ; сохранить как конст
+		mov a,h
+		sta line1_mod_dydx_gHi+1        ; сохранить как конст
+		
+		pop d				; de = 2 * dy - dx
+
+		; основной цикл рисования линии
+		; версия для пологого склона (_g)
+		lhld line_x	;l=x h=dx
+		mov c,l		;c=x
+		mov b,h		;line_dx
+		lda line_y	;a=y
+		sta line_yx_g+1
+
+		; подготовить начальное значение регистра c
+		mvi a, 111b 		; сначала вычисляем смещение 
+		ana c 			; пикселя в PixelMask (с = x)
+		adi PixelMask&255
+		mov l,a
+		mvi a,PixelMask>>8
+		aci 0
+		mov h,a			; hl - адрес маски в PixelMask
+		mvi a,11111000b
+		ana c
+		rrc
+		rrc
+		stc
+		rar
+		sta line_yx_g+2	; 0x80 | (x >> 3), l = y
+
+		xra a
+		cmp b		        ;dx=0?
+		mov c,m			; маска
+line_yx_g:
+		lxi h, 0                ; hl указывает в экран
+		jnz line1_loop_g	;если dx<>0, то переход на обычное рисование линии
+;если dx=0, то ставим одну точку
+SetPixelMode_g2:
+		mov a,m
+		xra c
+		mov m,a 		; записать в память
 		ret
 
+		;------ пологий цикл (g/gentle) -----
+line1_loop_g:	; <--- точка входа в пологий цикл --->
+		mov a,m
+SetPixelMode_g1:
+		xra c
+		mov m,a 		; записать в память
 
+		; if D > 0
+		xra a
+		ora d
+		jp line1_then_g
+line1_else_g: 	; else от if D > 0
+		mov a,c
+		rrc 			; сдвинуть вправо (следующий X)
+		mov c,a			; сохраняем текущее значение маски
+		jnc $+4 		; если не провернулся через край
+		inr h			;line_x += 1
+SetPixelMode_g3:
+		xra m
+		mov m,a 		; записать в память
+		dcr b			; dx -= 1
+		rz
+
+line1_mod_dy_gLo:
+		mvi a,0		        ; изменяемый код (2*dy) младший байт
+		add e
+		mov e,a
+line1_mod_dy_gHi:
+		mvi a,0		        ; изменяемый код (2*dy) старший байт
+		adc d
+		mov d,a
+		;в итоге de= de + 2*dy
+		jm line1_else_g
+
+line1_then_g:
+line1_mod_yinc_g:
+		inr l			; изменяемый код: line_y += yinc или line_y -= yinc
+		mov a,c
+		rrc 			; сдвинуть вправо (следующий X)
+		mov c,a			; сохраняем текущее значение маски
+		jnc $+4 		; если не провернулся через край
+		inr h			;line_x += 1
+SetPixelMode_g4:
+		xra m
+		mov m,a 		; записать в память
+		dcr b			; dx -= 1
+		rz
+line1_mod_dydx_gLo:
+		mvi a,0		        ; изменяемый код: 2*(dy-dx) младший байт
+		add e
+		mov e,a
+line1_mod_dydx_gHi:
+		mvi a,0		        ; изменяемый код: 2*(dy-dx) старший байт
+		adc d
+		mov d,a
+		;в итоге de = de + 2*(dy-dx)
+		jm line1_else_g
+		jmp line1_then_g
+		; --- конец тела пологого цикла ---
+
+		; --- конец line() ---
+		
 Cls:
 		lxi	h,08000h
 		mvi	e,0

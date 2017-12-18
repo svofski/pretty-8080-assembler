@@ -993,8 +993,7 @@ var rybas =
 
     "baboon-dissolve": ["🐒", "baboon-dissolve.asm"],
 
-    "line-ei": ["Вектор-06ц: линия с прерываниями", "line-ei.asm"],
-    "line-di": ["Вектор-06ц: линия без прерываний", "line-di.asm"],
+    "line-ei": ["Вектор-06ц: быстрая линия", "line-ei.asm"],
 };
 
 function load_ryba(url) 
