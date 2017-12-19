@@ -11,7 +11,7 @@
 		; Рисование происходит в плоскости 0x8000
 		;
 		; Вячеслав Славинский и Иван Городецкий, 2017
-		;
+		; версия 25.1
 
                 .nodump
                 .binfile line-ei.rom
@@ -265,12 +265,12 @@ SetPixelModeOR:
 		lxi h,0B1B6h		;B1 - ora c; B6 - ora m
 SetPixelModeOR1:
 		mov a,l
-		sta SetPixelMode_g2
 		sta SetPixelMode_g3
 		sta SetPixelMode_g4
 		sta SetPixelMode_s3
 		mov a,h
 		sta SetPixelMode_g1
+		sta SetPixelMode_g2
 		sta SetPixelMode_s1
 		sta SetPixelMode_s2
 		ret
@@ -532,8 +532,8 @@ line_yx_g:
 		lxi h, 0                ; hl указывает в экран
 		jnz line1_loop_g	;если dx<>0, то переход на обычное рисование линии
 ;если dx=0, то ставим одну точку
+                mov a,m
 SetPixelMode_g2:
-		mov a,m
 		xra c
 		mov m,a 		; записать в память
 		ret
