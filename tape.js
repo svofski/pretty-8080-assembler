@@ -31,7 +31,7 @@ var TapeFormat = function(fmt, forfile) {
             break;
         case 'v06c-rom':
             this.format = TapeFormat.prototype.v06c_rom;
-            this.speed = 8;
+            this.speed = 5;
             break;
         case 'krista-rom':
             this.format = TapeFormat.prototype.krista;
