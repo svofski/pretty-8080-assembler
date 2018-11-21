@@ -991,7 +991,7 @@ var rybas =
 
     "specialist": ["Специалист", "hello-spec.asm"],
 
-    "okean": ["Океан-240", "hello-okean240.asm"],
+    "okean": ["Океан-240 🌊", "hello-okean240.asm"],
 
     "baboon-dissolve": ["🐒", "baboon-dissolve.asm"],
 
