@@ -991,6 +991,8 @@ var rybas =
 
     "specialist": ["Специалист", "hello-spec.asm"],
 
+    "okean": ["�����-240", "hello-okean240.asm"],
+
     "baboon-dissolve": ["🐒", "baboon-dissolve.asm"],
 
     "line-ei": ["Вектор-06ц: быстрая линия", "line-ei.asm"],
