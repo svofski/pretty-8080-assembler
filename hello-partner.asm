@@ -1,8 +1,6 @@
     ; 🐟 для Партнёра 01.01
-    .tape partner-bin       ; формат ленты для wav
-    .binfile hellopartner.rk; имя файла
-    .download tape      ; формат двоичного файла .rk
-    ; .download bin     ; формат двоичного файла .bin без заголовков
+    .tapfile hellopartner.rk partner-bin ; формат ленты 
+    .binfile hellopartner.bin ; имя файла
     .org 0
 prompt  equ 0F8C9h
 puts    equ 0F818h

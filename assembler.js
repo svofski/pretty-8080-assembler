@@ -81,6 +81,7 @@ function Assembler() {
     this.errors = [];
     this.regUsage = [];
     this.listingText = "";
+    this.gutterContent = [];
 }
 
 // -- utility stuffs --
@@ -314,7 +315,7 @@ Assembler.prototype.setmem8 = function(addr, immediate) {
 
 Assembler.parseRegisterPair = function(s) {
     if (s !== undefined) {
-        s = s.split(';')[0].toLowerCase();
+        s = s.trim().split(';')[0].toLowerCase();
         if (s == 'b' || s == 'bc') return 0;
         if (s == 'd' || s == 'de') return 1;
         if (s == 'h' || s == 'hl') return 2;
@@ -491,7 +492,13 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 
             immediate = this.useExpr(parts.slice(1), addr, linenumber);
 
-            this.setmem16(addr+1, immediate);
+            if (immediate < 65536) {
+                this.setmem16(addr+1, immediate);
+            } 
+            else {
+                result = -2;
+                break;
+            }
 
             if (["lhld", "shld"].indexOf(mnemonic) != -1) {
                 regusage = ['#', 'h', 'l'];
@@ -514,8 +521,13 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
             this.mem[addr] = opcs | (rp << 4);
 
             immediate = this.useExpr(subparts.slice(1), addr, linenumber);
-
-            this.setmem16(addr+1, immediate);
+            if (immediate < 65536) {
+                this.setmem16(addr+1, immediate);
+            } 
+            else {
+                result = -2;
+                break;
+            }
             regusage = ['@'+subparts[0].trim()];
             if (["h","d"].indexOf(subparts[0].trim()) != -1) {
                 regusage.push('#',
@@ -529,7 +541,9 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
         if ((opcs = Assembler.opsIm8[mnemonic]) !== undefined) {
             this.mem[addr] = opcs;
             immediate = this.useExpr(parts.slice(1), addr, linenumber);
-            this.setmem8(addr+1, immediate);
+            if (immediate < 256) {
+                this.setmem8(addr+1, immediate);
+            }
 
             if (["sui", "sbi", "xri", "ori", "ani", "adi", "aci", "cpi"].indexOf(mnemonic) != -1) {
                 regusage = ['#', 'a'];
@@ -555,8 +569,14 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
             this.mem[addr] = opcs | reg << 3;
 
             immediate = this.useExpr(subparts.slice(1), addr, linenumber);
+            if (immediate < 256) {
+                this.setmem8(addr+1, immediate);
+            } else {
+                result = -2;
+                break;
+            }
 
-            this.setmem8(addr+1, immediate);
+            //this.setmem8(addr+1, immediate);
 
             regusage = [subparts[0].trim()];
 
@@ -644,7 +664,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 
         if (mnemonic == ".org" || mnemonic == "org") {
             let n = this.evaluateExpression(parts.slice(1).join(' '), addr);
-            if (n >= 0) {
+            if (n >= 0 && n < 65536) {
                 if (this.org === undefined || n < this.org) {
                     this.org = n;
                 }
@@ -671,36 +691,53 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
             break;
         }
 
-        if (mnemonic == ".download") {
+        if (mnemonic == ".tapfile" || mnemonic == ".tapefile") {
             if (parts[1] !== undefined && parts[1].trim().length > 0) {
-                this.downloadFormat = parts[1].trim();
+                this.tapFileName = parts[1];
             }
-            result = -100000;
-            break;
-        }
-
-        if (mnemonic == ".tape") {
-            if (parts[1] !== undefined && parts[1].trim().length > 0) {
-                this.tapeFormat = parts[1].trim();
+            if (parts[2] !== undefined && parts[2].trim().length > 0) {
+                this.tapeFormat = parts[2].trim();
                 var test = new TapeFormat(this.tapeFormat);
                 if (test.format) {
                     result = -100000;
                     break;
                 }
+            } else {
+                result = -100000;
+                break;
             }
         }
 
-        if (mnemonic == ".objcopy") {
-            this.objCopy = parts.slice(1).join(' '); 
-            result = -100000;
-            break;
-        }
+//        if (mnemonic == ".download") {
+//            if (parts[1] !== undefined && parts[1].trim().length > 0) {
+//                this.downloadFormat = parts[1].trim();
+//            }
+//            result = -100000;
+//            break;
+//        }
 
-        if (mnemonic == ".postbuild") {
-            this.postbuild = parts.slice(1).join(' ');
-            result = -100000;
-            break;
-        }
+//        if (mnemonic == ".tape") {
+//            if (parts[1] !== undefined && parts[1].trim().length > 0) {
+//                this.tapeFormat = parts[1].trim();
+//                var test = new TapeFormat(this.tapeFormat);
+//                if (test.format) {
+//                    result = -100000;
+//                    break;
+//                }
+//            }
+//        }
+
+//        if (mnemonic == ".objcopy") {
+//            this.objCopy = parts.slice(1).join(' '); 
+//            result = -100000;
+//            break;
+//        }
+//
+//        if (mnemonic == ".postbuild") {
+//            this.postbuild = parts.slice(1).join(' ');
+//            result = -100000;
+//            break;
+//        }
 
         if (mnemonic == ".nodump") {
             this.doHexDump = false;
@@ -910,9 +947,10 @@ Assembler.prototype.intelHex = function() {
 
         var rec = "";
         for (j = 0; j < 32 && this.mem[i+j] !== undefined; j++) {
-            if (this.mem[i+j] < 0) this.mem[i+j] = 0;
-            rec += Util.hex8(this.mem[i+j]); 
-            cs += this.mem[i+j];
+            var bb = this.mem[i+j];
+            if (bb < 0) bb = 0;
+            rec += Util.hex8(bb); 
+            cs += bb;
         }
 
         cs += j; line += Util.hex8(j);   // byte count
@@ -1010,6 +1048,65 @@ Assembler.prototype.processRegUsage = function(instr, linenumber) {
 
     return instr;
 };
+
+Assembler.prototype.gutter = function(text,lengths,addresses) {
+    var result = [];
+    var addr = 0;
+
+    for(var i = 0, end_i = text.length; i < end_i; i += 1) {
+        var hexes = "";
+        var unresolved = false;
+        var width = 0;
+
+        var len = lengths[i] > 4 ? 4 : lengths[i];
+        for (let b = 0; b < len; b++) {
+            hexes += Util.hex8(this.mem[addresses[i]+b]) + ' ';
+            width += 3;
+            if (this.mem[addresses[i]+b] < 0) unresolved = true;
+        }
+
+        if (len < lengths[i]) {
+            // append ellipses if hex is too long for the gutter
+            hexes += "…";
+            width += 2; 
+        }
+        hexes += "                ".substring(width);
+
+        var gut = lengths[i] > 0 ? Util.hex16(addresses[i]) : "";
+        gut += "  " + hexes;
+
+        var err = this.errors[i] || unresolved !== false;
+
+        var gutobj = {
+            text : gut,
+            error: err
+        };
+
+        //// display only first and last lines of db thingies
+        //if (len < lengths[i]) {
+        //    result.push('<br/>\t.&nbsp;.&nbsp;.&nbsp;<br/>');
+        //    var subresult = '';
+        //    for (var subline = 1; subline*4 < lengths[i]; subline++) {
+        //        subresult = '';
+        //        subresult += Util.hex16(addresses[i]+subline*4) + '\t';
+        //        for (var sofs = 0; sofs < 4; sofs += 1) {
+        //            var adr = subline*4+sofs;
+        //            if (adr < lengths[i]) {
+        //                subresult += Util.hex8(this.mem[addresses[i]+adr]) + ' ';
+        //            }
+        //        }
+        //    }
+        //    result.push(subresult + "<br/>");
+        //}
+        //result.push('</pre>');
+
+        addr += lengths[i];
+
+        result.push(gutobj);
+    }
+
+    return result;
+}
 
 Assembler.prototype.listing = function(text,lengths,addresses) { 
     var result = [];
@@ -1160,7 +1257,7 @@ Assembler.prototype.assemble = function(src) {
             size = 0;
         } else if (size < 0) {
             this.error(line, "syntax error");
-            size = -size;
+            size = 0; //-size;
         }
         lengths[line] = size;
         addresses[line] = addr;
@@ -1179,6 +1276,7 @@ Assembler.prototype.assemble = function(src) {
     }
 
     this.listingText = this.listing(inputlines, lengths, addresses);
+    this.gutterContent = this.gutter(inputlines, lengths, addresses);
 };
 
 
@@ -1307,28 +1405,43 @@ self.addEventListener('message', function(e) {
         asm.assemble(e.data['src']);
         self.postMessage(
                 {'listing':asm.listingText, 
+                    'gutter':asm.gutterContent,
+                    'errors':asm.errors,
                     'textlabels':asm.textlabels,
                     'references':asm.references,
-                    'hex':asm.hexText,
-                    'binFileName':asm.binFileName,
-                    'hexFileName':asm.hexFileName,
-                    'downloadFormat':asm.downloadFormat,
-                    'tapeFormat':asm.tapeFormat,
                 });
-    } else if (cmd == 'getmem') {
+    } 
+    else if (cmd == 'getmem') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
             'binFileName': asm.binFileName,
             'tapeFormat':asm.tapeFormat,
             'download':false});
-    } else if (cmd == 'getbin') {
+    } 
+    else if (cmd == 'getbin') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
-            'binFileName': asm.binFileName,
-            'tapeFormat':asm.tapeFormat,
+            'filename': asm.binFileName,
             'download':'bin'
         });
-    } else if (cmd == 'getwav') {
+    } 
+    else if (cmd == 'gethex') {
+        self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
+            'org': asm.org,
+            'filename': asm.hexFileName,
+            'hex':asm.hexText,
+            'download':'hex'
+        });
+    } 
+    else if (cmd == 'gettap') {
+        self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
+            'org': asm.org,
+            'filename': asm.tapFileName,
+            'tapeFormat':asm.tapeFormat,
+            'download':'tap'
+        });
+    } 
+    else if (cmd == 'getwav') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
             'binFileName': asm.binFileName,

@@ -1,8 +1,6 @@
     ; 🐟 для Микроши
-    .tape microsha-bin
-    .binfile hellosha.rk    ; имя файла
-    .download tape      ; формат двоичного файла .rk
-    ; .download bin     ; формат двоичного файла .bin без заголовков
+    .binfile hellosha.bin    ; имя файла без заголовков
+    .tapfile hellosha.rk microsha-bin ; файл для монитора 
     .org 0
 prompt  equ 0F89Dh
 puts    equ 0F818h

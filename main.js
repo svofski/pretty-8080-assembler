@@ -72,23 +72,10 @@ function Asmcache() {
 }
 var asmcache = new Asmcache();
 
-function updateReferences(ref, tls, hex, hfn, bfn, df, org) {
+function updateReferences(ref, tls, org) {
     asmcache.references = ref;
     asmcache.textlabels = tls;
-    asmcache.hexText = hex;
-    asmcache.hexFileName = hfn;
-    asmcache.binFileName = bfn;
-    asmcache.downloadFormat = df;
     asmcache.org = org || 256;
-
-    var formData = document.getElementById('hex');
-    formData.value = hex;
-    var formBinName = document.getElementById('formbinname');
-    formBinName.value = asmcache.binFileName;
-    var formHexName = document.getElementById('formhexname');
-    formHexName.value = hfn;
-    var formDownloadFormat = document.getElementById('downloadformat');
-    formDownloadFormat.value = df;
 }
 
 var listing_listener_added = false;
@@ -165,7 +152,8 @@ var last_src = null;
 
 // assembler main entry point
 function assemble() {
-    var src = document.getElementById('source').value;
+    //var src = document.getElementById('source').innerText;
+    var src = editor.session.getLines(0, editor.session.getLength()).join("\n");
 
     if (last_src === src) {
         return;
@@ -188,15 +176,29 @@ function assemble() {
                             console.log('assembler worker done');
                             list.innerHTML = '';
                             list.innerHTML += e.data['listing'];
+                            var gut = e.data['gutter'] || [];
+                            editor.session.gutter_contents = gut;
+
+                            var mrkrs = editor.session.mymarkers || [];
+                            for (var i = 0; i < mrkrs.length; ++i) {
+                                editor.session.removeMarker(mrkrs[i]);
+                            }
+                            editor.session.mymarkers = [];
+                            
+                            for (var i = 0; i < gut.length; ++i) {
+                                if (gut[i].error) {
+                                    editor.session.mymarkers.push(
+                                        editor.session.addMarker(
+                                            new Range(i,0,i,1),
+                                            "error_marker", "fullLine"));
+                                }
+                            }
+
+                            editor.resize(true);
                             var references = e.data['references'];
                             var textlabels = e.data['textlabels'];
-                            var hex = e.data['hex'];
-                            var hexFileName = e.data['hexFileName'];
-                            var binFileName = e.data['binFileName'];
-                            var downloadFormat = e.data['downloadFormat'];
                             var org = e.data['org'];
-                            updateReferences(references, textlabels, hex, 
-                                    hexFileName, binFileName, downloadFormat, org);
+                            updateReferences(references, textlabels, org);
                             list.scrollTop = list.savedScroll;//savedScroll;
                             updateSizes();
                             autotranslate = false;
@@ -652,16 +654,6 @@ function binaryMessageListener(e) {
     }
 }
 
-function hex2binMessageListener(e) {
-    if (e.data['download'] === 'bin') {
-        asmcache.binFileName = e.data['binFileName'];
-        asmcache.mem = e.data['mem'];
-        asmcache.org = e.data['org'];
-        asmcache.tapeFormat = e.data['tapeFormat'];
-        hex2binCallback();
-    }
-}
-
 // Function to download data to a file
 function __download(data, filename, type) {
     var a = document.createElement("a"),
@@ -681,37 +673,40 @@ function __download(data, filename, type) {
     }
 }
 
+function hex2binMessageListener(e) {
+    var filename = e.data['filename'];
+    var mem = e.data['mem'];
+    var data = new Uint8Array(mem.length);
+    var start = e.data['org'];
+    var end = mem.length;
+    for (var i = start, end = data.length; i < end; ++i) {
+        data[i] = 0xff & mem[i];
+    }
+
+    switch (e.data['download']) {
+        case 'bin':
+            __download(data.slice(start, end), filename,
+                "application/octet-stream");
+            break;
+        case 'hex':
+            __download(e.data['hex'], filename, "text/plain");
+            break;
+        case 'tap':
+            var stream = new TapeFormat(e.data['tapeFormat'], true).
+                format(data.slice(start, end), start, filename);
+            __download(stream.data, filename, "application/octet-stream");
+            break;
+    }
+}
+
 /* Downloadable blob */
-function load_hex2bin() {
+function load_hex2bin(format) {
     if (!hex2bin_listener_added) {
         hex2bin_listener_added = true;
-        hex2binCallback = function() {
-            var data = new Uint8Array(asmcache.mem.length);
-            var start = asmcache.org;
-            var end = asmcache.mem.length;
-            for(var i = start, end = data.length; i < end; ++i) {
-                data[i] = 0xff & asmcache.mem[i];
-            }
-            if (asmcache.downloadFormat === "tape") {
-                var stream = new TapeFormat(asmcache.tapeFormat, true).
-                    format(data.slice(start, end), asmcache.org,
-                            asmcache.binFileName);
-                __download(stream.data, asmcache.binFileName, 
-                        "application/octet-stream");
-            } else {
-                __download(data.slice(start, end), asmcache.binFileName, 
-                        "application/octet-stream");
-            }
-        };
         assemblerWorker.addEventListener('message', hex2binMessageListener, 
                 false);
     }
-    if (asmcache.downloadFormat == "hex") {
-        var data = asmcache.hexText;
-        __download(data, asmcache.hexFileName, "text/plain");
-    } else {
-        assemblerWorker.postMessage({'command': 'getbin'});
-    }
+    assemblerWorker.postMessage({'command': 'get' + format});
 }
 
 function play_audio(stream) {
@@ -796,7 +791,8 @@ function load_vector06js() {
             var container = document.getElementById("emulator-container");
             var iframe = document.createElement("iframe");
             //iframe.src = "../scalar/vector06js?i+";
-            iframe.src="https://svofski.github.io/vector06js?i+";
+            iframe.src = "http://sensi.org/scalar/vector06js?i+"; // don't push this to github!
+            //iframe.src="https://svofski.github.io/vector06js?i+";
             iframe.id = "emulator-iframe";
             container.appendChild(iframe);
             emulator_pane.className += " visible";
@@ -865,15 +861,30 @@ function loaded() {
 
     updateSizes();
 
-    var source = document.getElementById("source");
-    if (source) {
-        source.oninput = keypress;
-    }
+    //var source = document.getElementById("source");
+    //if (source) {
+    //    source.oninput = keypress;
+    //}
+    editor.session.on('change', keypress);
 
-    var translate = document.getElementById("baton");
+    var translate = document.getElementById('dl-bin');
     if (translate) {
         translate.onclick = function() {
-            load_hex2bin('translate');
+            load_hex2bin('bin');
+        };
+    }
+
+    var hexlate = document.getElementById('dl-hex');
+    if (hexlate) {
+        hexlate.onclick = function() {
+            load_hex2bin('hex');
+        };
+    }
+
+    var taplate = document.getElementById('dl-tape');
+    if (taplate) {
+        taplate.onclick = function() {
+            load_hex2bin('tap');
         };
     }
 
@@ -898,12 +909,15 @@ function loaded() {
 }
 
 function updateSizes() {
-    var height = window.innerHeight - 95;
+    var header_height = document.getElementById('header').clientHeight;
+    var bottom_height = document.getElementById('buttons-below').clientHeight;
+    var height = window.innerHeight - header_height - bottom_height - 10;
 
     var ti = document.getElementById('source');
     ti.style.height = height + "px";
     var to = document.getElementById('list');
     to.style.height = height + "px";
+    //to.style.height = ti.clientHeight + "px";
 }
 
 // toolbar
@@ -1010,7 +1024,9 @@ function load_ryba(url)
         //console.log(oReq.response);
         let status = oReq.status;
         if (status >= 200 && status < 300 || status === 304) {
-            document.getElementById('source').value = oReq.response;
+            //document.getElementById('source').value = oReq.response;
+            editor.setValue(oReq.response, 0);
+            editor.clearSelection();
             assemble();
         }
     };
@@ -1047,12 +1063,12 @@ function create_ryba_menu()
     var text = document.getElementById("source");
     (function(text, menu) {
         text.onclick = function(e) {
-            console.log("onclick in text", text, text.selectionStart,
-                    text.selectionEnd, e);
-            var s = text.selectionStart;
-            var p = s - 2;
-            var r1 = text.value.substring(s, s+2);
-            var r2 = text.value.substring(p, p+2)
+            var selectionRange = editor.getSelectionRange();
+            selectionRange.start.column -= 2;
+            var r1 = editor.session.getTextRange(selectionRange);
+            selectionRange.moveBy(0,2);
+            var r2 = editor.session.getTextRange(selectionRange);
+            
             if (r1 === "🐟" || r2 === "🐟") {
                 var parnt = document.getElementById("textinput");
                 parnt && parnt.appendChild(menu);
@@ -1095,12 +1111,12 @@ function i18n() {
     var baton = document.getElementById('baton');
 
     header.innerHTML = m_header;
-    baton.innerHTML = m_button;
+    if (baton) baton.innerHTML = m_button;
 
     if (lang === 'he' || lang === 'fa') {
         header.style.textAlign = 'right';
-        baton.style.cssFloat = 'right';
-        baton.style.clear = 'right';
+        if (baton) baton.style.cssFloat = 'right';
+        if (baton) baton.style.clear = 'right';
         document.getElementById('buttbr').style.cssFloat = 'right';
         document.getElementById('ta').style.cssFloat = 'right';
         document.getElementById('list').style.cssFloat = 'left';

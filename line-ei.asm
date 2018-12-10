@@ -13,9 +13,8 @@
 		; Вячеслав Славинский и Иван Городецкий, 2017
 		; версия 25.1
 
-                .nodump
                 .binfile line-ei.rom
-                .tape v06c-rom
+                .tapfile line-ei.tap v06c-rom
 		.org 100h
 
 		di

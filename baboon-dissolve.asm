@@ -2,9 +2,7 @@
 		; Эту 🐟 сделал Иван Городецкий, 04.10.2017
 
 		.binfile babdis.rom
-		.download bin
-		.tape v06c-rom
-		.nodump
+		.tapfile babdis.tap v06c-rom
 
 		.org 100h
 

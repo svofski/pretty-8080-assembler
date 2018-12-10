@@ -1,9 +1,9 @@
 html { }
-body {font-size:small; background-color: white; font-family: Monaco, Lucida Console, monospace;}
+body {font-size:small; background-color: #333; font-family: Monaco, Lucida Console, monospace;}
 .hordiv { width:80%; text-align: left; border-bottom:2px solid black;}
 .code { font-family: Monaco, Lucida Console, monospace; }
 .cmt { font-style: italic; color: blue;}
-pre { margin-top:0ex; margin-bottom:0.4ex; font-family: Monaco, Lucida Console, monospace;}
+//pre { margin-top:0ex; margin-bottom:0.4ex; font-family: Monaco, Lucida Console, monospace;}
 .highlight0 { border:none; background-color: transparent; }
 .highlight1 { background-color: wheat; border: 1px dotted red; margin:-1px -1px -1px -1px; border-radius: 10px;}
 .highlight2 { background-color: white; border: 2px solid red; margin:-2px -2px -2px -2px; border-radius: 5px;}
@@ -23,10 +23,13 @@ pre { margin-top:0ex; margin-bottom:0.4ex; font-family: Monaco, Lucida Console, 
     font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
     font-size:150%;
     font-weight:bold;
-    background-color:maroon;
-    color:white;
-    padding:5px 5px 2px 5px;
-    border-bottom: 1px dotted darkgray;
+    background-color: #522;
+    color:#ccc;
+    padding:5px 5px 5px 5px;
+    margin-left: -8px;
+    margin-right: -8px;
+    margin-top: -8px;
+    border-bottom: 1px dotted #000;
     user-select:none;
     -moz-user-select: none;
     -khtml-user-select: none;
@@ -54,18 +57,22 @@ pre { margin-top:0ex; margin-bottom:0.4ex; font-family: Monaco, Lucida Console, 
     font-variant: small-caps;
     font-size: large;
     letter-spacing: 0.4ex;
-    padding-left:10px;
-    padding-right:10px;
+    padding-left:20px;
+    padding-right:20px;
     padding-top:2px;
     padding-bottom: 0.25ex;
-    color: white;
-    background-color: black;
-    color: white;
-    background-color: black;
+    color: #887;
+    background-color: #111;
     margin-top:0.65ex;
     user-select:none;
     -moz-user-select: none;
     -khtml-user-select: none;
+    border-radius: 5px;
+}
+
+.baton:hover {
+    color: #cc8;
+    background: #333;
 }
 
 .baton.disabled {
@@ -81,20 +88,27 @@ pre { margin-top:0ex; margin-bottom:0.4ex; font-family: Monaco, Lucida Console, 
     position:relative;
 }
 
-#source {
-    font-family:Monaco, Lucida Console, monospace; font-size:100%;
-    margin:0px 0px 0px 0px;
-    padding:0px 0px 0px 5px;
-    width:100%;
-    border: 1px solid black;
-    border-top: 1px dotted darkgray;
+//#source {
+//    font-family:Monaco, Lucida Console, monospace; font-size:100%;
+//    margin:0px 0px 0px 0px;
+//    padding:0px 0px 0px 5px;
+//    width:100%;
+//    border: 1px solid black;
+//    border-top: 1px dotted darkgray;
+//}
+#source { 
+    //display: table-cell;
+    //float:left;
+    //width:39%;
+    //direction:ltr;
+    //height:100%;
+    //display: table-cell;
+    //height:80vh;
+    margin:0;
+    //position: absolute;
+    //top: 0; bottom: 0; left: 0; right: 0;
 }
-#ta { 
-    display: table-cell;
-    float:left;
-    width:39%;
-    direction:ltr;
-}
+
 #list {
     direction:ltr;
     float:right;
@@ -104,7 +118,8 @@ pre { margin-top:0ex; margin-bottom:0.4ex; font-family: Monaco, Lucida Console, 
     padding-left:1ex;
     overflow:scroll;
     display:table-cell;
-    width:60%;
+    width:40%;
+    display:none;
 }
 .uarr1 {
     margin-top:-4px;
@@ -206,6 +221,7 @@ span.t2:hover { background:#ffff7d; }
     left: 0;
     right: 0;
     display: none;
+    z-index: 20;
 }
 
 #emulator:before {
@@ -287,19 +303,20 @@ span.t2:hover { background:#ffff7d; }
 
 span#wav-dl {
     font-size: smaller;
-    color: pink;
-    box-shadow: inset 0 0px 0 white, inset 0 -2px 0 pink;
+    color: #833;
+    text-decoration-line: underline;
+    //box-shadow: inset 0 0px 0 white, inset 0 -2px 0 #833;
     cursor: pointer;
 }
 
 span#wav-dl:hover {
     color: white;
-    box-shadow: inset 0 0px 0 white, inset 0 -2px 0 white;
+    //box-shadow: inset 0 0px 0 white, inset 0 -2px 0 white;
 }
 
 #wav-play {
     font-size: smaller;
-    color: pink;
+    color: #833;
     cursor: pointer;
 }
 
@@ -333,3 +350,8 @@ span#wav-dl:hover {
     color: white;
 }
 
+.error_marker {
+    position: absolute;
+    background: rgba(255,100,100,0.5);
+    z-index: 20;
+}

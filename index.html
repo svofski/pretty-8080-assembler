@@ -13,7 +13,7 @@ Rev.L: Worker + Base64
 <script type="text/javascript" src="makewav.js"></script>
 <script type="text/javascript" src="tape.js"></script>
 <script type="text/javascript" src="main.js"></script>
-
+<script src="ace-local/ace.js" type="text/javascript" charset="utf-8"></script>
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
 <!-- styleSheets[1] -->
 <style type="text/css">
@@ -63,24 +63,17 @@ onmouseout="magicToolbar(2); return false;"
 </div>
 
 <div id="list">…</div>
-<div id="ta">
-<textarea id="source" rows="30" cols="80"
-onkeydown="return keydown(event);" 
-onkeypress="keypress(event);return true;">
+<div id="ta"> 
+<pre id="source">
         ; 🐟  (try me)
         ; 8080 assembler code
         .hexfile test.hex
         .binfile test.com
-        ; try "hex" for downloading in hex format
-        .download bin  
+        .tapfile test.tap v06c-rom
         ; target for generated loadable wav-file:
         ;   rk-bin          Радио-86РК 
         ;   microsha-bin    Микроша
         ;   v06c-rom        Вектор-06ц ROM
-        .tape v06c-rom 
-        .objcopy gobjcopy
-        .postbuild echo "Hooray!"
-        ;.nodump
 bdos    equ 5
 intv    equ 38h
         .org 100h
@@ -106,23 +99,177 @@ delay:
         dcr a
         jnz .-2
         ret
-</textarea></div>
+</pre>
 </div>
+</div>
+<!--
 <div id="messagepane">
 </div>
 <div style="height:0.5ex"><br/></div>
 <div id="buttbr" class="hordiv"></div>
+-->
 <div id="buttons-below">
 <input type="text" id="hex" name="hex" style="display:none;"/>
 <input type="text" id="formbinname" name="formbinname" style="display:none;"/>
 <input type="text" id="formhexname" name="formhexname" style="display:none;"/>
 <input type="text" id="downloadformat" name="downloadformat" style="display:none;"/>
-<!--<input type="submit" class="baton" id="baton" name="baton" value="Translate"/>-->
-<div class="baton" id="baton">Translate</div>
-<div class="baton" id="run">Run</div>
-<div class="baton" id="sounds">Wav&nbsp;&nbsp;
+
+<div class="baton" id="dl-bin">BIN</div>
+<div class="baton" id="dl-hex">HEX</div>
+<div class="baton" id="dl-tape">TAPE</div>
+<div class="baton" id="run">RUN</div>
+<div class="baton" id="sounds">WAV&nbsp;&nbsp;
     <span id="wav-dl">⬇</span>&nbsp;&nbsp;&nbsp;<span id="wav-play">▶</span></div>
 </div>
+
+<script>
+    var editor = ace.edit("source");
+    editor.setTheme("ace/theme/twilight");
+    //editor.session.setMode("ace/mode/assembly_x86");
+    editor.session.setOptions({
+        mode: "ace/mode/assembly_8080",
+        tabSize: 8,
+        useSoftTabs: true,
+        wrap: true,
+    });
+    editor.session.gutter_contents = [];
+    editor.session.gutterRenderer =  {
+        getWidth: function(session, lastLineNumber, config) {
+            return 20 * config.characterWidth;
+            return lastLineNumber.toString().length * config.characterWidth;
+        },
+        getText: function(session, row) {
+            var gc = session.gutter_contents[row];
+            if (gc) return gc.text || "*";
+            return "*";//String.fromCharCode(row + 65);
+        }
+    };
+
+    var Range = ace.require('ace/range').Range;
+    
+    //editor.setKeyboardHandler('ace/keyboard/vim');
+
+    var Tooltip = ace.require("ace/tooltip").Tooltip;
+    var oop = ace.require("ace/lib/oop");
+    var Event = ace.require("ace/lib/event");
+    function TokenTooltip(editor) {
+        if (editor.tokenTooltip) {
+            return;
+        }
+
+        Tooltip.call(this, editor.container);
+        editor.tokenTooltip = this;
+        this.editor = editor;
+
+        this.update = this.update.bind(this);
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseOut = this.onMouseOut.bind(this);
+        Event.addListener(editor.renderer.scroller, "mousemove", this.onMouseMove);
+        Event.addListener(editor.renderer.content, "mouseout", this.onMouseOut);
+    }
+    oop.inherits(TokenTooltip, Tooltip);
+
+    (function() {
+        this.token = {};
+        this.range = new Range();
+        this.update = function() {
+            this.$timer = null;
+
+            var r = this.editor.renderer;
+            if (this.lastT - (r.timeStamp || 0) > 1000) {
+                r.rect = null;
+                r.timeStamp = this.lastT;
+                this.maxHeight = window.innerHeight;
+                this.maxWidth = window.innerWidth;
+            }
+
+            var canvasPos = r.rect || (r.rect = r.scroller.getBoundingClientRect());
+            var offset = (this.x + r.scrollLeft - canvasPos.left - r.$padding) / r.characterWidth;
+            var row = Math.floor((this.y + r.scrollTop - canvasPos.top) / r.lineHeight);
+            var col = Math.round(offset);
+
+            var screenPos = {row: row, column: col, side: offset - col > 0 ? 1 : -1};
+            var session = this.editor.session;
+            var docPos = session.screenToDocumentPosition(screenPos.row, screenPos.column);
+            var token = session.getTokenAt(docPos.row, docPos.column);
+
+            if (!token && !session.getLine(docPos.row)) {
+                token = {
+                    type: "",
+                    value: "",
+                    state: session.bgTokenizer.getState(0)
+                };
+            }
+            if (!token) {
+                session.removeMarker(this.marker);
+                this.hide();
+                return;
+            }
+
+            var tokenText = token.type;
+            if (token.state)
+                tokenText += "|" + token.state;
+            if (token.merge)
+                tokenText += "\n  merge";
+            if (token.stateTransitions)
+                tokenText += "\n  " + token.stateTransitions.join("\n  ");
+
+            if (this.tokenText != tokenText) {
+                this.setText(tokenText);
+                this.width = this.getWidth();
+                this.height = this.getHeight();
+                this.tokenText = tokenText;
+            }
+
+            this.show(null, this.x, this.y);
+
+            this.token = token;
+            session.removeMarker(this.marker);
+            this.range = new Range(docPos.row, token.start, docPos.row, token.start + token.value.length);
+            this.marker = session.addMarker(this.range, "ace_bracket", "text");
+        };
+
+        this.onMouseMove = function(e) {
+            this.x = e.clientX;
+            this.y = e.clientY;
+            if (this.isOpen) {
+                this.lastT = e.timeStamp;
+                this.setPosition(this.x, this.y);
+            }
+            if (!this.$timer)
+                this.$timer = setTimeout(this.update, 100);
+        };
+
+        this.onMouseOut = function(e) {
+            if (e && e.currentTarget.contains(e.relatedTarget))
+                return;
+            this.hide();
+            this.editor.session.removeMarker(this.marker);
+            this.$timer = clearTimeout(this.$timer);
+        };
+
+        this.setPosition = function(x, y) {
+            if (x + 10 + this.width > this.maxWidth)
+                x = window.innerWidth - this.width - 10;
+            if (y > window.innerHeight * 0.75 || y + 20 + this.height > this.maxHeight)
+                y = y - this.height - 30;
+
+            Tooltip.prototype.setPosition.call(this, x + 10, y + 20);
+        };
+
+        this.destroy = function() {
+            this.onMouseOut();
+            Event.removeListener(this.editor.renderer.scroller, "mousemove", this.onMouseMove);
+            Event.removeListener(this.editor.renderer.content, "mouseout", this.onMouseOut);
+            delete this.editor.tokenTooltip;
+        };
+
+
+    }).call(TokenTooltip.prototype);
+
+    // token tooltips are cool but not yet
+    new TokenTooltip(editor);
+</script>
 
 </body>
 </html>
