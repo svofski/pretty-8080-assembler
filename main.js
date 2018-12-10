@@ -72,9 +72,39 @@ function Asmcache() {
 }
 var asmcache = new Asmcache();
 
-function updateReferences(ref, tls, org) {
-    asmcache.references = ref;
-    asmcache.textlabels = tls;
+function updateReferences(ref, tls, labels, org) {
+    asmcache.references = ref; // from_line:"text"
+    asmcache.textlabels = tls; // line_number:"text"
+    asmcache.xref = {};
+    asmcache.labels = labels;
+    for (var i = 0; i < asmcache.references.length; ++i) {
+        var text = asmcache.references[i];
+        if (text) {
+            if (!asmcache.xref[text]) {
+                asmcache.xref[text] = [];
+            }
+            asmcache.xref[text].push(i);
+        }
+
+        text = asmcache.textlabels[i];
+        if (text) {
+            if (!asmcache.xref[text]) {
+                asmcache.xref[text] = [];
+            }
+            asmcache.xref[text].push(i);
+        }
+    }
+
+    //for (var key in labels) {
+    //    if (labels.hasOwnProperty(key)) {
+    //        var value = labels[key];
+    //        if (!asmcache.xref[key]) {
+    //            asmcache.xref[key] = [];
+    //        }
+    //        asmcache.xref[key].push(value);
+    //    }
+    //}
+
     asmcache.org = org || 256;
 }
 
@@ -197,8 +227,9 @@ function assemble() {
                             editor.resize(true);
                             var references = e.data['references'];
                             var textlabels = e.data['textlabels'];
+                            var labels = e.data['labels'];
                             var org = e.data['org'];
-                            updateReferences(references, textlabels, org);
+                            updateReferences(references, textlabels, labels, org);
                             list.scrollTop = list.savedScroll;//savedScroll;
                             updateSizes();
                             autotranslate = false;
@@ -674,8 +705,9 @@ function __download(data, filename, type) {
 }
 
 function hex2binMessageListener(e) {
-    var filename = e.data['filename'];
     var mem = e.data['mem'];
+    if (!mem) return;
+    var filename = e.data['filename'];
     var data = new Uint8Array(mem.length);
     var start = e.data['org'];
     var end = mem.length;
@@ -917,7 +949,8 @@ function updateSizes() {
     ti.style.height = height + "px";
     var to = document.getElementById('list');
     to.style.height = height + "px";
-    //to.style.height = ti.clientHeight + "px";
+
+    editor.resize(true);
 }
 
 // toolbar

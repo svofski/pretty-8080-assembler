@@ -59,15 +59,11 @@ importScripts('tape.js');
 
 function Assembler() {
     this.debug = false;
-    this.binFileName = 'test.com';
-    this.hexFileName = 'test.hex';
-    this.downloadFormat = 'bin';
     this.tapeFormat = 'rk-bin';
-    this.objCopy = 'gobjcopy';
-    this.postbuild = '';
     this.doHexDump = true;
     this.doIntelHex = true;
     this.targetEncoding = 'koi8-r';
+    this.project = "test";
 
 
     this.LabelsCount = 0;
@@ -83,6 +79,38 @@ function Assembler() {
     this.listingText = "";
     this.gutterContent = [];
 }
+
+Assembler.prototype.getBinFileName = function()
+{
+    if (this.project.indexOf('.') === -1) {
+        return this.project + '.bin';
+    }
+    else {
+        return this.project;
+    }
+}
+
+Assembler.prototype.getHexFileName = function()
+{
+    if (this.project.indexOf('.') === -1) {
+        return this.project + '.hex';
+    }
+    else {
+        return Util.replaceExt(this.project, '.hex');
+    }
+}
+
+Assembler.prototype.getTapFileName = function()
+{
+    if (this.project.indexOf('.') === -1) {
+        return this.project + '.cas';
+    }
+    else {
+        return Util.replaceExt(this.project, '.cas');
+    }
+}
+
+
 
 // -- utility stuffs --
 Assembler.rpmap = {"h":"l", "d":"e"};
@@ -675,69 +703,24 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
             break;
         }
 
-        if (mnemonic == ".binfile") {
+        if (mnemonic == ".project") {
             if (parts[1] !== undefined && parts[1].trim().length > 0) {
-                this.binFileName = parts[1];
+                this.project = parts[1];
             }
             result = -100000;
             break;
         }
 
-        if (mnemonic == ".hexfile") {
+        if (mnemonic == ".tape") {
             if (parts[1] !== undefined && parts[1].trim().length > 0) {
-                this.hexFileName = parts[1];
-            }
-            result = -100000;
-            break;
-        }
-
-        if (mnemonic == ".tapfile" || mnemonic == ".tapefile") {
-            if (parts[1] !== undefined && parts[1].trim().length > 0) {
-                this.tapFileName = parts[1];
-            }
-            if (parts[2] !== undefined && parts[2].trim().length > 0) {
-                this.tapeFormat = parts[2].trim();
+                this.tapeFormat = parts[1];
                 var test = new TapeFormat(this.tapeFormat);
                 if (test.format) {
                     result = -100000;
                     break;
                 }
-            } else {
-                result = -100000;
-                break;
             }
         }
-
-//        if (mnemonic == ".download") {
-//            if (parts[1] !== undefined && parts[1].trim().length > 0) {
-//                this.downloadFormat = parts[1].trim();
-//            }
-//            result = -100000;
-//            break;
-//        }
-
-//        if (mnemonic == ".tape") {
-//            if (parts[1] !== undefined && parts[1].trim().length > 0) {
-//                this.tapeFormat = parts[1].trim();
-//                var test = new TapeFormat(this.tapeFormat);
-//                if (test.format) {
-//                    result = -100000;
-//                    break;
-//                }
-//            }
-//        }
-
-//        if (mnemonic == ".objcopy") {
-//            this.objCopy = parts.slice(1).join(' '); 
-//            result = -100000;
-//            break;
-//        }
-//
-//        if (mnemonic == ".postbuild") {
-//            this.postbuild = parts.slice(1).join(' ');
-//            result = -100000;
-//            break;
-//        }
 
         if (mnemonic == ".nodump") {
             this.doHexDump = false;
@@ -960,7 +943,7 @@ Assembler.prototype.intelHex = function() {
 
         cs = 0xff&(-(cs&255));
         line += Util.hex8(cs);
-        pureHex += line + '|n';
+        pureHex += line + '\n';
         r += line + '<br/>';
 
         i += j;
@@ -970,7 +953,7 @@ Assembler.prototype.intelHex = function() {
     //r += '.<br>w ' + this.hexFileName +'<br>q<br>';
     r += 'X<br/>';
     r += this.objCopy + ' -I ihex ' + this.hexFileName + ' -O binary ' + 
-        this.binFileName + '<br/>';
+        this.getBinFileName() + '<br/>';
     if (this.postbuild.length > 0) {
         r += this.postbuild + '<br/>';
     }
@@ -1409,26 +1392,28 @@ self.addEventListener('message', function(e) {
                     'errors':asm.errors,
                     'textlabels':asm.textlabels,
                     'references':asm.references,
+                    'labels':asm.labels,
                 });
     } 
     else if (cmd == 'getmem') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
-            'binFileName': asm.binFileName,
+            'binFileName': asm.getBinFileName(),
             'tapeFormat':asm.tapeFormat,
             'download':false});
     } 
     else if (cmd == 'getbin') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
-            'filename': asm.binFileName,
+            'filename': asm.getBinFileName(),
             'download':'bin'
         });
     } 
     else if (cmd == 'gethex') {
+        asm.intelHex(); // make sure that hexText is up to date
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
-            'filename': asm.hexFileName,
+            'filename': asm.getHexFileName(),
             'hex':asm.hexText,
             'download':'hex'
         });
@@ -1436,7 +1421,7 @@ self.addEventListener('message', function(e) {
     else if (cmd == 'gettap') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
-            'filename': asm.tapFileName,
+            'filename': asm.getTapFileName(),
             'tapeFormat':asm.tapeFormat,
             'download':'tap'
         });

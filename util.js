@@ -25,4 +25,9 @@ Util.toTargetEncoding = function(str, encoding) {
     return toEncoding(str, encoding);
 };
 
-
+Util.replaceExt = function(path, newext) {
+    if (path.indexOf('.') === -1) {
+        return path + newext;
+    }
+    return path.split('.').slice(0, -1).join('.') + newext;
+}

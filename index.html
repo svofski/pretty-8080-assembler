@@ -67,9 +67,8 @@ onmouseout="magicToolbar(2); return false;"
 <pre id="source">
         ; 🐟  (try me)
         ; 8080 assembler code
-        .hexfile test.hex
-        .binfile test.com
-        .tapfile test.tap v06c-rom
+        .project test.com
+        .tape v06c-rom
         ; target for generated loadable wav-file:
         ;   rk-bin          Радио-86РК 
         ;   microsha-bin    Микроша
@@ -125,7 +124,6 @@ delay:
 <script>
     var editor = ace.edit("source");
     editor.setTheme("ace/theme/twilight");
-    //editor.session.setMode("ace/mode/assembly_x86");
     editor.session.setOptions({
         mode: "ace/mode/assembly_8080",
         tabSize: 8,
@@ -206,27 +204,90 @@ delay:
                 return;
             }
 
-            var tokenText = token.type;
-            if (token.state)
-                tokenText += "|" + token.state;
-            if (token.merge)
-                tokenText += "\n  merge";
-            if (token.stateTransitions)
-                tokenText += "\n  " + token.stateTransitions.join("\n  ");
 
-            if (this.tokenText != tokenText) {
-                this.setText(tokenText);
-                this.width = this.getWidth();
-                this.height = this.getHeight();
-                this.tokenText = tokenText;
+//            var tokenText = token.type;
+//            if (token.state)
+//                tokenText += "|" + token.state;
+//            if (token.merge)
+//                tokenText += "\n  merge";
+//            if (token.stateTransitions)
+//                tokenText += "\n  " + token.stateTransitions.join("\n  ");
+
+            //var tokenText = token.value.replace(/[,\s]/g,'');
+            //var ref = "";
+            //for (var i = 0; i < asmcache.textlabels.length; ++i) {
+            //    if (asmcache.textlabels[i] == tokenText) {
+            //        //ref += i;
+            //        /* found label, show address */
+            //        for (var k = 0;ref.length === 0 && k < 20; ++k) {
+            //            var gc = editor.session.gutter_contents[i+k];
+            //            if (gc) {
+            //                ref = gc.text.trim();
+            //            }
+            //        }
+            //    }
+            //}
+
+            var tokenText = token.value.replace(/[:\s]/g, '');
+            var addr = asmcache.labels[tokenText];
+            var ref = "";
+            var label = tokenText;    
+            if (addr) {
+                ref = label + "=0x" + Util.hex16(addr);
             }
+            tokenText = ref.trim();
+            //console.log("tokenText=", tokenText);
 
-            this.show(null, this.x, this.y);
+            if (tokenText.length > 0) {
+                if (this.tokenText != tokenText) {
+                    //tokenText += '\n' + this.collectXrefs(label);
+                    this.clearxrefs();
+                    this.xrefs = this.collectXrefs(label);
+                    this.setText(tokenText);
+                    this.width = this.getWidth();
+                    this.height = this.getHeight();
+                    this.tokenText = tokenText;
+                }
 
-            this.token = token;
-            session.removeMarker(this.marker);
-            this.range = new Range(docPos.row, token.start, docPos.row, token.start + token.value.length);
-            this.marker = session.addMarker(this.range, "ace_bracket", "text");
+                this.show(null, this.x, this.y);
+
+                this.token = token;
+                session.removeMarker(this.marker);
+                this.range = new Range(docPos.row, token.start, docPos.row, token.start + token.value.length);
+                this.marker = session.addMarker(this.range, "ace_bracket", "text");
+            }
+            else {
+                this.disappear();
+            }
+        };
+
+        this.clearxrefs = function()
+        {
+            if (!this.xrefs) return;
+            for (var i = 0; i < this.xrefs.length; ++i) {
+                this.editor.session.removeMarker(this.xrefs[i]);
+            }
+        }
+
+        this.disappear = function() {
+            this.hide();
+            this.editor.session.removeMarker(this.marker);
+            this.clearxrefs();
+            this.$timer = clearTimeout(this.$timer);
+            this.tokenText = undefined;
+        }
+
+        this.collectXrefs = function(label) {
+            var result = [];
+            xrefs = asmcache.xref[label];
+            for (var k = 0; k < xrefs.length; ++k) { 
+                var i = xrefs[k];
+                    var text = this.editor.session.getLine(i);
+                    var begin = text.indexOf(label);
+                    var range = new Range(i, begin, i, begin + label.length);
+                    result.push(this.editor.session.addMarker(range, "ace_bracket", "text"));
+            }
+            return result;
         };
 
         this.onMouseMove = function(e) {
@@ -243,9 +304,7 @@ delay:
         this.onMouseOut = function(e) {
             if (e && e.currentTarget.contains(e.relatedTarget))
                 return;
-            this.hide();
-            this.editor.session.removeMarker(this.marker);
-            this.$timer = clearTimeout(this.$timer);
+            this.disappear();
         };
 
         this.setPosition = function(x, y) {
