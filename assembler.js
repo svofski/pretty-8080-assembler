@@ -341,13 +341,18 @@ Assembler.prototype.setmem8 = function(addr, immediate) {
     this.mem[addr] = immediate < 0 ? immediate : immediate & 0xff;
 };
 
-Assembler.parseRegisterPair = function(s) {
+Assembler.parseRegisterPair = function(s, forstack) {
     if (s !== undefined) {
         s = s.trim().split(';')[0].toLowerCase();
         if (s == 'b' || s == 'bc') return 0;
         if (s == 'd' || s == 'de') return 1;
         if (s == 'h' || s == 'hl') return 2;
-        if (s == 'sp'|| s == 'psw' || s == 'a') return 3;
+        if (forstack) { // push/pop
+            if (s == 'psw' || s == 'a') return 3;
+        } 
+        else {  // lxi, dad
+            if (s == 'sp') return 3;
+        }
     }
     return -1;
 };
@@ -543,7 +548,7 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
         if ((opcs = Assembler.opsRpIm16[mnemonic]) !== undefined) {
             let subparts = parts.slice(1).join(" ").split(",");
             if (subparts.length < 2) return -3;
-            let rp = Assembler.parseRegisterPair(subparts[0]);
+            let rp = Assembler.parseRegisterPair(subparts[0], false);
             if (rp == -1) return -3;
 
             this.mem[addr] = opcs | (rp << 4);
@@ -655,7 +660,8 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 
         // single register pair
         if ((opcs = Assembler.opsRp[mnemonic]) !== undefined) {
-            let rp = Assembler.parseRegisterPair(parts[1]);
+            let stack = ["push","pop"].indexOf(mnemonic) != -1;
+            let rp = Assembler.parseRegisterPair(parts[1], stack);
             if (rp == -1) {
                 result = -1;
                 break;
@@ -1225,7 +1231,7 @@ Assembler.prototype.assemble = function(src) {
     this.mem.length = 0;
     this.org = undefined;
     this.references.length = 0;
-    this.textlabels.lenth = 0;
+    this.textlabels.length = 0;
     this.errors.length = 0;
     this.doHexDump = true;
     this.postbuild = '';
@@ -1429,7 +1435,7 @@ self.addEventListener('message', function(e) {
     else if (cmd == 'getwav') {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
-            'binFileName': asm.binFileName,
+            'binFileName': asm.getBinFileName(),
             'tapeFormat':asm.tapeFormat,
             'download':e.data['mode']
         });

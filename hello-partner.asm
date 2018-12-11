@@ -1,6 +1,6 @@
     ; 🐟 для Партнёра 01.01
-    .tapfile hellopartner.rk partner-bin ; формат ленты 
-    .binfile hellopartner.bin ; имя файла
+    .project hellopartner.rk 
+    .tape partner-bin 
     .org 0
 prompt  equ 0F8C9h
 puts    equ 0F818h

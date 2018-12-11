@@ -1,6 +1,6 @@
     ; 🐟 для Микроши
-    .binfile hellosha.bin    ; имя файла без заголовков
-    .tapfile hellosha.rk microsha-bin ; файл для монитора 
+    .project hellosha.rk
+    .tape microsha-bin ; формат ленты 
     .org 0
 prompt  equ 0F89Dh
 puts    equ 0F818h

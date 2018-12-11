@@ -1,6 +1,6 @@
     ; 🐟 для Радио-86РК
-    .binfile hello.bin  ; имя файла без заголовков
-    .tapfile hello.rk rk-bin      ; формат двоичного файла .rk
+    .project hello.rk 
+    .tape rk-bin
     .org 0
 prompt  equ 0F86Ch
 puts    equ 0F818h

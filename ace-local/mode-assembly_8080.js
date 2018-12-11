@@ -81,7 +81,7 @@ var AssemblyX86HighlightRules = function() {
               'text',
               'entity.name.function.assembly',
             ],
-           regex: '(\\s*)(org|equ|binfile|hexfile|tapfile|tapefile|download|tape|objcopy|postbuild|nodump|nohex|encoding|cpu|db|dw|ds|db64)\\b( ?)((?:[_a-zA-Z][\-\._a-zA-Z0-9]*)?)( ?)((?:[a-zA-Z0-9_\.\$\-]+)?)',
+           regex: '(\\s*)(org|equ|project|tape|encoding|cpu|db|dw|ds|db64)\\b( ?)((?:[_a-zA-Z][\-\._a-zA-Z0-9]*)?)( ?)((?:[a-zA-Z0-9_\.\$\-]+)?)',
            caseInsensitive: true },
            
          { token: 'entity.name.function.assembly',

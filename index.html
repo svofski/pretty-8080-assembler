@@ -15,6 +15,7 @@ Rev.L: Worker + Base64
 <script type="text/javascript" src="main.js"></script>
 <script src="ace-local/ace.js" type="text/javascript" charset="utf-8"></script>
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
+<link href="ace-extras.css" rel="stylesheet" type="text/css" media="screen"/>
 <!-- styleSheets[1] -->
 <style type="text/css">
 .rga { color: blue; }
@@ -229,7 +230,7 @@ delay:
             //}
 
             var tokenText = token.value.replace(/[:\s]/g, '');
-            var addr = asmcache.labels[tokenText];
+            var addr = asmcache.labels[tokenText.toLowerCase()];
             var ref = "";
             var label = tokenText;    
             if (addr) {
@@ -240,7 +241,6 @@ delay:
 
             if (tokenText.length > 0) {
                 if (this.tokenText != tokenText) {
-                    //tokenText += '\n' + this.collectXrefs(label);
                     this.clearxrefs();
                     this.xrefs = this.collectXrefs(label);
                     this.setText(tokenText);
@@ -249,12 +249,14 @@ delay:
                     this.tokenText = tokenText;
                 }
 
-                this.show(null, this.x, this.y);
+                if (token.start > 0) {
+                    this.show(null, this.x, this.y);
+                }
 
                 this.token = token;
                 session.removeMarker(this.marker);
                 this.range = new Range(docPos.row, token.start, docPos.row, token.start + token.value.length);
-                this.marker = session.addMarker(this.range, "ace_bracket", "text");
+                //this.marker = session.addMarker(this.range, "ace_bracket", "text");
             }
             else {
                 this.disappear();
@@ -279,13 +281,13 @@ delay:
 
         this.collectXrefs = function(label) {
             var result = [];
-            xrefs = asmcache.xref[label];
+            xrefs = asmcache.xref[label.toLowerCase()];
             for (var k = 0; k < xrefs.length; ++k) { 
                 var i = xrefs[k];
-                    var text = this.editor.session.getLine(i);
-                    var begin = text.indexOf(label);
-                    var range = new Range(i, begin, i, begin + label.length);
-                    result.push(this.editor.session.addMarker(range, "ace_bracket", "text"));
+                var text = this.editor.session.getLine(i);
+                var begin = text.indexOf(label);
+                var range = new Range(i, begin, i, begin + label.length);
+                result.push(this.editor.session.addMarker(range, "ace_xref", "text"));
             }
             return result;
         };

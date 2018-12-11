@@ -1,6 +1,6 @@
     ; 🐟 для Вектора-06ц
-    .binfile helv06c.rom
-    .tape helv06c.tap v06c-rom
+    .project helv06c.rom
+    .tape v06c-rom
 
 rastint equ 38h ; прервывание обратного хода луча
 

@@ -1,6 +1,6 @@
     ; 🐟 для Кристы
-    .binfile helkrista.rom
-    .tapfile helkrista.tap krista-rom  ; формат Кристы-2
+    .project helkrista.rom
+    .tape krista-rom  ; формат Кристы-2
 
 rastint equ 38h ; прервывание обратного хода луча
 
