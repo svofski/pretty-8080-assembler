@@ -1,0 +1,27 @@
+.ace-twilight .ace_marker-layer .ace_xref {
+margin: -1px 0 0 -1px;
+border: 1px solid rgba(255, 255, 255, 0.25);
+background-color: yellow;
+color: black;
+position: absolute;
+animation-name: xref-appears;
+animation-duration: 1s;
+}
+
+@keyframes xref-appears {
+  0%   {background-color:black;}
+  49%  {background-color:black;}
+  50%  {background-color:wheat;}
+  55%  {background-color:black;}
+  60%  {background-color:wheat;}
+  65%  {background-color:black;}
+  75%  {background-color:wheat;}
+  65%  {background-color:black;}
+  100% {background-color:yellow;}
+}
+
+.ace-twilight .ace_tooltip {
+    border: 0px;
+    background-color: wheat;
+}
+
