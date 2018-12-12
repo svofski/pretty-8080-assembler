@@ -484,6 +484,7 @@ Assembler.prototype.setNewEncoding = function(encoding) {
 
 Assembler.prototype.splitParts = function(s)
 {
+    var lines = [];
     var parts = [];
     var state = 0;
     var cork = undefined;
@@ -504,8 +505,13 @@ Assembler.prototype.splitParts = function(s)
                         cork = "'";
                         state = 10;
                         break;
+                    case '\\':
+                        lines.push(parts);
+                        parts = [];
+                        remainder = remainder.slice(1).trimStart();
+                        break;
                     default:
-                        var at = remainder.search(/[\s]/);
+                        var at = remainder.search(/[\s\\]/);
                         if (at >= 0) {
                             parts.push(remainder.slice(0, at));
                             remainder = remainder.slice(at).trimStart();
@@ -538,14 +544,19 @@ Assembler.prototype.splitParts = function(s)
             break;
         }
     }
-    return parts;
+    lines.push(parts);
+    return lines;
 };
 
-Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
-    //var parts = s.split(/\s+/);
+//Assembler.prototype.parseParts(parts, addr, linenumber) {
+//
+//}
 
-    var parts = this.splitParts(s);
+Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
+    //var parts = this.splitParts(s);
     //console.log("splut prat=", this.splitParts(s));
+
+    //parts = parts[0];
 
     for (let i = 0; i < parts.length; i++) {
         if (parts[i][0] == ';') {
@@ -581,6 +592,10 @@ Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
 
             result = 1;
             break;
+            //result += 1;
+            //addr += 1;
+            //parts = parts.slice(1);
+            //continue;
         }
 
         // immediate word
@@ -1107,53 +1122,22 @@ Assembler.prototype.gutter = function(text,lengths,addresses) {
     var addr = 0;
 
     for(var i = 0, end_i = text.length; i < end_i; i += 1) {
-        var hexes = "";
         var unresolved = false;
         var width = 0;
-
-        var len = lengths[i] > 4 ? 4 : lengths[i];
-        for (let b = 0; b < len; b++) {
-            hexes += Util.hex8(this.mem[addresses[i]+b]) + ' ';
-            width += 3;
-            if (this.mem[addresses[i]+b] < 0) unresolved = true;
+        var hexes = new Uint8Array(lengths[i]);
+        for (let b = 0; b < lengths[i]; ++b) {
+            var bytte = this.mem[addresses[i]+b];
+            if (bytte < 0) unresolved = true;
+            hexes[b] = bytte;
         }
-
-        if (len < lengths[i]) {
-            // append ellipses if hex is too long for the gutter
-            hexes += "…";
-            width += 2; 
-        }
-        hexes += "                ".substring(width);
-
-        var gut = lengths[i] > 0 ? Util.hex16(addresses[i]) : "";
-        gut += "  " + hexes;
 
         var err = this.errors[i] || unresolved !== false;
 
         var gutobj = {
-            text : gut,
+            addr : addresses[i],
+            hex : hexes,
             error: err
         };
-
-        //// display only first and last lines of db thingies
-        //if (len < lengths[i]) {
-        //    result.push('<br/>\t.&nbsp;.&nbsp;.&nbsp;<br/>');
-        //    var subresult = '';
-        //    for (var subline = 1; subline*4 < lengths[i]; subline++) {
-        //        subresult = '';
-        //        subresult += Util.hex16(addresses[i]+subline*4) + '\t';
-        //        for (var sofs = 0; sofs < 4; sofs += 1) {
-        //            var adr = subline*4+sofs;
-        //            if (adr < lengths[i]) {
-        //                subresult += Util.hex8(this.mem[addresses[i]+adr]) + ' ';
-        //            }
-        //        }
-        //    }
-        //    result.push(subresult + "<br/>");
-        //}
-        //result.push('</pre>');
-
-        addr += lengths[i];
 
         result.push(gutobj);
     }
@@ -1304,17 +1288,28 @@ Assembler.prototype.assemble = function(src) {
 
     for (var line = 0, end = inputlines.length; line < end; line += 1) {
         var encodedLine = Util.toTargetEncoding(inputlines[line].trim(), this.targetEncoding);
-        var size = this.parseInstruction(encodedLine, addr, line);
-        if (size <= -100000) {
-            addr = -size-100000;
-            size = 0;
-        } else if (size < 0) {
-            this.error(line, "syntax error");
-            size = 0; //-size;
+        var sublines = this.splitParts(encodedLine);
+
+        for (var sul = 0; sul < sublines.length; ++sul) {
+            var size = this.parseInstruction(sublines[sul], addr, line);
+            if (size <= -100000) {
+                addr = -size-100000;
+                size = 0;
+            } else if (size < 0) {
+                this.error(line, "syntax error");
+                size = 0; //-size;
+                break;
+            }
+            var l = lengths[line];
+            if (l === undefined) {
+                lengths[line] = size;
+            }
+            else {
+                lengths[line] = lengths[line] + size;
+            }
+            if (sul === 0) addresses[line] = addr;
+            addr += size;
         }
-        lengths[line] = size;
-        addresses[line] = addr;
-        addr += size;
     }
 
     this.resolveLabelsTable();

@@ -31,3 +31,57 @@ Util.replaceExt = function(path, newext) {
     }
     return path.split('.').slice(0, -1).join('.') + newext;
 }
+
+Util.formatGutterBrief = function(addr, bytes)
+{
+    var width = 0;
+    var hexes = " ";
+
+    if (bytes.length > 0) {
+        hexes = Util.hex16(addr) + "  ";
+        var len = bytes.length > 4 ? 4 : bytes.length;
+        for (let b = 0; b < len; b++) {
+            hexes += Util.hex8(bytes[b]) + ' ';
+            width += 3;
+        }
+
+        if (len < bytes.length) {
+            // append ellipses if hex is too long for the gutter
+            hexes += "…";
+            width += 2; 
+        }
+        hexes += "                ".substring(width);
+    }
+
+    return hexes;
+}
+
+Util.formatGutterFull = function(addr, bytes)
+{
+    var hexes = "";
+    var chars = "";
+
+    if (bytes.length > 0) {
+        var len = Math.floor((bytes.length + 15)/16) * 16;
+        
+        for (let b = 0; b < len; b++) {
+            if ((b % 16) === 0) {
+                hexes += Util.hex16(addr + b) + "  ";
+                chars = "";
+            }
+            var ht = b < bytes.length ?
+                Util.hex8(bytes[b]) : '  '; 
+            hexes += ht + (b%16==7?'-':' ');
+
+            chars += b < bytes.length ?
+                Util.char8(bytes[b]) : ' ';
+
+            if (((b + 1) % 16) === 0) {
+                hexes += "  " + chars;
+                hexes += "<br/>";
+            }
+        }
+    }
+
+    return hexes;
+}

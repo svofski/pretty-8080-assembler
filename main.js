@@ -1040,9 +1040,12 @@ var rybas =
 
     "okean": ["Океан-240 🌊", "hello-okean240.asm"],
 
-    "baboon-dissolve": ["🐒", "baboon-dissolve.asm"],
+    "baboon-dissolve": ["Вектор-06ц: 🐒", "baboon-dissolve.asm"],
 
     "line-ei": ["Вектор-06ц: быстрая линия", "line-ei.asm"],
+
+    "circle": ["Вектор-06ц: окружность", "circle.asm"],
+    
 };
 
 function load_ryba(url) 
@@ -1140,7 +1143,7 @@ function i18n() {
     var m_header = messages[0];
     var m_button = messages[1];
 
-    var header = document.getElementById('header');
+    var header = document.getElementById('header-text');
     var baton = document.getElementById('baton');
 
     header.innerHTML = m_header;

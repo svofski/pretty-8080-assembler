@@ -35,6 +35,10 @@ body {font-size:small; background-color: #333; font-family: Monaco, Lucida Conso
     -khtml-user-select: none;
 }
 
+a#header-text:visited {
+    color: inherit;
+}
+
 #toolbar {
     float:right;
     font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
@@ -355,3 +359,5 @@ span#wav-dl:hover {
     background: rgba(255,100,100,0.5);
     z-index: 20;
 }
+
+

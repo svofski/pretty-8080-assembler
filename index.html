@@ -48,7 +48,8 @@ onmouseout="magicToolbar(2); return false;"
 onmouseover="magicToolbar(0); return false;"
 onmouseout="magicToolbar(2); return false;"
 >
-Прекрасный ассемблер КР580ВМ80А
+<a id="header-text" href="https://github.com/svofski/pretty-8080-assembler" target=_>
+    Прекрасный ассемблер КР580ВМ80А</a>
 </div>
 <div id="textinput">
 <div id="emulator">
@@ -139,7 +140,7 @@ delay:
         },
         getText: function(session, row) {
             var gc = session.gutter_contents[row];
-            if (gc) return gc.text || "*";
+            if (gc) return Util.formatGutterBrief(gc.addr,gc.hex) || "*";
             return "*";//String.fromCharCode(row + 65);
         }
     };
@@ -182,10 +183,13 @@ delay:
                 this.maxWidth = window.innerWidth;
             }
 
+
             var canvasPos = r.rect || (r.rect = r.scroller.getBoundingClientRect());
             var offset = (this.x + r.scrollLeft - canvasPos.left - r.$padding) / r.characterWidth;
             var row = Math.floor((this.y + r.scrollTop - canvasPos.top) / r.lineHeight);
             var col = Math.round(offset);
+
+            //console.log("tt canvaspos row col", canvasPos, row, col);
 
             var screenPos = {row: row, column: col, side: offset - col > 0 ? 1 : -1};
             var session = this.editor.session;
@@ -324,12 +328,78 @@ delay:
             Event.removeListener(this.editor.renderer.content, "mouseout", this.onMouseOut);
             delete this.editor.tokenTooltip;
         };
-
-
     }).call(TokenTooltip.prototype);
 
-    // token tooltips are cool but not yet
     new TokenTooltip(editor);
+
+    function GutnikBox(editor) {
+        this.editor = editor;
+        console.log("GutnikBox: this=", this);
+
+        this.beginShowing = this.beginShowing.bind(this);
+        this.show = this.show.bind(this);
+        this.hide = this.hide.bind(this);
+        this.timer = null;
+
+        editor.on('guttermousemove', this.beginShowing);
+        editor.on('mousemove', this.hide);
+    }
+
+    (function() {
+        this.beginShowing = function(e) {
+            var row = e.getDocumentPosition().row;
+            var gutnik = editor.session.gutter_contents[row];
+
+            if (this.timer !== null && this.row !== row) {
+                this.hide();
+            }
+
+            if (gutnik && gutnik.hex.length > 4) {
+                if (this.timer == null) {
+                    this.where = editor.renderer.textToScreenCoordinates(e.getDocumentPosition());
+                    this.row = row;
+                    this.timer = setTimeout(this.show, 100);
+                }
+            } 
+            else {
+                this.hide();
+            }
+        };
+
+        this.show = function(e) {
+            //console.log("Showing gutnik at ", this.where);
+            var gt = document.createElement('div');
+
+            var cnt = editor.session.gutter_contents[this.row];
+            gt.innerHTML = '<pre class="gutter-pre">'+
+                Util.formatGutterFull(cnt.addr, cnt.hex)+'</pre>';
+            gt.classList.add('gutter-box');
+            gt.style.top = this.where.pageY + "px";
+            gt.style.left = (this.where.pageX - editor.renderer.gutterWidth) + "px";
+            document.body.appendChild(gt);
+
+            gt.addEventListener('mouseleave', this.hide);
+
+            this.gutterbox = gt;
+
+            this.timer = setTimeout(this.hide, 10000);
+        }
+
+        this.hide = function(e) {
+            if (this.gutterbox) {
+                document.body.removeChild(this.gutterbox);
+                this.gutterbox = null;
+            }
+            if (this.timer) {
+                clearTimeout(this.timer);
+                this.timer = null;
+            }
+        }
+        
+    }).call(GutnikBox.prototype);
+
+    new GutnikBox(editor);
+
 </script>
 
 </body>
