@@ -410,7 +410,7 @@ Assembler.prototype.parseDeclDB = function(args, addr, linenumber, dw) {
     var nbytes = 0;
     var arg_start = 0;
     var i, end_i;
-    for (i = 0, end_i = text.length; i < end_i; i+=1) {
+    for (i = 0, end_i = text.length; i < end_i && mode !== 10; i+=1) {
         var char = text[i];
         switch (mode) {
             case 0:
@@ -427,7 +427,9 @@ Assembler.prototype.parseDeclDB = function(args, addr, linenumber, dw) {
                     nbytes += len;
                     arg_start = i + 1;
                 } else if (char === ';') {
-                    i = text.length;
+                    // parse what's left, don't include the ';' symbol itself
+                    i -= 1;
+                    mode = 10;
                     break;
                 } 
                 break;
@@ -480,8 +482,70 @@ Assembler.prototype.setNewEncoding = function(encoding) {
     return -100000;
 };
 
+Assembler.prototype.splitParts = function(s)
+{
+    var parts = [];
+    var state = 0;
+    var cork = undefined;
+    var remainder = s.trimStart();
+    for(;state !== 100;) {
+        switch (state) {
+            case 0:
+                switch (remainder.charAt(0)) {
+                    case ';': 
+                        parts.push(remainder);
+                        state = 100;
+                        break;
+                    case '"':
+                        cork = '"';
+                        state = 10;
+                        break;
+                    case "'":
+                        cork = "'";
+                        state = 10;
+                        break;
+                    default:
+                        var at = remainder.search(/[\s]/);
+                        if (at >= 0) {
+                            parts.push(remainder.slice(0, at));
+                            remainder = remainder.slice(at).trimStart();
+                        } 
+                        else {
+                            parts.push(remainder);
+                            state = 100;
+                        }
+                        break;
+                }
+                break;
+            case 10:
+                var n = remainder.slice(1).search(cork);
+                if (n > 0) {
+                    n += 2;
+                    parts.push(remainder.slice(0, n));
+                    remainder = remainder.slice(n).trimStart();
+                    state = 0;
+                }
+                else {
+                    parts.push(remainder);
+                    remainder = '';
+                    state = 100;
+                }
+                break;
+            case 100:
+                break;
+        }
+        if (remainder.length == 0) {
+            break;
+        }
+    }
+    return parts;
+};
+
 Assembler.prototype.parseInstruction = function(s, addr, linenumber) {
-    var parts = s.split(/\s+/);
+    //var parts = s.split(/\s+/);
+
+    var parts = this.splitParts(s);
+    //console.log("splut prat=", this.splitParts(s));
 
     for (let i = 0; i < parts.length; i++) {
         if (parts[i][0] == ';') {
