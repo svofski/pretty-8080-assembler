@@ -76,7 +76,7 @@ function Assembler() {
     this.references = [];
     this.errors = [];
     this.regUsage = [];
-    this.listingText = "";
+    //this.listingText = "";
     this.gutterContent = [];
 }
 
@@ -548,16 +548,7 @@ Assembler.prototype.splitParts = function(s)
     return lines;
 };
 
-//Assembler.prototype.parseParts(parts, addr, linenumber) {
-//
-//}
-
 Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
-    //var parts = this.splitParts(s);
-    //console.log("splut prat=", this.splitParts(s));
-
-    //parts = parts[0];
-
     for (let i = 0; i < parts.length; i++) {
         if (parts[i][0] == ';') {
             parts.length = i;
@@ -592,10 +583,6 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
 
             result = 1;
             break;
-            //result += 1;
-            //addr += 1;
-            //parts = parts.slice(1);
-            //continue;
         }
 
         // immediate word
@@ -1323,7 +1310,7 @@ Assembler.prototype.assemble = function(src) {
         this.org = org;
     }
 
-    this.listingText = this.listing(inputlines, lengths, addresses);
+    //this.listingText = this.listing(inputlines, lengths, addresses);
     this.gutterContent = this.gutter(inputlines, lengths, addresses);
 };
 
@@ -1453,7 +1440,7 @@ self.addEventListener('message', function(e) {
     if (cmd == 'assemble') {
         asm.assemble(e.data['src']);
         self.postMessage(
-                {'listing':asm.listingText, 
+                {//'listing':asm.listingText, 
                     'gutter':asm.gutterContent,
                     'errors':asm.errors,
                     'textlabels':asm.textlabels,

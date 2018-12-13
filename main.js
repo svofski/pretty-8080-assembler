@@ -49,11 +49,12 @@
 // Rev.J: Backport from offline version: register highlighting
 // Rev.K: Target encodings support
 // Rev.L: use assembler worker, support base64 strings
+// Rev.M: version 2.0 integrates editor and listing, old stuff thrown away
 //
 // TODO: evaluation should ignore precedence, it's all left-to-right
 //
 
-var assembler;//new Assembler();
+var assembler;
 var assemblerWorker = new Worker('assembler.js');
 
 // -- global DOM elements
@@ -95,16 +96,6 @@ function updateReferences(ref, tls, labels, org) {
             asmcache.xref[text].push(i);
         }
     }
-
-    //for (var key in labels) {
-    //    if (labels.hasOwnProperty(key)) {
-    //        var value = labels[key];
-    //        if (!asmcache.xref[key]) {
-    //            asmcache.xref[key] = [];
-    //        }
-    //        asmcache.xref[key].push(value);
-    //    }
-    //}
 
     asmcache.org = org || 256;
 }
@@ -183,17 +174,11 @@ var last_src = null;
 
 // assembler main entry point
 function assemble() {
-    //var src = document.getElementById('source').innerText;
     var src = editor.session.getLines(0, editor.session.getLength()).join("\n");
 
     if (last_src === src) {
         return;
     } 
-
-    var list = document.getElementById('list');
-    list.savedScroll = list.scrollTop;
-
-    backrefWindow = false;
 
     if (assemblerWorker) {
         last_src = src;
@@ -202,46 +187,36 @@ function assemble() {
             listing_listener_added = true;
             assemblerWorker.addEventListener('message',
                     function(e) {
-                        var listing = e.data['listing'];
-                        if (listing) {
-                            console.log('assembler worker done');
-                            list.innerHTML = '';
-                            list.innerHTML += e.data['listing'];
-                            var gut = e.data['gutter'] || [];
-                            editor.session.gutter_contents = gut;
+                        var gut = e.data['gutter'] || [];
+                        editor.session.gutter_contents = gut;
 
-                            var mrkrs = editor.session.mymarkers || [];
-                            for (var i = 0; i < mrkrs.length; ++i) {
-                                editor.session.removeMarker(mrkrs[i]);
-                            }
-                            editor.session.mymarkers = [];
-                            
-                            for (var i = 0; i < gut.length; ++i) {
-                                if (gut[i].error) {
-                                    editor.session.mymarkers.push(
-                                        editor.session.addMarker(
-                                            new Range(i,0,i,1),
-                                            "error_marker", "fullLine"));
-                                }
-                            }
-
-                            editor.resize(true);
-                            var references = e.data['references'];
-                            var textlabels = e.data['textlabels'];
-                            var labels = e.data['labels'];
-                            var org = e.data['org'];
-                            updateReferences(references, textlabels, labels, org);
-                            list.scrollTop = list.savedScroll;//savedScroll;
-                            updateSizes();
-                            autotranslate = false;
+                        var mrkrs = editor.session.mymarkers || [];
+                        for (var i = 0; i < mrkrs.length; ++i) {
+                            editor.session.removeMarker(mrkrs[i]);
                         }
+                        editor.session.mymarkers = [];
+                            
+                        for (var i = 0; i < gut.length; ++i) {
+                            if (gut[i].error) {
+                                editor.session.mymarkers.push(
+                                    editor.session.addMarker(
+                                        new Range(i,0,i,1),
+                                        "error_marker", "fullLine"));
+                            }
+                        }
+
+                        editor.resize(true);
+                        var references = e.data['references'];
+                        var textlabels = e.data['textlabels'];
+                        var labels = e.data['labels'];
+                        var org = e.data['org'];
+                        updateReferences(references, textlabels, labels, org);
+                        updateSizes();
+                        autotranslate = false;
                     });
         }
     } else if (assembler) {
         assembler.assemble(src);
-        list.innerHTML += assembler.listingText;
-
-        list.scrollTop = list.savedScroll;
         updateSizes();
         last_src = src;
         autotranslate = false;
@@ -287,381 +262,11 @@ function keydown(e) {
     return true;
 }
 
-function scrollMark(location) {
-    scrollHistory[scrollHistory.length] = location;
-    if (scrollHistory.length > 32) {
-        scrollHistory = scrollHistory.slice(1);
-    }
-}
-
-// gobak i sosak
-function scrollBack() {
-    if (scrollHistory.length === 0) return;
-
-    var dest = scrollHistory[scrollHistory.length - 1];
-    scrollHistory.length = scrollHistory.length - 1;
-
-    var l = document.getElementById('list');
-    l.scrollTop = dest;
-
-    magicToolbar(0);
-}
-
-// -- Highlighting and navigation --
-
-var highlightTimeout = false;
-var highlightTimeout2 = false;
-var highlightLabel = false;
-var highlightLineNo = false;
-var highlightLines = [];
-var highlightArrow = false;
-var highlightOrigin = false;
-var highlightDir = false;
-var highlightDelayed = false;
-
 // backreferences window
 var backrefTimeout = false;
-var backrefWindow = false;
-var backrefTop = 0, backrefLeft = 0;
-var backrefLabel = "?";
-
 var referencingLinesFull = [];
 
-function startHighlighting(lineno, label) {
-    if (highlightTimeout === false) {
-        highlightLineNo = lineno;
-        highlightOrigin = document.getElementById('code'+lineno);
-        highlightTimeout = setTimeout(function() { highlightStage1(); }, 500);
-        if (label !== undefined) {
-            highlightLabel = label;
-        } else {
-            highlightLabel = false;
-        }
-    }
-}
-
-function xscrollTo(n, dontdelay) {
-    if (!dontdelay) {
-        highlightDelayed = true;
-    }
-    var l = document.getElementById('list');
-    scrollMark(l.scrollTop);
-
-    l.scrollTop = n;
-
-    if (highlightOrigin) {
-        highlightOrigin.removeAttribute('onclick');
-        highlightOrigin.style.cursor = null;
-    }
-    if (highlightArrow) {
-        highlightOrigin.removeChild(highlightArrow);
-    }
-}
-
-function highlightStage1() {
-    if (!highlightLabel) {
-        highlightLabel = getReferencedLabel(highlightLineNo);
-    }
-    if (highlightLabel) {
-        var listElement = document.getElementById('list');
-        var scrollTop = listElement.scrollTop;
-        var height = getListHeight();
-
-        // highlightLabel would only have relative offsetTop in Opera
-        var labelTop = highlightLabel.parentNode.offsetTop;
-        var labelHeight = highlightLabel.offsetHeight;
-
-        if (highlightArrow === false && (labelTop-labelHeight) <= scrollTop) {
-            highlightArrow = document.createElement('span');
-            highlightArrow.innerHTML = '&#x25b2;'; //uarr
-            highlightDir = 'uarr';
-        } else if (highlightArrow === false && labelTop > scrollTop+height) {
-            highlightArrow = document.createElement('span');
-            highlightArrow.innerHTML = '&#x25bc;'; //darr
-            highlightDir = 'darr';
-        }
-
-        if (highlightArrow !== false) {
-            highlightArrow.className = highlightDir+1;
-
-            highlightOrigin.insertBefore(highlightArrow, highlightOrigin.firstChild);
-            highlightArrow.style.display='inline-block';
-            highlightArrow.style.marginLeft ='-4em';
-            highlightArrow.style.paddingLeft ='2em';
-            highlightArrow.style.width = '2em';
-
-            highlightOrigin.setAttribute('onclick', 
-                    'xscrollTo('+(labelTop-height/2)+'); return false;');
-            highlightOrigin.style.cursor = 'pointer';
-        }
-
-        highlightLabel.className += ' highlight1';
-    } 
-    highlightTimeout = setTimeout(function() { highlightStage2(); }, 50);
-}
-
-function highlightStage2() {
-    if (highlightLabel) {
-        highlightLabel.className = highlightLabel.className.replace('highlight1', 
-                'highlight2');
-    }
-    if (highlightArrow !== false) {
-        highlightArrow.className = highlightDir + 2;
-    }
-    highlightTimeout = setTimeout(function() { highlightStage3(); }, 100);
-}
-
-function highlightStage3() {
-    if (highlightLabel) {
-        highlightLabel.className = highlightLabel.className.replace('highlight2', 
-                'highlight3');
-    }
-    if (highlightArrow !== false) {
-        highlightArrow.className = highlightDir + 3;
-    }
-}
-
-function endHighlighting(lineno) {
-    if (lineno === -2) {
-        highlightTimeout2 = setTimeout(function() { endHighlighting(-1); }, 1000);
-        highlightStage1();
-        return;
-    } else if (lineno === -1) {
-        highlightDelayed = false;
-        highlightTimeout2 = false;
-    } else {
-        if (highlightDelayed) {
-            if (highlightTimeout2 === false) {
-                highlightTimeout2 = setTimeout(function() { endHighlighting(-2); }, 350);
-            }
-            return;
-        }
-    }
-
-    clearTimeout(highlightTimeout);
-    highlightTimeout = false;
-    if (highlightLabel) {
-        if (highlightLabel.className !== undefined) {
-            highlightLabel.className = highlightLabel.className.replace(/ .*/, '');
-        }
-        highlightLabel = undefined;
-    }
-    for (var src = 0; src < highlightLines.length; src++) {
-        highlightLines[src].className = null;//'srchl0';
-    }
-    highlightLines.length = 0;
-
-    if (highlightArrow !== false) {
-        if (highlightArrow.parentNode !== null) {
-            highlightArrow.parentNode.removeChild(highlightArrow);
-        }
-        highlightArrow = false;
-    }
-    if (highlightOrigin) {
-        highlightOrigin.removeAttribute('onclick');
-        highlightOrigin.style.cursor = null;
-    }
-}
-
-function formatBackrefText(element) {
-    formatBackrefText.spaces = "         ";
-    var label = "";
-    var text = "";
-    var adr;
-    for (var i = 0; i < element.childNodes.length; i++) {
-        var child = element.childNodes[i];
-        if (child.id === undefined) continue;
-        if (child.id.indexOf("label") === 0) {
-            label = child.innerHTML;
-        } else if (child.id.indexOf("code") === 0) {
-            text = child.innerHTML;
-        } else if (child.className === "adr") {
-            adr = child.innerHTML;
-        }
-    }
-
-    if (label.length < formatBackrefText.spaces.length) {
-        label += formatBackrefText.spaces.substring(label.length);
-    }
-
-    return [adr,label,text].join(' ').replace(/ /g,'&nbsp;');
-}
-
-function showBackrefReturn(on) {
-    var sosak = document.getElementById('backrefgoback');
-    if (sosak !== undefined) {
-        sosak.style.display= on ? 'block' : 'none';
-    }
-    return false;
-}
-
-function backrefHintLine(n) {
-    if (n === -1) {
-        if (backrefHintLine.unhint !== undefined) {
-            backrefHintLine.unhint.className = null;
-            backrefHintLine.unhint = undefined;
-        }
-        return;
-    }
-    backrefHintLine(-1);
-    var line = document.getElementById(n);
-    if (line !== undefined) {
-        backrefHintLine.unhint = line.childNodes[line.childNodes.length-1];
-        backrefHintLine.unhint.className = 'srchl3';
-    }
-}
-
-function startBackrefWindow(lineno) {
-    if (lineno != -1) {
-        highlightLines = getReferencingLines(lineno);
-        highlightOrigin = document.getElementById('code'+lineno);
-        backrefLabel = document.getElementById('label'+lineno);
-        setTimeout(function() { startBackrefWindow(-1); }, 250);
-        return;
-    }
-    if (backrefTimeout === false &&
-            highlightLines.length > 0) {
-        backrefTimeout = setTimeout(function() { showBackref(0); }, 500);
-        backrefLeft = backrefLabel.offsetLeft;
-        backrefTop = highlightOrigin.offsetTop + 4;
-        backrefTop += backrefLabel.offsetHeight;
-        var list = document.getElementById('list');
-        if (!inTheOpera) {
-            backrefTop -= document.getElementById('list').scrollTop;
-        }
-    }
-}
-
-function showBackref(n) {
-    if (n === 0) {
-        endHighlighting(0);
-        var list = document.getElementById('list');
-        var height = getListHeight();
-        backrefTimeout = false;
-        // start display
-        if (!backrefWindow) {
-            backrefWindow = document.createElement('div');
-            backrefWindow.id = 'backrefpopup';
-            backrefWindow.style.position = 'fixed';
-            backrefWindow.setAttribute("onmouseover",
-                    "clearTimeout(backrefTimeout);backrefTimeout=false;return false;");
-            backrefWindow.setAttribute("onmouseout",
-                    "showBackref(-1);return false;");
-            document.getElementById('list').appendChild(backrefWindow);
-        }
-        backrefWindow.style.left = backrefLeft + 'px';
-        backrefWindow.style.top = backrefTop + 'px';
-        backrefWindow.style.display = 'block';
-
-        backrefWindow.innerHTML = '';
-        for (var src = 0; src < referencingLinesFull.length; src++) {
-            var labelTop = referencingLinesFull[src].offsetTop;
-            var text = formatBackrefText(referencingLinesFull[src]);
-            var scrollTo = labelTop - backrefTop + 18;
-
-            backrefWindow.innerHTML += 
-                '<div onclick="xscrollTo('+scrollTo+');' +
-                'backrefHintLine(\'' + referencingLinesFull[src].id +'\');' +
-                'showBackrefReturn(1);' +
-                'return false;"' +
-                ' class="brmenuitem" ' +
-                '>' +
-                text + 
-                '</div>';
-        }
-        // append return
-        var returnTo = list.scrollTop;
-        backrefWindow.innerHTML += 
-            '<div id="backrefgoback" onclick="xscrollTo(' +returnTo+ ');'+
-            'showBackref(-1);return false;"' +
-            ' class="brmenuitem" ' +
-            ' style="border-top:1px solid black;font-size:120%;">' +
-            '&nbsp;&#x25c0;&nbsp;' + backrefLabel.innerHTML +
-            '</div>';
-        showBackrefReturn(0);
-        backrefWindow.style.opacity = 0;
-        showBackref.opacity = 0;
-        showBackref(1);
-    }
-
-    if (n === 1) {
-        if (backrefWindow.style.opacity >= 0.9) {
-            backrefTimeout = false;
-        } else {
-            showBackref.opacity += 0.3;
-            backrefWindow.style.opacity = showBackref.opacity;
-            setTimeout(function() { showBackref(1); }, 50);
-        }
-    }
-
-    // start hiding
-    if (n === -1) {
-        clearTimeout(backrefTimeout);
-        backrefTimeout = setTimeout(function() { showBackref(-2); }, 100);
-        backrefHintLine(-1);
-    }
-
-    if (n === -2) {
-        clearTimeout(backrefTimeout);
-        backrefTimeout = false;
-        if (backrefWindow !== false) {
-            backrefWindow.style.display = 'none';
-        }
-    }
-
-    return false;
-}
-
-function mouseover(lineno) {
-    startHighlighting(lineno);
-    return false;
-}
-
-function mouseovel(lineno) {
-    startBackrefWindow(lineno);
-    return false;
-}
-
-function mouseout(lineno) {
-    endHighlighting(lineno);
-    showBackref(-1);
-    return false;
-}
-
-function getRuleset(selector) {
-    var rules = document.styleSheets[1].cssRules;
-    for (var i = 0; i < rules.length; i++) {
-        if (rules[i].selectorText === selector) {
-            return rules[i];
-        }
-    }
-    return undefined;
-}
-
-function rgmouseover(className) {
-    var list = [].concat(className);
-
-    for (var i = 0; i < list.length; i++) {
-        var ruleset = getRuleset("."+list[i]);
-        if (ruleset !== undefined) {
-            ruleset.style["color"] = "#ff3020";
-        }
-    }
-}
-
-function rgmouseout(className) {
-    var list = [].concat(className);
-
-    for (var i = 0; i < list.length; i++) {
-        var ruleset = getRuleset("."+list[i]);
-        if (ruleset !== undefined) {
-            ruleset.style["color"] = "blue";
-        }
-    }
-}
-
 function boo() {
-    //var d = document.createElement('div');
     document.body.innerHTML = 
         '<h1>Unfortunately&#0133;</h1>' +
         '<p>The <b>Pretty 8080 Assembler</b> only works in Internet Browsers.</p>' +
@@ -894,10 +499,6 @@ function loaded() {
 
     updateSizes();
 
-    //var source = document.getElementById("source");
-    //if (source) {
-    //    source.oninput = keypress;
-    //}
     editor.session.on('change', keypress);
 
     var translate = document.getElementById('dl-bin');
@@ -1083,7 +684,6 @@ function create_ryba_menu()
     for (var k in rybas) {
         console.log("ryba ", k, rybas[k][0], rybas[k][1]);
         var item = document.createElement("div");
-        //item.class = "ryba-item";
         item.setAttribute("class", "ryba-item");
         item.innerText = rybas[k][0];
         (function(href) {
