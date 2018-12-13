@@ -16,80 +16,63 @@ var AssemblyX86HighlightRules = function() {
            +'|j(?:mp|nz|z|nc|c|po|pe|p|m))\\b';
     this.reg = '\\b(a|b|c|d|e|h|l|sp|psw|m)\\b';
     this.expr = '([a-zA-Z_+-<>]+)\\b';
-    this.$rules = { start: 
-       [ 
-	 { token: ['keyword.control.assembly', 
-             'text', 
-             'variable.parameter.register.assembly',
-             'text', 
-             'variable.parameter.register.assembly'],
-	   regex: this.instr + '(\\s+)' + this.reg + '(\\s*,\\s*)' + this.reg },
-
-	 { token: ['keyword.control.assembly', 
-             'text', 
-             'variable.parameter.register.assembly',
-             'text', 
-             'entity.name.function.assembly'],
-	   regex: this.instr + '(\\s+)' + this.reg + '(\\s*,\\s*)' + this.expr },
-
-	 { token: ['keyword.control.assembly', 
-             'text', 
-             'variable.parameter.register.assembly'],
-	   regex: this.instr + '(\\s+)' + this.reg },
-
-	 { token: ['keyword.control.assembly', 
-             'text', 
-             'entity.name.function.assembly'],
-	   regex: this.instr + '(\\s+)' + this.expr },
-
-	 { token: 'keyword.control.assembly', 
-	   regex: this.instr },
-
-	 
-//	 { token: ['keyword.control.assembly', 'text', 'entity.name.function.assembly'],
-//	   regex: this.instr + '(\\s+)' + '(.+)\\b' },
-	
-//         { token: 'variable.parameter.register.assembly',
-//           regex: this.reg,
-//           caseInsensitive: true },
-         { token: 'constant.character.hexadecimal.assembly',
-           regex: '\\b0x[A-F0-9]+\\b',
-           caseInsensitive: true },
-         { token: 'constant.character.hexadecimal.assembly',
-           regex: '\\b[A-F0-9]+h\\b',
-           caseInsensitive: true },
-         { token: 'constant.character.hexadecimal.assembly',
-             regex: '\\$[A-F0-9]+\\b', // $ seems to conflict with word boundary
-           caseInsensitive: true },
-         { token: 'constant.character.octal.assembly',
-           regex: '\\b[0-7]+q\\b',
-           caseInsensitive: true },
-         { token: 'constant.character.binary.assembly',
-           regex: '\\b[01]+b\\b',
-           caseInsensitive: true },
-         { token: 'constant.character.decimal.assembly',
-           regex: '\\b[0-9]+\\b' },
-//
-         { token: 'string.assembly', regex: /'([^\\']|\\.)*'/ },
-         { token: 'string.assembly', regex: /"([^\\"]|\\.)*"/ },
-//         { token: ['text','entity.name.function.assembly'], regex: '(\\s*,\\s*)(.+)' },
-         { token: 
-            [ 'text',
-              'support.function.directive.assembly',
-              'text',
-              'entity.name.function.assembly',
-              'text',
-              'entity.name.function.assembly',
-            ],
-           regex: '(\\s*)(org|equ|project|tape|encoding|cpu|db|dw|ds|db64)\\b( ?)((?:[_a-zA-Z][\-\._a-zA-Z0-9]*)?)( ?)((?:[a-zA-Z0-9_\.\$\-]+)?)',
-           caseInsensitive: true },
-           
-         { token: 'entity.name.function.assembly',
-             regex: '^[_a-zA-Z][_a-zA-Z0-9]+(\:?)'},
-         { token: 'comment.assembly', regex: ';.*$' } 
-           ] 
+    this.$rules = {
+        start:
+        [ 
+            {
+                token: 'keyword.control.assembly',
+                regex: this.instr,
+                next: 'args',
+                caseInsensitive: true,
+            },
+            {
+                token: 'support.function.directive.assembly',
+                regex: '\\b(org|equ|project|tape|encoding|cpu|db|dw|ds|db64)\\b',
+                caseInsensitive: true,
+                next: 'args',
+            },
+            { token: 'comment.assembly', regex: ';.*$' },
+            { token: 'entity.name.function.assembly',
+              regex: '[_a-zA-Z][_a-zA-Z0-9]+(\:?)'},
+        ],
+        args:
+        [
+            {
+                token: 'text',
+                regex: '(\\\\|$|^)',
+                next: 'start',
+            },
+            {
+                token: 'variable.parameter.register.assembly',
+                regex: this.reg
+            },
+            { token: 'constant.character.hexadecimal.assembly',
+                regex: '\\b0x[A-F0-9]+\\b',
+                caseInsensitive: true },
+            { token: 'constant.character.hexadecimal.assembly',
+                regex: '\\b[A-F0-9]+h\\b',
+                caseInsensitive: true },
+            { token: 'constant.character.hexadecimal.assembly',
+                regex: '\\$[A-F0-9]+\\b', // $ seems to conflict with word boundary
+                caseInsensitive: true },
+            { token: 'constant.character.octal.assembly',
+                regex: '\\b[0-7]+q\\b',
+                caseInsensitive: true },
+            { token: 'constant.character.binary.assembly',
+                regex: '\\b[01]+b\\b',
+                caseInsensitive: true },
+            { token: 'constant.character.decimal.assembly',
+                regex: '\\b[0-9]+\\b' },
+            //
+            { token: 'string.assembly', regex: /'([^\\']|\\.)*'/ },
+            { token: 'string.assembly', regex: /"([^\\"]|\\.)*"/ },
+            //
+            { token: 'entity.name.function.assembly',
+              regex: '[_a-zA-Z][_a-zA-Z0-9]+(\:?)'},
+            { token: 'comment.assembly', regex: ';.*$', next: 'start' } 
+        ]
     };
-    
+   
     this.normalizeRules();
 };
 
