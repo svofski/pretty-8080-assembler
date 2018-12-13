@@ -288,7 +288,7 @@ delay:
             for (var k = 0; k < xrefs.length; ++k) { 
                 var i = xrefs[k];
                 var text = this.editor.session.getLine(i);
-                var begin = text.indexOf(label);
+                var begin = text.search('\\b' + label + '\\b');
                 var range = new Range(i, begin, i, begin + label.length);
                 result.push(this.editor.session.addMarker(range, "ace_xref", "text"));
             }
