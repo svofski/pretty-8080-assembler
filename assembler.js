@@ -1446,6 +1446,7 @@ self.addEventListener('message', function(e) {
                     'textlabels':asm.textlabels,
                     'references':asm.references,
                     'labels':asm.labels,
+                    'kind':'assemble',
                 });
     } 
     else if (cmd == 'getmem') {

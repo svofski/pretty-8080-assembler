@@ -187,6 +187,7 @@ function assemble() {
             listing_listener_added = true;
             assemblerWorker.addEventListener('message',
                     function(e) {
+                        if (e.data['kind'] !== 'assemble') return;
                         var gut = e.data['gutter'] || [];
                         editor.session.gutter_contents = gut;
 

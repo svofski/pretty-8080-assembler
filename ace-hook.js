@@ -137,8 +137,8 @@ oop.inherits(TokenTooltip, Tooltip);
 
     this.collectXrefs = function(label) {
         var result = [];
-        xrefs = asmcache.xref[label.toLowerCase()];
-        for (var k = 0; k < xrefs.length; ++k) { 
+        var xrefs = asmcache.xref[label.toLowerCase()];
+        for (var k = 0; xrefs && k < xrefs.length; ++k) { 
             var i = xrefs[k];
             var text = this.editor.session.getLine(i);
             var begin = text.search('\\b' + label + '\\b');
