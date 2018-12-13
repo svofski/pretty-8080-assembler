@@ -511,7 +511,7 @@ Assembler.prototype.splitParts = function(s)
                         remainder = remainder.slice(1).trimStart();
                         break;
                     default:
-                        var at = remainder.search(/[\s\\;]/);
+                        var at = remainder.search(/[\s\\;"']/);
                         if (at >= 0) {
                             parts.push(remainder.slice(0, at));
                             remainder = remainder.slice(at).trimStart();
