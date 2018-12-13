@@ -152,26 +152,10 @@ _putchar:
     dad d        ; hl -> destination
 
     ; gruu the bits in
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
 
     lhld __savedsp
     sphl

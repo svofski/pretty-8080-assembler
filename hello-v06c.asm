@@ -151,26 +151,10 @@ _putchar:
     dad d        ; hl -> destination
 
     ; Выдавить биты на экран
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
-    pop b
-    mov m, c
-    dcr l
-    mov m, b
-    dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
+    pop b\ mov m, c\ dcr l\ mov m, b\ dcr l
 
     lhld __savedsp
     sphl
