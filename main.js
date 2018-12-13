@@ -69,6 +69,7 @@ function Asmcache() {
     this.references = [];
     this.textlabels = [];
     this.binFileName = "";
+    this.labels = [];
 }
 var asmcache = new Asmcache();
 

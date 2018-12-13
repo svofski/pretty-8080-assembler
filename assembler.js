@@ -1374,6 +1374,7 @@ Assembler.prototype.evaluateExpression = function(input, addr0) {
     if (!input) {
         return -1;
     }
+    input = input.toLowerCase();
     var q = input.split(/<<|>>|[+\-*\/()\^\&\|]/);
     var expr = '';
     for (var ident = 0; ident < q.length; ident++) {
