@@ -4,4 +4,4 @@ Works right in the browser. The code is being translated immediately as you type
 
 It is hosted at https://svofski.github.io/pretty-8080-assembler/ — go there and give it a try.
 
-(c) 2009-2016 Viacheslav Slavinsky http://sensi.org/~svo
+(c) 2009-2018 Viacheslav Slavinsky http://sensi.org/~svo
