@@ -1045,6 +1045,8 @@ var rybas =
     "line-ei": ["Вектор-06ц: быстрая линия", "line-ei.asm"],
 
     "circle": ["Вектор-06ц: окружность", "circle.asm"],
+    "circlearc": ["Вектор-06ц: дуга", "circleArc.asm"],
+    "circleellip": ["Вектор-06ц: эллипс", "circleClipAndEllip.asm"],
     
 };
 
