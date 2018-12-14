@@ -60,8 +60,8 @@ importScripts('tape.js');
 function Assembler() {
     this.debug = false;
     this.tapeFormat = 'rk-bin';
-    this.doHexDump = true;
-    this.doIntelHex = true;
+    this.doHexDump = false;
+    this.doIntelHex = false;
     this.targetEncoding = 'koi8-r';
     this.project = "test";
 
@@ -231,8 +231,9 @@ Assembler.prototype.clearLabels = function() {
 
 Assembler.DecimalDigits = "0123456789";
 
+/* try to resolve a number literal, return value or undefined */
 Assembler.prototype.resolveNumber = function(identifier) {
-    if (identifier === undefined || identifier.length === 0) return;
+    if (identifier === undefined || identifier.length === 0) return undefined;
 
     var first = identifier[0];
     if ((first === "'" || first === '"') && identifier.length === 3) {
@@ -244,7 +245,8 @@ Assembler.prototype.resolveNumber = function(identifier) {
         return test;
     }
 
-    if (Assembler.DecimalDigits.indexOf(identifier[0]) != -1) {
+    //if (Assembler.DecimalDigits.indexOf(identifier[0]) != -1) {
+    if (identifier.match(/^[+-]?[0-9]+/)) {
         let test = Number(identifier);
         if (!isNaN(test)) {
             return test.valueOf();
@@ -273,7 +275,7 @@ Assembler.prototype.resolveNumber = function(identifier) {
             case 'q':
                 var oct = identifier.substr(0, identifier.length-1);
                 for (var i = oct.length; --i >= 0;) {
-                    if (oct[i] == '8' || oct[i] == '9') return -1;
+                    if (oct[i] == '8' || oct[i] == '9') return undefined;
                 }
                 var octaltest = parseInt(oct, 8);
                 if (!isNaN(octaltest)) {
@@ -282,7 +284,7 @@ Assembler.prototype.resolveNumber = function(identifier) {
                 break;
         }
     }
-    return -1;
+    return undefined;
 };
 
 Assembler.prototype.referencesLabel = function(identifier, linenumber) {
@@ -291,11 +293,13 @@ Assembler.prototype.referencesLabel = function(identifier, linenumber) {
     }
 };
 
+/* return { number: <value>, label: <-2...> } */
 Assembler.prototype.markLabel = function(identifier_, address, linenumber, override, updateReference) {
-    var id = identifier_.replace(/\$([0-9a-fA-F]+)/, '0x$1'); 		// make sure that $ in hexes is replaced
+    var id = identifier_.replace(/\$([0-9a-fA-F]+)/, '0x$1');   // make sure that $ in hexes is replaced
     id = id.replace(/(^|[^'])(\$|\.)/, ' '+address+' '); 	// substitute $/. with address
-    var result = this.resolveNumber(id.trim());
-    if (result === -1) {
+    var result = {};
+    result.number = this.resolveNumber(id.trim());
+    if (result.number === undefined) {
         if (linenumber === undefined) {
             this.LabelsCount++;
             address = -1 - this.LabelsCount;
@@ -322,7 +326,8 @@ Assembler.prototype.markLabel = function(identifier_, address, linenumber, overr
         if (updateReference) {
             this.referencesLabel(identifier_ /* sic! */, linenumber);
         }
-        result = address;
+        //result = address;
+        result.label = address;
     }			
     return result;
 };
@@ -370,20 +375,36 @@ Assembler.parseRegister = function(s) {
 Assembler.prototype.tokenDBDW = function(s, addr, length, linenumber) {
     s = s.trim();
     if (s.length === 0) return 0;
-    var size = -1;
-    var n = this.markLabel(s, addr);
+    var mark = this.markLabel(s, addr);
     this.referencesLabel(s, linenumber);
 
     var len = length ? length : 1;
-    if (len === 1 && n < 256) {
-        this.setmem8(addr, n);
-        size = 1;
-    } else if (len === 2 && n < 65536) {
-        this.setmem16(addr, n); 
-        size = 2;
+    if (len === 1) {
+        if (mark.number !== undefined) {
+            if (mark.number >= -128 && mark.number < 256) {
+                this.setmem8(addr, mark.number & 0xff);
+            }
+            else {
+                len = -1;
+            }
+        } else {
+            this.setmem8(addr, mark.label);
+        }
+    } 
+    else if (len === 2) {
+        if (mark.number !== undefined) {
+            if (mark.number >= -32768 && mark.number < 65536) {
+                this.setmem16(addr, mark.number & 0xffff);
+            }
+            else {
+                len = -1;
+            }
+        } else {
+            this.setmem16(addr, mark.label); 
+        }
     }
 
-    return size;
+    return len;
 };
 
 Assembler.prototype.tokenString = function(s, addr, linenumber) {
@@ -467,9 +488,9 @@ Assembler.prototype.useExpr = function(s, addr, linenumber) {
     var expr = this.getExpr(s);
     if (expr === undefined || expr.trim().length === 0) return false;
 
-    var immediate = this.markLabel(expr, addr);
+    var m = this.markLabel(expr, addr);
     this.referencesLabel(expr, linenumber);
-    return immediate;
+    return m;
 };
 
 Assembler.prototype.setNewEncoding = function(encoding) {
@@ -590,13 +611,15 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
             this.mem[addr] = opcs;
 
             immediate = this.useExpr(parts.slice(1), addr, linenumber);
-
-            if (immediate < 65536) {
-                this.setmem16(addr+1, immediate);
-            } 
+            if (immediate.number !== undefined) {
+                if (immediate.number >= -32768 && immediate.number < 65536) {
+                    this.setmem16(addr+1, immediate.number & 0xffff);
+                }
+                // if value does not fit in range, it's an error
+                // but the instruction size will be correct
+            }
             else {
-                result = -2;
-                break;
+                this.setmem16(addr+1, immediate.label);
             }
 
             if (["lhld", "shld"].indexOf(mnemonic) != -1) {
@@ -619,13 +642,14 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
 
             this.mem[addr] = opcs | (rp << 4);
 
-            immediate = this.useExpr(subparts.slice(1), addr, linenumber);
-            if (immediate < 65536) {
-                this.setmem16(addr+1, immediate);
+            var use = this.useExpr(subparts.slice(1), addr, linenumber);
+            if (use.number !== undefined) {
+                if (use.number >= -32768 && use.number < 65536) {
+                    this.setmem16(addr+1, use.number & 0xffff);
+                }
             } 
             else {
-                result = -2;
-                break;
+                this.setmem16(addr+1, use.label);
             }
             regusage = ['@'+subparts[0].trim()];
             if (["h","d"].indexOf(subparts[0].trim()) != -1) {
@@ -640,8 +664,17 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
         if ((opcs = Assembler.opsIm8[mnemonic]) !== undefined) {
             this.mem[addr] = opcs;
             immediate = this.useExpr(parts.slice(1), addr, linenumber);
-            if (immediate < 256) {
-                this.setmem8(addr+1, immediate);
+            if (immediate.number !== undefined) {
+                if (immediate.number >= -128 && immediate.number < 256) {
+                    this.setmem8(addr+1, immediate.number & 0xff);
+                }
+                else {
+                    result = -2;
+                    break;
+                }
+            }
+            else {
+                this.setmem8(addr+1, immediate.label);
             }
 
             if (["sui", "sbi", "xri", "ori", "ani", "adi", "aci", "cpi"].indexOf(mnemonic) != -1) {
@@ -668,15 +701,16 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
             this.mem[addr] = opcs | reg << 3;
 
             immediate = this.useExpr(subparts.slice(1), addr, linenumber);
-            if (immediate < 256) {
-                this.setmem8(addr+1, immediate);
-            } else {
-                result = -2;
-                break;
+            if (immediate.number !== undefined) {
+                if (immediate.number >= -128 && immediate.number < 256) {
+                    this.setmem8(addr+1, immediate.number & 0xff);
+                } 
+                // if value does not fit in range, it's an error
+                // but the instruction size will be correct
             }
-
-            //this.setmem8(addr+1, immediate);
-
+            else {
+                this.setmem8(addr+1, immediate.label);
+            }
             regusage = [subparts[0].trim()];
 
             result = 2;			
@@ -945,9 +979,7 @@ Assembler.prototype.dumpspan = function(org, mode) {
 };
 
 Assembler.prototype.dump = function() {
-    //var org;
-    //for (org = 0; org < this.mem.length && this.mem[org] === undefined; org++);
-    var org = this.org;
+    var org = 0;
 
     if (org % 16 !== 0) org = org - org % 16;
 
@@ -1111,11 +1143,16 @@ Assembler.prototype.gutter = function(text,lengths,addresses) {
     for(var i = 0, end_i = text.length; i < end_i; i += 1) {
         var unresolved = false;
         var width = 0;
-        var hexes = new Uint8Array(lengths[i]);
+        var hexes = new Int32Array(lengths[i]);
         for (let b = 0; b < lengths[i]; ++b) {
             var bytte = this.mem[addresses[i]+b];
-            if (bytte < 0) unresolved = true;
-            hexes[b] = bytte;
+            if (bytte === undefined || bytte < 0) {
+                unresolved = true;
+                hexes[b] = -1;
+            } 
+            else {
+                hexes[b] = bytte;
+            }
         }
 
         var err = this.errors[i] || unresolved !== false;
@@ -1159,7 +1196,7 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
         }
 
         // processRegUsage will add tags to remainder so it cannot be truncated after this
-        remainder = this.processRegUsage(remainder, i);
+        //remainder = this.processRegUsage(remainder, i);
 
         var id = "l" + i;
         var labelid = "label" + i;
@@ -1189,10 +1226,12 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
                 hexes);
 
         if (labeltext.length > 0) {
-            result.push('<span class="l" id="' + labelid + '"' +
-                    ' onmouseover="return mouseovel('+i+');"' + 
-                    ' onmouseout="return mouseout('+i+');"' +
-                    '>' + labeltext + '</span>');
+            result.push('<span class="l" id="' + labelid + '">' + labeltext +
+                '</span>');
+            //result.push('<span class="l" id="' + labelid + '"' +
+            //        ' onmouseover="return mouseovel('+i+');"' + 
+            //        ' onmouseout="return mouseout('+i+');"' +
+            //        '>' + labeltext + '</span>');
         }
         var padding = '';
         for (var b = 0; b < remainder.length && Util.isWhitespace(remainder[b]); b++) {
@@ -1201,10 +1240,11 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
         result.push(padding);
         remainder = remainder.substring(b);
         if (remainder.length > 0) {
-            result.push('<span id="' + remid + '"' +
-                    ' onmouseover="return mouseover('+i+');"' + 
-                    ' onmouseout="return mouseout('+i+');"' +
-                    '>' + remainder + '</span>');
+            result.push('<span id="' + remid + '">' + remainder + '</span>');
+            //result.push('<span id="' + remid + '"' +
+            //        ' onmouseover="return mouseover('+i+');"' + 
+            //        ' onmouseout="return mouseout('+i+');"' +
+            //        '>' + remainder + '</span>');
         }
 
         if (comment.length > 0) {
@@ -1227,7 +1267,7 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
             }
             result.push(subresult + "<br/>");
         }
-        result.push('</pre>');
+        result.push('</pre>\n');
 
         addr += lengths[i];
     }
@@ -1254,7 +1294,7 @@ Assembler.prototype.error = function(line, text) {
 };
 
 // assembler main entry point
-Assembler.prototype.assemble = function(src) {
+Assembler.prototype.assemble = function(src,listobj) {
     var lengths = Array();
     var addresses = Array();
 
@@ -1268,7 +1308,6 @@ Assembler.prototype.assemble = function(src) {
     this.references.length = 0;
     this.textlabels.length = 0;
     this.errors.length = 0;
-    this.doHexDump = true;
     this.postbuild = '';
     this.objCopy = 'gobjcopy';
     this.hexText = '';
@@ -1310,8 +1349,10 @@ Assembler.prototype.assemble = function(src) {
         this.org = org;
     }
 
-    //this.listingText = this.listing(inputlines, lengths, addresses);
     this.gutterContent = this.gutter(inputlines, lengths, addresses);
+    if (listobj) {
+        listobj.text = this.listing(inputlines, lengths, addresses);
+    }
 };
 
 
@@ -1352,7 +1393,7 @@ Assembler.prototype.evalInvoke = function(expr) {
         //console.log(err);
     }
 
-    return -1;
+    return undefined;
 };
 
 Assembler.prototype.evaluateExpression = function(input, addr0) {
@@ -1366,7 +1407,7 @@ Assembler.prototype.evaluateExpression = function(input, addr0) {
     var expr = '';
     for (var ident = 0; ident < q.length; ident++) {
         var qident = q[ident].trim();
-        if (-1 != this.resolveNumber(qident)) continue;
+        if (this.resolveNumber(qident) !== undefined) continue;
         var addr = this.labels[qident];//.indexOf(qident);
         if (addr !== undefined) {
             //addr = this.labels[idx+1];
@@ -1396,7 +1437,7 @@ Assembler.prototype.evaluateLabels = function() {
         var label = this.labels[i];
         if (label < 0 && this.resolveTable[-label] === undefined) {
             var result = this.evaluateExpression(i,-1);
-            if (result >= 0) {
+            if (result !== undefined) {
                 this.resolveTable[-label] = result;
                 this.labels[i] = undefined;
             }
@@ -1410,15 +1451,29 @@ Assembler.prototype.resolveLabelsInMem = function() {
         if ((negativeId = this.mem[i]) < 0) {
             var newvalue = this.resolveTable[-negativeId];
 
-            if (newvalue !== undefined) this.mem[i] = newvalue & 0xff;
-            i++;
-            if (this.mem[i] == negativeId) {
-                if (newvalue !== undefined) this.mem[i] = 0xff & (newvalue >> 8);
-                i++;
+            if (newvalue !== undefined) {
+                if (this.mem[i] === negativeId && this.mem[i+1] === negativeId) {
+                    if (newvalue >= -32768 && newvalue < 65536) {
+                        this.mem[i] = newvalue & 0xff;
+                        this.mem[i+1] = (newvalue & 0xff00) >> 8;
+                    } 
+                    else {
+                        this.mem[i] = undefined;
+                        this.mem[i+1] = undefined;
+                    }
+                    ++i;
+                }
+                else if (this.mem[i] === negativeId) {
+                    if (newvalue >= -128 && newvalue < 256) {
+                        this.mem[i] = newvalue & 0xff;
+                    }
+                    else {
+                        this.mem[i] = undefined;
+                    }
+                }
             }
-        } else {
-            i++;
         }
+        ++i;
     }
 };
 

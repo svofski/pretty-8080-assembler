@@ -76,7 +76,7 @@ loop:
 		pop d
 		pop h
 		pop b
-		mvi a, $fc ;  -4
+		mvi a, -4
 		add b
 		mov b,a
 		mov a,c

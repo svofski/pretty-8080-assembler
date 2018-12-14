@@ -1,0 +1,72 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link href="list-test.css" rel="stylesheet" type="text/css" media="screen"/><link href="../list-test.css" rel="stylesheet" type="text/css" media="screen"/></head><body><pre id="l0"><span class="adr"></span>	                        <span class="cmt">; 🐟 для Океана-240</span></pre>
+<pre id="l1"><span class="adr"></span>	                        <span class="cmt">; Для загрузки в монитор через директиву L</span></pre>
+<pre id="l2"><span class="adr"></span>	                        <span class="cmt">; Автор: Тимур Ташпулатов, C.-Петербург 2018</span></pre>
+<pre id="l3"><span class="adr"></span>	                	<span id="code3">.project okeah</span></pre>
+<pre id="l4"><span class="adr"></span>	                	<span id="code4">.org 8000h</span></pre>
+<pre id="l5"><span class="adr"></span>	                </pre>
+<pre id="l6"><span class="adr"></span>	                <span class="l" id="label6">BANKING</span>	<span id="code6">equ	0c1h		</span><span class="cmt">; регистр управления банками ОЗУ и ПЗУ</span></pre>
+<pre id="l7"><span class="adr"></span>	                <span class="l" id="label7">VIDEO</span>	<span id="code7">equ	0e1h		</span><span class="cmt">; регистр управления цветом и режимами видео</span></pre>
+<pre id="l8"><span class="adr"></span>	                </pre>
+<pre id="l9"><span class="adr">8000</span>	3E 01           	<span id="code9">mvi	a, 01</span></pre>
+<pre id="l10"><span class="adr">8002</span>	D3 C1           	<span id="code10">out	BANKING		</span><span class="cmt">; включить отображение старших 32К на младшие</span></pre>
+<pre id="l11"><span class="adr"></span>	                </pre>
+<pre id="l12"><span class="adr">8004</span>	AF              	<span id="code12">xra	a		</span><span class="cmt">; очистить аккумулятор</span></pre>
+<pre id="l13"><span class="adr">8005</span>	21 00 40        	<span id="code13">lxi	h, 4000h	</span><span class="cmt">; поместить в HL адрес начала экранной области</span></pre>
+<pre id="l14"><span class="adr">8008</span>	16 00           	<span id="code14">mvi	d, 0		</span><span class="cmt">; очистить регистр D можно было бы на один байт короче</span></pre>
+<pre id="l15"><span class="adr"></span>	                </pre>
+<pre id="l16"><span class="adr">800A</span>	01 00 20        	<span id="code16">lxi	b, 256*32	</span><span class="cmt">; экран в "Океане" состоит из вертикальных столбиков по 256 байт в каждом</span></pre>
+<pre id="l17"><span class="adr">800D</span>	72              <span class="l" id="label17">Loop</span><span id="code17">:	mov	m, d		</span><span class="cmt">; заполняем экран трухой</span></pre>
+<pre id="l18"><span class="adr">800E</span>	14              	<span id="code18">inr	d		</span><span class="cmt">; примерно на треть</span></pre>
+<pre id="l19"><span class="adr">800F</span>	23              	<span id="code19">inx 	h		</span><span class="cmt">; двигаться дальше</span></pre>
+<pre id="l20"><span class="adr"></span>	                </pre>
+<pre id="l21"><span class="adr">8010</span>	0B              	<span id="code21">dcx 	b		</span><span class="cmt">; внимательно следим за длиной столбика</span></pre>
+<pre id="l22"><span class="adr">8011</span>	78              	<span id="code22">mov	a, b		</span><span class="cmt">; если столбик </span></pre>
+<pre id="l23"><span class="adr">8012</span>	B1              	<span id="code23">ora	c		</span><span class="cmt">; не дорисован</span></pre>
+<pre id="l24"><span class="adr">8013</span>	C2 0D 80        	<span id="code24">jnz	Loop		</span><span class="cmt">; продолжаем писать в экран труху</span></pre>
+<pre id="l25"><span class="adr"></span>	                </pre>
+<pre id="l26"><span class="adr">8016</span>	21 00 41        	<span id="code26">lxi	h, 4100h	</span><span class="cmt">; цвет каждой точки определяется битами соседних через 100h байт</span></pre>
+<pre id="l27"><span class="adr">8019</span>	3E 00           	<span id="code27">mvi	a, 00h		</span><span class="cmt">; первый столбик</span></pre>
+<pre id="l28"><span class="adr">801B</span>	CD 53 80        	<span id="code28">call	Strip		</span><span class="cmt">; окрашиваем нулём</span></pre>
+<pre id="l29"><span class="adr"></span>	                </pre>
+<pre id="l30"><span class="adr">801E</span>	21 00 43        	<span id="code30">lxi	h, 4300h	</span><span class="cmt">; второй столбик</span></pre>
+<pre id="l31"><span class="adr">8021</span>	3E 0F           	<span id="code31">mvi	a, 0fh		</span><span class="cmt">; окрашиваем в две полосы</span></pre>
+<pre id="l32"><span class="adr">8023</span>	CD 53 80        	<span id="code32">call	Strip		</span><span class="cmt">; для красоты</span></pre>
+<pre id="l33"><span class="adr"></span>	                </pre>
+<pre id="l34"><span class="adr">8026</span>	21 00 45        	<span id="code34">lxi	h, 4500h	</span><span class="cmt">; третье окно</span></pre>
+<pre id="l35"><span class="adr">8029</span>	3E 33           	<span id="code35">mvi	a, 33h		</span><span class="cmt">; выходит</span></pre>
+<pre id="l36"><span class="adr">802B</span>	CD 53 80        	<span id="code36">call	Strip		</span><span class="cmt">; к океану</span></pre>
+<pre id="l37"><span class="adr"></span>	                </pre>
+<pre id="l38"><span class="adr">802E</span>	21 00 47        	<span id="code38">lxi	h, 4700h	</span><span class="cmt">; ровным ветром</span></pre>
+<pre id="l39"><span class="adr">8031</span>	3E 55           	<span id="code39">mvi	a, 55h		</span><span class="cmt">; дышит</span></pre>
+<pre id="l40"><span class="adr">8033</span>	CD 53 80        	<span id="code40">call	Strip		</span><span class="cmt">; океан</span></pre>
+<pre id="l41"><span class="adr"></span>	                </pre>
+<pre id="l42"><span class="adr">8036</span>	21 00 49        	<span id="code42">lxi	h, 4900h	</span><span class="cmt">; а за ним</span></pre>
+<pre id="l43"><span class="adr">8039</span>	3E FF           	<span id="code43">mvi	a,0ffh		</span><span class="cmt">; диковинные</span></pre>
+<pre id="l44"><span class="adr">803B</span>	CD 53 80        	<span id="code44">call	Strip		</span><span class="cmt">; страны</span></pre>
+<pre id="l45"><span class="adr"></span>	                </pre>
+<pre id="l46"><span class="adr"></span>	                				<span class="cmt">; и никто</span></pre>
+<pre id="l47"><span class="adr"></span>	                				<span class="cmt">; не видел</span></pre>
+<pre id="l48"><span class="adr"></span>	                				<span class="cmt">; этих стран</span></pre>
+<pre id="l49"><span class="adr"></span>	                </pre>
+<pre id="l50"><span class="adr">803E</span>	AF              	<span id="code50">xra	a		</span><span class="cmt">; экран размалеван</span></pre>
+<pre id="l51"><span class="adr">803F</span>	D3 C1           	<span id="code51">out	BANKING		</span><span class="cmt">; возвращаем его на место</span></pre>
+<pre id="l52"><span class="adr"></span>	                </pre>
+<pre id="l53"><span class="adr">8041</span>	3C              <span class="l" id="label53">Key</span><span id="code53">:	inr	a		</span><span class="cmt">; не пропадать же аккумулятору</span></pre>
+<pre id="l54"><span class="adr">8042</span>	E6 3F           	<span id="code54">ani	3fh		</span><span class="cmt">; возьмем из него три младших бита переднего плана</span></pre>
+<pre id="l55"><span class="adr">8044</span>	F6 40           	<span id="code55">ori	40h		</span><span class="cmt">; и три старших бита фона</span></pre>
+<pre id="l56"><span class="adr">8046</span>	D3 E1           	<span id="code56">out	VIDEO		</span><span class="cmt">; и намажем на кадр</span></pre>
+<pre id="l57"><span class="adr"></span>	                </pre>
+<pre id="l58"><span class="adr">8048</span>	CD 09 E0        	<span id="code58">call	0e009h		</span><span class="cmt">; подождем ввода символа с клавиатуры</span></pre>
+<pre id="l59"><span class="adr">804B</span>	FE 1B           	<span id="code59">cpi	1bh		</span><span class="cmt">; если это не Esc,</span></pre>
+<pre id="l60"><span class="adr">804D</span>	C2 41 80        	<span id="code60">jnz	Key		</span><span class="cmt">; продолжим интерактивную раскраску</span></pre>
+<pre id="l61"><span class="adr"></span>	                </pre>
+<pre id="l62"><span class="adr">8050</span>	C3 03 E0        	<span id="code62">jmp	0e003h		</span><span class="cmt">; теплый старт "Монитора"</span></pre>
+<pre id="l63"><span class="adr"></span>	                </pre>
+<pre id="l64"><span class="adr">8053</span>	77              <span class="l" id="label64">Strip</span><span id="code64">:	mov	m, a		</span><span class="cmt">; это подпрограмма</span></pre>
+<pre id="l65"><span class="adr">8054</span>	23              	<span id="code65">inx	h		</span><span class="cmt">; небыстрого, но верного</span></pre>
+<pre id="l66"><span class="adr">8055</span>	15              	<span id="code66">dcr	d		</span><span class="cmt">; рисования столбика</span></pre>
+<pre id="l67"><span class="adr">8056</span>	C2 53 80        	<span id="code67">jnz	Strip		</span><span class="cmt">; с заданною длиною</span></pre>
+<pre id="l68"><span class="adr"></span>	                </pre>
+<pre id="l69"><span class="adr">8059</span>	C9              	<span id="code69">ret			</span><span class="cmt">; К О Н Е Ц</span></pre>
+<pre id="l70"><span class="adr"></span>	                </pre>
+<pre>Labels:</pre><div class="hordiv"></div><pre class="labeltable"><span class='t1' onclick="return gotoLabel('banking');">banking                 00C1</span><span class='t1' onclick="return gotoLabel('key');">key                     8041</span><span class='t1' onclick="return gotoLabel('loop');">loop                    800D</span><span class='t2' onclick="return gotoLabel('strip');">strip                   8053</span><br/><span class='t1' onclick="return gotoLabel('video');">video                   00E1</span></pre><div>&nbsp;</div><pre>Memory dump:</pre><div class="hordiv"></div><pre class="d0"> </pre><br/><pre class="d1">8000:  3E 01 D3 C1 AF 21 00 40-16 00 01 00 20 72 14 23  >....!.@.....r.#</pre><br/><pre class="d0">8010:  0B 78 B1 C2 0D 80 21 00-41 3E 00 CD 53 80 21 00  .x....!.A>..S.!.</pre><br/><pre class="d1">8020:  43 3E 0F CD 53 80 21 00-45 3E 33 CD 53 80 21 00  C>..S.!.E>3.S.!.</pre><br/><pre class="d0">8030:  47 3E 55 CD 53 80 21 00-49 3E FF CD 53 80 AF D3  G>U.S.!.I>..S...</pre><br/><pre class="d1">8040:  C1 3C E6 3F F6 40 D3 E1-CD 09 E0 FE 1B C2 41 80  .<.?.@........A.</pre><br/><pre class="d0">8050:  C3 03 E0 77 23 15 C2 53-80 C9                    ...w#..S........</pre><br/></body></html>

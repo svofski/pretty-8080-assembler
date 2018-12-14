@@ -1,0 +1,54 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link href="list-test.css" rel="stylesheet" type="text/css" media="screen"/><link href="../list-test.css" rel="stylesheet" type="text/css" media="screen"/></head><body><pre id="l0"><span class="adr">0000</span>	AF 78                   <span id="code0">xra a \ mov a, b</span></pre>
+<pre id="l1"><span class="adr">0002</span>	F5                      <span id="code1">push psw</span></pre>
+<pre id="l2"><span class="adr">0003</span>	78                      <span id="code2">mov a, b</span></pre>
+<pre id="l3"><span class="adr">0004</span>	21 0E 00                <span id="code3">lxi h, mike+1</span><span class="cmt">;screw mike btw</span></pre>
+<pre id="l4"><span class="adr">0007</span>	31 0D 00                <span id="code4">lxi sp, mike</span></pre>
+<pre id="l5"><span class="adr">000A</span>	C3 0D 00                <span id="code5">jmp $+3</span></pre>
+<pre id="l6"><span class="adr"></span>	                        </pre>
+<pre id="l7"><span class="adr"></span>	                <span class="l" id="label7">mike</span><span id="code7">:</span></pre>
+<pre id="l8"><span class="adr">000D</span>	00                      <span id="code8">nop</span></pre>
+<pre id="l9"><span class="adr">000E</span>	22 0D 00 22     <span class="l" id="label9">bob</span><span id="code9">:    shld mike \ shld mike\shld mike\shld mike</span><span class="cmt">;fec\k</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0016	00 22 0D 00 <br/></pre>
+<pre id="l10"><span class="adr">001A</span>	00                      <span id="code10">nop</span></pre>
+<pre id="l11"><span class="adr">001B</span>	22 38 77 66             <span id="code11">db 34,56,$77,"fork",037h,177q,mike&377q</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0023	7F 0D <br/></pre>
+<pre id="l12"><span class="adr"></span>	                        <span id="code12">org 100</span></pre>
+<pre id="l13"><span class="adr">0064</span>	C3 0E 00                <span id="code13">jmp bob</span></pre>
+<pre id="l14"><span class="adr">0067</span>	3E FF                   <span id="code14">mvi a,-1        </span><span class="cmt">; =ff</span></pre>
+<pre id="l15"><span class="adr">0069</span>	06 FE                   <span id="code15">mvi b,-2        </span><span class="cmt">; =fe</span></pre>
+<pre id="l16"><span class="adr">006B</span>	0E FD                   <span id="code16">mvi c,-3        </span><span class="cmt">; =fd</span></pre>
+<pre id="l17"><span class="adr">006D</span>	16 FC                   <span id="code17">mvi d,-4        </span><span class="cmt">; =fc</span></pre>
+<pre id="l18"><span class="adr">006F</span>	1E F8                   <span id="code18">mvi e, -8       </span><span class="cmt">; =f8</span></pre>
+<pre id="l19"><span class="adr">0071</span>	3E FF                   <span id="code19">mvi a, 255      </span><span class="cmt">; =ff</span></pre>
+<pre id="l20"><span class="adr">0073</span>	3E 80                   <span id="code20">mvi a,-128      </span><span class="cmt">; =80</span></pre>
+<pre id="l21"><span class="adr">0075</span>	01 7F FF                <span id="code21">lxi b,-129</span></pre>
+<pre id="l22"><span class="adr">0078</span>	11 FF FF                <span id="code22">lxi d,65535</span></pre>
+<pre id="l23"><span class="adr">007B</span>	22 FF FF                <span id="code23">shld 65535</span></pre>
+<pre id="l24"><span class="adr">007E</span>	22 00 00                <span id="code24">shld 65536      </span><span class="cmt">; overflow</span></pre>
+<pre id="l25"><span class="adr">0081</span>	21 00 00                <span id="code25">lxi h,65536     </span><span class="cmt">; overflow</span></pre>
+<pre id="l26"><span class="adr">0084</span>	21 00 00                <span id="code26">lxi h,-32769</span></pre>
+<pre id="l27"><span class="adr">0087</span>	3E 00                   <span id="code27">mvi a,256       </span><span class="cmt">; overlofw</span></pre>
+<pre id="l28"><span class="adr">0089</span>	3E 00                   <span id="code28">mvi a,-129      </span><span class="cmt">; overflow</span></pre>
+<pre id="l29" class="errorline" ><span class="adr">008B</span>	3E ??                   <span id="code29">mvi a, nonexistent</span></pre>
+<pre id="l30" class="errorline" ><span class="adr">008D</span>	21 ?? ??                <span id="code30">lxi h,nonexistent</span></pre>
+<pre id="l31" class="errorline" ><span class="adr">0090</span>	22 ?? ??                <span id="code31">shld nonexistent</span></pre>
+<pre id="l32"><span class="adr">0093</span>	31 00 80                <span id="code32">lxi sp,-32768</span></pre>
+<pre id="l33"><span class="adr">0096</span>	31 01 80                <span id="code33">lxi sp,-32767</span></pre>
+<pre id="l34"><span class="adr">0099</span>	4C 6F 6E 67             <span id="code34">db64 TG9uZyBiaW5hcnkgaW5pdGlhbGl6YXRpb24gc2VjdGlvbnMgY2FuIGJlIGRlZmluZWQgdXNpbmcgYmFzZTY0LWVuY29kZWQgc3RyaW5ncyENCiQ=</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>00E9	0D 0A 24 <br/></pre>
+<pre id="l35"><span class="adr">00EC</span>	F3                      <span id="code35">di</span><span class="cmt">;ck</span></pre>
+<pre id="l36" class="errorline" ><span class="adr"></span>	                        <span id="code36">lxi a, 0        </span><span class="cmt">; impossible</span></pre>
+<pre id="l37" class="errorline" ><span class="adr"></span>	                        <span id="code37">dad psw         </span><span class="cmt">; impossible</span></pre>
+<pre id="l38" class="errorline" ><span class="adr"></span>	                        <span id="code38">push sp         </span><span class="cmt">; impossible</span></pre>
+<pre id="l39"><span class="adr">00ED</span>	22 00 00                <span id="code39">shld 0</span></pre>
+<pre id="l40"><span class="adr">00F0</span>	22 FF FF                <span id="code40">shld -1</span></pre>
+<pre id="l41"><span class="adr">00F3</span>	31 FF FF                <span id="code41">lxi sp,-1</span></pre>
+<pre id="l42"><span class="adr">00F6</span>	3E 01                   <span id="code42">mvi a, bob-mike </span><span class="cmt">; =1</span></pre>
+<pre id="l43"><span class="adr">00F8</span>	06 FF                   <span id="code43">mvi b, mike-bob </span><span class="cmt">; =-1</span></pre>
+<pre id="l44"><span class="adr">00FA</span>	0E 00                   <span id="code44">mvi c,1111-1111 </span><span class="cmt">; =0</span></pre>
+<pre id="l45"><span class="adr">00FC</span>	39                      <span id="code45">dad sp</span></pre>
+<pre id="l46"><span class="adr">00FD</span>	F5                      <span id="code46">push psw</span></pre>
+<pre id="l47"><span class="adr"></span>	                <span class="l" id="label47">cthulhu</span><span id="code47">:</span></pre>
+<pre id="l48"><span class="adr"></span>	                        <span id="code48">ftagn   </span><span class="cmt">; this is actually a label</span></pre>
+<pre id="l49"><span class="adr">00FE</span>	11 FE 00                <span id="code49">lxi d,ftagn</span></pre>
+<pre id="l50"><span class="adr">0101</span>	D6 00                   <span id="code50">sui ftagn-cthulhu </span><span class="cmt">; d6 00</span></pre>
+<pre id="l51"><span class="adr"></span>	                        </pre>
+<pre id="l52"><span class="adr"></span>	                </pre>
+<pre>Labels:</pre><div class="hordiv"></div><pre class="labeltable"><span class='t1' onclick="return gotoLabel('bob');">bob                     000E</span><span class='t1' onclick="return gotoLabel('cthulhu');">cthulhu                 00FE</span><span class='t1' onclick="return gotoLabel('ftagn');">ftagn                   00FE</span><span class='t2' onclick="return gotoLabel('mike');">mike                    000D</span><br/><span class='t1 errorline' onclick="return gotoLabel('nonexistent');">nonexistent             ????</span></pre><div>&nbsp;</div><pre>Memory dump:</pre><div class="hordiv"></div><pre class="d0">0000:  AF 78 F5 78 21 0E 00 31-0D 00 C3 0D 00 00 22 0D  .x.x!..1......".</pre><br/><pre class="d1">0010:  00 22 0D 00 22 0D 00 22-0D 00 00 22 38 77 66 6F  ."..".."..."8wfo</pre><br/><pre class="d0">0020:  72 6B 37 7F 0D         -                         rk7.............</pre><br/><pre class="d1"> </pre><br/><pre class="d0">0060:              C3 0E 00 3E-FF 06 FE 0E FD 16 FC 1E  .......>........</pre><br/><pre class="d1">0070:  F8 3E FF 3E 80 01 7F FF-11 FF FF 22 FF FF 22     .>.>......."..".</pre><br/><pre class="d0">0080:     21       21       3E-   3E    3E <span class="errorline">??</span> 21 <span class="errorline">??</span> <span class="errorline">??</span>  .!..!..>.>.>.!..</pre><br/><pre class="d1">0090:  22 <span class="errorline">??</span> <span class="errorline">??</span> 31 00 80 31 01-80 4C 6F 6E 67 20 62 69  "..1..1..Long.bi</pre><br/><pre class="d0">00A0:  6E 61 72 79 20 69 6E 69-74 69 61 6C 69 7A 61 74  nary.initializat</pre><br/><pre class="d1">00B0:  69 6F 6E 20 73 65 63 74-69 6F 6E 73 20 63 61 6E  ion.sections.can</pre><br/><pre class="d0">00C0:  20 62 65 20 64 65 66 69-6E 65 64 20 75 73 69 6E  .be.defined.usin</pre><br/><pre class="d1">00D0:  67 20 62 61 73 65 36 34-2D 65 6E 63 6F 64 65 64  g.base64-encoded</pre><br/><pre class="d0">00E0:  20 73 74 72 69 6E 67 73-21 0D 0A 24 F3 22 00 00  .strings!..$."..</pre><br/><pre class="d1">00F0:  22 FF FF 31 FF FF 3E 01-06 FF 0E 00 39 F5 11 FE  "..1..>.....9...</pre><br/><pre class="d0">0100:  00 D6 00               -                         ................</pre><br/></body></html>
