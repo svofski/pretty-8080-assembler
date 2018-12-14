@@ -89,19 +89,19 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
         data[dptr++] = 0xe6;
     }
 
-    data[dptr++] = (org >> 8) & 0377;
-    data[dptr++] = org & 0377;
-    data[dptr++] = ((org + mem.length - 1) >> 8) & 0377;
-    data[dptr++] = (org + mem.length - 1) & 0377;
+    data[dptr++] = (org >> 8) & 0xff;
+    data[dptr++] = org & 0xff;
+    data[dptr++] = ((org + mem.length - 1) >> 8) & 0xff;
+    data[dptr++] = (org + mem.length - 1) & 0xff;
 
     for (var i = 0; i < mem.length; ++i) {
         let octet = mem[i];
         data[dptr++] = octet;
         cs_lo += octet;
         if (i < mem.length - 1) {
-            cs_hi += octet + ((cs_lo >> 8) & 0377);
+            cs_hi += octet + ((cs_lo >> 8) & 0xff);
         }
-        cs_lo &= 0377;
+        cs_lo &= 0xff;
 
         if (i % 2 === 0) {
             csm_lo ^= octet;
@@ -110,13 +110,13 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
         }
     }
 
-    console.log('checksum rk=', Util.hex8(cs_hi&0377), Util.hex8(cs_lo&0377));
-    console.log('checksum microsha=', Util.hex8(csm_hi&0377), 
-            Util.hex8(csm_lo&0377));
+    console.log('checksum rk=', Util.hex8(cs_hi&0xff), Util.hex8(cs_lo&0xff));
+    console.log('checksum microsha=', Util.hex8(csm_hi&0xff), 
+            Util.hex8(csm_lo&0xff));
 
     if (this.variant === 'mikrosha') {
-        data[dptr++] = csm_hi & 0377;
-        data[dptr++] = csm_lo & 0377;
+        data[dptr++] = csm_hi & 0xff;
+        data[dptr++] = csm_lo & 0xff;
     } else {
         data[dptr++] = 0;
         data[dptr++] = 0;
@@ -124,8 +124,8 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     data[dptr++] = 0xe6;
 
     /* rk86 checksum */
-    data[dptr++] = cs_hi & 0377;
-    data[dptr++] = cs_lo & 0377;
+    data[dptr++] = cs_hi & 0xff;
+    data[dptr++] = cs_lo & 0xff;
     var end = dptr;
     data[dptr++] = 0;
     data[dptr++] = 0;
@@ -158,7 +158,7 @@ TapeFormat.prototype.biphase = function(data, halfperiod) {
         let octet = data[i];
         for (var b = 0; b < 8; ++b, octet <<= 1) {
             //let phase = (octet & 0200) ? -128 : 127;
-            let phase = (octet & 0200) ? 32 : (255 - 32);
+            let phase = (octet & 0x80) ? 32 : (255 - 32);
             for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
             phase = phase ^ 255;
             for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
@@ -220,12 +220,12 @@ TapeFormat.prototype.v06c_rom = function(mem, org, name) {
         }
         data[dofs++] = data[dofs++] = 0; 
         /* High nibble of org address */
-        cs0 += data[dofs++] = 0377 & (org >> 8); /* TODO: fix misaligned org */
+        cs0 += data[dofs++] = 0xff & (org >> 8); /* TODO: fix misaligned org */
         /* Block count */
         cs0 += data[dofs++] = nblocks;
         /* Block number */
         cs0 += data[dofs++] = nblocks - block;
-        data[dofs++] = cs0 & 0377;
+        data[dofs++] = cs0 & 0xff;
 
         /* Now the actual data: 8x32 octets */
         for (var sblk = 0x80; sblk < 0x88; ++sblk) {
@@ -237,7 +237,7 @@ TapeFormat.prototype.v06c_rom = function(mem, org, name) {
             for (var i = 0; i < 32; ++i) {
                 cs += data[dofs++] = sofs < mem.length ? mem[sofs++] : 0;
             }
-            data[dofs++] = 0377 & cs;
+            data[dofs++] = 0xff & cs;
         }
     }
     this.data = data;
@@ -262,9 +262,9 @@ TapeFormat.prototype.krista = function(mem, org, name) {
     /* Header block */
     data[dofs++] = 0xe6;
     data[dofs++] = 0xff;
-    var startblock = 0377 & (org >> 8);
+    var startblock = 0xff & (org >> 8);
     cs = data[dofs++] = startblock;
-    cs += data[dofs++] = 0377 & (startblock + nblocks);
+    cs += data[dofs++] = 0xff & (startblock + nblocks);
     data[dofs++] = cs;
     //data[dofs++] = data[dofs++] = 0;
     
@@ -283,7 +283,7 @@ TapeFormat.prototype.krista = function(mem, org, name) {
         for (var i = 0; i < 256; ++i) {
             cs += data[dofs++] = sofs < mem.length ? mem[sofs++] : 0;
         }
-        data[dofs++] = 0377 & cs;
+        data[dofs++] = 0xff & cs;
     }
     this.data = data.slice(0, dofs + 16);
     return this;
@@ -323,26 +323,26 @@ TapeFormat.prototype.specialist = function(mem, org, name) {
     }
 
     // same as .rk but little endian
-    data[dptr++] = org & 0377;
-    data[dptr++] = (org >> 8) & 0377;
-    data[dptr++] = (org + mem.length - 1) & 0377;
-    data[dptr++] = ((org + mem.length - 1) >> 8) & 0377;
+    data[dptr++] = org & 0xff;
+    data[dptr++] = (org >> 8) & 0xff;
+    data[dptr++] = (org + mem.length - 1) & 0xff;
+    data[dptr++] = ((org + mem.length - 1) >> 8) & 0xff;
 
     for (var i = 0; i < mem.length; ++i) {
         let octet = mem[i];
         data[dptr++] = octet;
         cs_lo += octet;
         if (i < mem.length - 1) {
-            cs_hi += octet + ((cs_lo >> 8) & 0377);
+            cs_hi += octet + ((cs_lo >> 8) & 0xff);
         }
-        cs_lo &= 0377;
+        cs_lo &= 0xff;
     }
 
-    console.log('checksum=', Util.hex8(cs_hi&0377), Util.hex8(cs_lo&0377));
+    console.log('checksum=', Util.hex8(cs_hi&0xff), Util.hex8(cs_lo&0xff));
 
     /* rk86 checksum */
-    data[dptr++] = cs_lo & 0377;
-    data[dptr++] = cs_hi & 0377;
+    data[dptr++] = cs_lo & 0xff;
+    data[dptr++] = cs_hi & 0xff;
 
     var end = dptr;
 
