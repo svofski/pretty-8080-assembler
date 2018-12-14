@@ -1,2 +1,5 @@
 junk/*
 *.swp
+test/out/*
+test/_all.js
+ace-builds
