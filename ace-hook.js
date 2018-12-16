@@ -98,14 +98,23 @@ oop.inherits(TokenTooltip, Tooltip);
         if (tokenText.length > 0) {
             if (this.tokenText != tokenText) {
                 this.clearxrefs();
-                this.xrefs = this.collectXrefs(label);
+                var textobj = {text: []};
+                this.xrefs = this.collectXrefs(label, textobj);
+                if (token.start == 0) {
+                    tokenText = "";
+                } else {
+                    tokenText += '\n';
+                }
+                if (textobj.text.length) {
+                    tokenText += textobj.text.join('\n');
+                }
                 this.setText(tokenText);
                 this.width = this.getWidth();
                 this.height = this.getHeight();
                 this.tokenText = tokenText;
             }
 
-            if (token.start > 0) {
+            if (tokenText.length) {
                 this.show(null, this.x, this.y);
             }
 
@@ -135,12 +144,28 @@ oop.inherits(TokenTooltip, Tooltip);
         this.tokenText = undefined;
     }
 
-    this.collectXrefs = function(label) {
+    this.collectXrefs = function(label, textobj) {
         var result = [];
-        var xrefs = asmcache.xref[label.toLowerCase()];
+        label = label.toLowerCase();
+        var xrefs = asmcache.xref[label];
         for (var k = 0; xrefs && k < xrefs.length; ++k) { 
             var i = xrefs[k];
             var text = this.editor.session.getLine(i);
+
+            var precomment = [
+                Util.hex16(editor.session.gutter_contents[i].addr) + " " + 
+                text.slice(0,80)];
+            if (text.toLowerCase().match('^\s*' + label + '\\b')) {
+                for (var cmt = i - 1; cmt >= 0; --cmt) {
+                    var t = this.editor.session.getLine(cmt);
+                    if (t && t.match(/^\s*;/)) {
+                        precomment.push(t);
+                    } 
+                    else break;
+                }
+            }
+
+            textobj.text.push(precomment.reverse().join('\n'));
 
             var re = new RegExp('\\b' + label + '\\b', 'gi');
             for (var m = re.exec(text); m; m = re.exec(text)) {
