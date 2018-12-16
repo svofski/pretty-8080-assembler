@@ -74,29 +74,9 @@ function Asmcache() {
 }
 var asmcache = new Asmcache();
 
-function updateReferences(ref, tls, labels, org) {
-    asmcache.references = ref; // from_line:"text"
-    asmcache.textlabels = tls; // line_number:"text"
-    asmcache.xref = {};
+function updateReferences(xref, labels, org) {
+    asmcache.xref = xref;
     asmcache.labels = labels;
-    for (var i = 0; i < asmcache.references.length; ++i) {
-        var text = asmcache.references[i];
-        if (text) {
-            if (!asmcache.xref[text]) {
-                asmcache.xref[text] = [];
-            }
-            asmcache.xref[text].push(i);
-        }
-
-        text = asmcache.textlabels[i];
-        if (text) {
-            if (!asmcache.xref[text]) {
-                asmcache.xref[text] = [];
-            }
-            asmcache.xref[text].push(i);
-        }
-    }
-
     asmcache.org = org || 256;
 }
 
@@ -207,11 +187,10 @@ function assemble() {
                         }
 
                         editor.resize(true);
-                        var references = e.data['references'];
-                        var textlabels = e.data['textlabels'];
                         var labels = e.data['labels'];
+                        var xref = e.data['xref'];
                         var org = e.data['org'];
-                        updateReferences(references, textlabels, labels, org);
+                        updateReferences(xref, labels, org);
                         updateSizes();
                         autotranslate = false;
                     });

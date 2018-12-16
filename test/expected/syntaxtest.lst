@@ -1,0 +1,94 @@
+0000	AF 78                   xra a \ mov a, b
+0002	F5                      push psw
+0003	78                      mov a, b
+0004	21 0E 00                lxi h, mike+1;screw mike btw
+0007	31 0D 00                lxi sp, mike
+000A	C3 0D 00                jmp $+3
+	                        
+	                mike:
+000D	00                      nop
+000E	22 0D 00 22     bob:    shld mike \ shld mike\shld mike\shld mike;fec\k
+	. . .
+0016	00 22 0D 00 
+
+001A	00                      nop
+001B	22 38 77 66             db 34,56,$77,"fork",037h,177q,mike&377q
+	. . .
+0023	7F 0D 
+
+	                        org 100
+0064	C3 0E 00                jmp bob
+0067	3E FF                   mvi a,-1        ; =ff
+0069	06 FE                   mvi b,-2        ; =fe
+006B	0E FD                   mvi c,-3        ; =fd
+006D	16 FC                   mvi d,-4        ; =fc
+006F	1E F8                   mvi e, -8       ; =f8
+0071	3E FF                   mvi a, 255      ; =ff
+0073	3E 80                   mvi a,-128      ; =80
+0075	01 7F FF                lxi b,-129
+0078	11 FF FF                lxi d,65535
+007B	22 FF FF                shld 65535
+007E	22 00 00                shld 65536      ; overflow
+0081	21 00 00                lxi h,65536     ; overflow
+0084	21 00 00                lxi h,-32769    ; overflow
+0087	3E 00                   mvi a,256       ; overlofw
+0089	3E 00                   mvi a,-129      ; overflow
+008B	3E 00                   mvi a, nonexistent ; no such label
+008D	21 00 00                lxi h,nonexistent ; no such label
+0090	22 00 00                shld nonexistent ; no such label
+0093	31 00 80                lxi sp,-32768
+0096	31 01 80                lxi sp,-32767
+0099	4C 6F 6E 67             db64 TG9uZyBiaW5hcnkgaW5pdGlhbGl6YXRpb24gc2VjdGlvbnMgY2FuIGJlIGRlZmluZWQgdXNpbmcgYmFzZTY0LWVuY29kZWQgc3RyaW5ncyENCiQ=
+	. . .
+00E9	0D 0A 24 
+
+00EC	F3                      di;ck
+	                        lxi a, 0        ; impossible
+	                        dad psw         ; impossible
+	                        push sp         ; impossible
+00ED	22 00 00                shld 0
+00F0	22 FF FF                shld -1
+00F3	31 FF FF                lxi sp,-1
+00F6	3E 01                   mvi a, bob-mike ; =1
+00F8	06 FF                   mvi b, mike-bob ; =-1
+00FA	0E 00                   mvi c,1111-1111 ; =0
+00FC	39                      dad sp
+00FD	F5                      push psw
+00FE	D6 00           	sui -1+1h       ; = 0
+0100	D6 01           	sui 1           ; = 1
+0102	D6 01           	sui 01          ; = 1
+0104	D6 08           	sui 08          ; = 8, not an octal
+0106	D6 01           	sui 1d          ; = 1 dec
+0108	D6 01           	sui 1h          ; = 1 hex
+010A	D6 02           	sui 1h+1        ; = 2
+010C	D6 02           	sui 1+1h        ; = 2
+010E	D6 01           	sui 01h         ; = 1
+0110	D6 07           	sui 07q         ; = 7 octal
+0112	D6 FF           	sui 377q        ; = ff 
+	                cthulhu:
+	                        ftagn   ; this is actually a label
+0114	11 14 01                lxi d,ftagn
+0117	D6 00                   sui ftagn-cthulhu ; d6 00
+	                        
+	                
+Labels:
+bob                     000E
+cthulhu                 0114	ftagn                   0114
+mike                    000D	
+Memory dump:
+0000:  AF 78 F5 78 21 0E 00 31-0D 00 C3 0D 00 00 22 0D  .x.x!..1......".
+0010:  00 22 0D 00 22 0D 00 22-0D 00 00 22 38 77 66 6F  ."..".."..."8wfo
+0020:  72 6B 37 7F 0D         -                         rk7.............
+ 
+0060:              C3 0E 00 3E-FF 06 FE 0E FD 16 FC 1E  .......>........
+0070:  F8 3E FF 3E 80 01 7F FF-11 FF FF 22 FF FF 22     .>.>......."..".
+0080:     21       21       3E-   3E    3E    21        .!..!..>.>.>.!..
+0090:  22       31 00 80 31 01-80 4C 6F 6E 67 20 62 69  "..1..1..Long.bi
+00A0:  6E 61 72 79 20 69 6E 69-74 69 61 6C 69 7A 61 74  nary.initializat
+00B0:  69 6F 6E 20 73 65 63 74-69 6F 6E 73 20 63 61 6E  ion.sections.can
+00C0:  20 62 65 20 64 65 66 69-6E 65 64 20 75 73 69 6E  .be.defined.usin
+00D0:  67 20 62 61 73 65 36 34-2D 65 6E 63 6F 64 65 64  g.base64-encoded
+00E0:  20 73 74 72 69 6E 67 73-21 0D 0A 24 F3 22 00 00  .strings!..$."..
+00F0:  22 FF FF 31 FF FF 3E 01-06 FF 0E 00 39 F5 D6 00  "..1..>.....9...
+0100:  D6 01 D6 01 D6 08 D6 01-D6 01 D6 02 D6 02 D6 01  ................
+0110:  D6 07 D6 FF 11 14 01 D6-00                       ................

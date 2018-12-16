@@ -1,233 +1,0 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link href="list-test.css" rel="stylesheet" type="text/css" media="screen"/><link href="../list-test.css" rel="stylesheet" type="text/css" media="screen"/></head><body><pre id="l0"><span class="adr"></span>	                    <span class="cmt">; 🐟 для Вектора-06ц</span></pre>
-<pre id="l1"><span class="adr"></span>	                    <span id="code1">.project helv06c.rom</span></pre>
-<pre id="l2"><span class="adr"></span>	                    <span id="code2">.tape v06c-rom</span></pre>
-<pre id="l3"><span class="adr"></span>	                <span id="code3"></span></pre>
-<pre id="l4"><span class="adr"></span>	                <span class="l" id="label4">rastint</span> <span id="code4">equ 38h </span><span class="cmt">; прервывание обратного хода луча</span></pre>
-<pre id="l5"><span class="adr"></span>	                <span id="code5"></span></pre>
-<pre id="l6"><span class="adr"></span>	                    <span id="code6">.org 100h</span></pre>
-<pre id="l7"><span class="adr"></span>	                    <span class="cmt">; стандартная точка входа .rom файла </span></pre>
-<pre id="l8"><span class="adr">0100</span>	F3                  <span id="code8">di              </span><span class="cmt">; запретить прерывания</span></pre>
-<pre id="l9"><span class="adr">0101</span>	AF                  <span id="code9">xra a               </span></pre>
-<pre id="l10"><span class="adr">0102</span>	D3 10               <span id="code10">out 10h         </span><span class="cmt">; выключить квазидиск </span></pre>
-<pre id="l11"><span class="adr">0104</span>	31 00 01            <span id="code11">lxi sp, $100    </span><span class="cmt">; инициализировать указатель стека</span></pre>
-<pre id="l12"><span class="adr"></span>	                <span id="code12"></span></pre>
-<pre id="l13"><span class="adr">0107</span>	3E C9               <span id="code13">mvi a, 0c9h     </span><span class="cmt">; код инструкции RET</span></pre>
-<pre id="l14"><span class="adr">0109</span>	32 38 00            <span id="code14">sta rastint     </span><span class="cmt">; инициализировать обработчик RST7</span></pre>
-<pre id="l15"><span class="adr"></span>	                <span id="code15"></span></pre>
-<pre id="l16"><span class="adr">010C</span>	CD 30 01            <span id="code16">call clrscr     </span><span class="cmt">; очистить экран</span></pre>
-<pre id="l17"><span class="adr">010F</span>	CD 50 01            <span id="code17">call set_palette</span><span class="cmt">; установить палитру</span></pre>
-<pre id="l18"><span class="adr"></span>	                <span id="code18"></span></pre>
-<pre id="l19"><span class="adr"></span>	                    <span class="cmt">; задать позицию вывода текста</span></pre>
-<pre id="l20"><span class="adr"></span>	                    <span class="cmt">; столбец 0, строка $f8 (верх экрана)</span></pre>
-<pre id="l21"><span class="adr">0112</span>	21 F8 00            <span id="code21">lxi h, $00f8    </span></pre>
-<pre id="l22"><span class="adr">0115</span>	CD 71 01            <span id="code22">call gotoxy</span></pre>
-<pre id="l23"><span class="adr"></span>	                <span id="code23"></span></pre>
-<pre id="l24"><span class="adr"></span>	                    <span class="cmt">; вывести строку</span></pre>
-<pre id="l25"><span class="adr">0118</span>	21 20 01            <span id="code25">lxi h, msg</span></pre>
-<pre id="l26"><span class="adr">011B</span>	CD 75 01            <span id="code26">call puts</span></pre>
-<pre id="l27"><span class="adr"></span>	                <span id="code27"></span></pre>
-<pre id="l28"><span class="adr"></span>	                    <span class="cmt">; элегантно зависнуть</span></pre>
-<pre id="l29"><span class="adr">011E</span>	F3                  <span id="code29">di</span></pre>
-<pre id="l30"><span class="adr">011F</span>	76                  <span id="code30">hlt</span></pre>
-<pre id="l31"><span class="adr"></span>	                <span id="code31"></span></pre>
-<pre id="l32"><span class="adr"></span>	                <span class="l" id="label32">msg</span><span id="code32">:</span></pre>
-<pre id="l33"><span class="adr">0120</span>	48 45 4C 4C         <span id="code33">db 'HELLO, WORLD!',0</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>012C	21 00 <br/></pre>
-<pre id="l34"><span class="adr"></span>	                <span id="code34"></span></pre>
-<pre id="l35"><span class="adr"></span>	                    <span class="cmt">;</span></pre>
-<pre id="l36"><span class="adr"></span>	                    <span class="cmt">; Микро-библиотека для Вектора-06ц</span></pre>
-<pre id="l37"><span class="adr"></span>	                    <span class="cmt">;</span></pre>
-<pre id="l38"><span class="adr"></span>	                <span id="code38"></span></pre>
-<pre id="l39"><span class="adr"></span>	                    <span class="cmt">; Область временного хранения SP</span></pre>
-<pre id="l40"><span class="adr">012E</span>	00 00           <span class="l" id="label40">__savedsp</span> <span id="code40">dw 0</span></pre>
-<pre id="l41"><span class="adr"></span>	                <span id="code41"></span></pre>
-<pre id="l42"><span class="adr"></span>	                    <span class="cmt">; Очистка всей экранной области</span></pre>
-<pre id="l43"><span class="adr"></span>	                <span class="l" id="label43">clrscr</span><span id="code43"></span></pre>
-<pre id="l44"><span class="adr">0130</span>	F3                  <span id="code44">di</span></pre>
-<pre id="l45"><span class="adr">0131</span>	21 00 00            <span id="code45">lxi h,0</span></pre>
-<pre id="l46"><span class="adr">0134</span>	39                  <span id="code46">dad sp</span></pre>
-<pre id="l47"><span class="adr">0135</span>	22 2E 01            <span id="code47">shld __savedsp</span></pre>
-<pre id="l48"><span class="adr"></span>	                <span id="code48"></span></pre>
-<pre id="l49"><span class="adr">0138</span>	31 00 00            <span id="code49">lxi sp, 0</span></pre>
-<pre id="l50"><span class="adr">013B</span>	01 00 00            <span id="code50">lxi b, 0</span></pre>
-<pre id="l51"><span class="adr">013E</span>	11 00 10            <span id="code51">lxi d, $1000</span></pre>
-<pre id="l52"><span class="adr"></span>	                <span class="l" id="label52">_clrscr_1</span><span id="code52">:</span></pre>
-<pre id="l53"><span class="adr">0141</span>	C5                  <span id="code53">push b</span></pre>
-<pre id="l54"><span class="adr">0142</span>	C5                  <span id="code54">push b</span></pre>
-<pre id="l55"><span class="adr">0143</span>	C5                  <span id="code55">push b</span></pre>
-<pre id="l56"><span class="adr">0144</span>	C5                  <span id="code56">push b</span></pre>
-<pre id="l57"><span class="adr">0145</span>	1B                  <span id="code57">dcx d</span></pre>
-<pre id="l58"><span class="adr">0146</span>	7A                  <span id="code58">mov a, d</span></pre>
-<pre id="l59"><span class="adr">0147</span>	B3                  <span id="code59">ora e</span></pre>
-<pre id="l60"><span class="adr">0148</span>	C2 41 01            <span id="code60">jnz _clrscr_1</span></pre>
-<pre id="l61"><span class="adr"></span>	                <span id="code61"></span></pre>
-<pre id="l62"><span class="adr">014B</span>	2A 2E 01            <span id="code62">lhld __savedsp</span></pre>
-<pre id="l63"><span class="adr">014E</span>	F9                  <span id="code63">sphl</span></pre>
-<pre id="l64"><span class="adr">014F</span>	C9                  <span id="code64">ret</span></pre>
-<pre id="l65"><span class="adr"></span>	                <span id="code65"></span></pre>
-<pre id="l66"><span class="adr"></span>	                    <span class="cmt">; Программирование палитры</span></pre>
-<pre id="l67"><span class="adr"></span>	                <span class="l" id="label67">set_palette</span><span id="code67"></span></pre>
-<pre id="l68"><span class="adr">0150</span>	FB                  <span id="code68">ei</span></pre>
-<pre id="l69"><span class="adr">0151</span>	76                  <span id="code69">hlt</span></pre>
-<pre id="l70"><span class="adr"></span>	                <span id="code70"></span></pre>
-<pre id="l71"><span class="adr">0152</span>	3E 88               <span id="code71">mvi a, 88h      </span><span class="cmt">; настроить ППИ</span></pre>
-<pre id="l72"><span class="adr">0154</span>	D3 00               <span id="code72">out 0</span></pre>
-<pre id="l73"><span class="adr"></span>	                <span id="code73"></span></pre>
-<pre id="l74"><span class="adr">0156</span>	3E FF               <span id="code74">mvi a, 255      </span><span class="cmt">; сбросить прокрутку</span></pre>
-<pre id="l75"><span class="adr">0158</span>	D3 03               <span id="code75">out 03</span></pre>
-<pre id="l76"><span class="adr"></span>	                <span id="code76"></span></pre>
-<pre id="l77"><span class="adr">015A</span>	0E 0F               <span id="code77">mvi c, $f       </span><span class="cmt">; программирование палитры</span></pre>
-<pre id="l78"><span class="adr">015C</span>	06 00               <span id="code78">mvi b, $00</span></pre>
-<pre id="l79"><span class="adr"></span>	                <span class="l" id="label79">_set_palette_1</span><span id="code79">:</span></pre>
-<pre id="l80"><span class="adr">015E</span>	79                  <span id="code80">mov a,c</span></pre>
-<pre id="l81"><span class="adr">015F</span>	D3 02               <span id="code81">out 2</span></pre>
-<pre id="l82"><span class="adr">0161</span>	78                  <span id="code82">mov a, b</span></pre>
-<pre id="l83"><span class="adr">0162</span>	D3 0C               <span id="code83">out $c</span></pre>
-<pre id="l84"><span class="adr">0164</span>	D3 0C               <span id="code84">out $c</span></pre>
-<pre id="l85"><span class="adr">0166</span>	D3 0C               <span id="code85">out $c</span></pre>
-<pre id="l86"><span class="adr">0168</span>	D3 0C               <span id="code86">out $c</span></pre>
-<pre id="l87"><span class="adr">016A</span>	2F                  <span id="code87">cma</span></pre>
-<pre id="l88"><span class="adr">016B</span>	47                  <span id="code88">mov b, a</span></pre>
-<pre id="l89"><span class="adr">016C</span>	0D                  <span id="code89">dcr c</span></pre>
-<pre id="l90"><span class="adr">016D</span>	F2 5E 01            <span id="code90">jp _set_palette_1</span></pre>
-<pre id="l91"><span class="adr">0170</span>	C9                  <span id="code91">ret</span></pre>
-<pre id="l92"><span class="adr"></span>	                <span id="code92"></span></pre>
-<pre id="l93"><span class="adr"></span>	                    <span class="cmt">; установить позицию для вывода следующего символа</span></pre>
-<pre id="l94"><span class="adr"></span>	                    <span class="cmt">; H = столбец, L = строка ($F8 = верхняя)</span></pre>
-<pre id="l95"><span class="adr"></span>	                <span class="l" id="label95">gotoxy</span><span id="code95"></span></pre>
-<pre id="l96"><span class="adr">0171</span>	22 81 01            <span id="code96">shld _puts_de</span></pre>
-<pre id="l97"><span class="adr">0174</span>	C9                  <span id="code97">ret</span></pre>
-<pre id="l98"><span class="adr"></span>	                <span id="code98"></span></pre>
-<pre id="l99"><span class="adr"></span>	                    <span class="cmt">; Вывести 0-терминированую строку в HL на экран</span></pre>
-<pre id="l100"><span class="adr"></span>	                <span class="l" id="label100">puts</span><span id="code100"></span></pre>
-<pre id="l101"><span class="adr">0175</span>	22 7F 01            <span id="code101">shld _puts_sptr</span></pre>
-<pre id="l102"><span class="adr"></span>	                <span class="l" id="label102">_puts_1</span><span id="code102">:</span></pre>
-<pre id="l103"><span class="adr">0178</span>	CD 83 01            <span id="code103">call _putchar</span></pre>
-<pre id="l104"><span class="adr">017B</span>	C2 78 01            <span id="code104">jnz _puts_1</span></pre>
-<pre id="l105"><span class="adr">017E</span>	C9                  <span id="code105">ret</span></pre>
-<pre id="l106"><span class="adr"></span>	                <span id="code106"></span></pre>
-<pre id="l107"><span class="adr">017F</span>	00 00           <span class="l" id="label107">_puts_sptr</span><span id="code107">:dw 0</span></pre>
-<pre id="l108"><span class="adr">0181</span>	00 00           <span class="l" id="label108">_puts_de</span><span id="code108">: dw 0</span></pre>
-<pre id="l109"><span class="adr"></span>	                <span id="code109"></span></pre>
-<pre id="l110"><span class="adr"></span>	                    <span class="cmt">; Нарисовать один символ</span></pre>
-<pre id="l111"><span class="adr"></span>	                <span class="l" id="label111">_putchar</span><span id="code111">:</span></pre>
-<pre id="l112"><span class="adr">0183</span>	2A 7F 01            <span id="code112">lhld _puts_sptr</span></pre>
-<pre id="l113"><span class="adr">0186</span>	7E                  <span id="code113">mov a, m</span></pre>
-<pre id="l114"><span class="adr">0187</span>	B7                  <span id="code114">ora a</span></pre>
-<pre id="l115"><span class="adr">0188</span>	C8                  <span id="code115">rz</span></pre>
-<pre id="l116"><span class="adr">0189</span>	4F                  <span id="code116">mov c, a</span></pre>
-<pre id="l117"><span class="adr">018A</span>	23                  <span id="code117">inx h</span></pre>
-<pre id="l118"><span class="adr">018B</span>	22 7F 01            <span id="code118">shld _puts_sptr</span></pre>
-<pre id="l119"><span class="adr">018E</span>	EB                  <span id="code119">xchg</span></pre>
-<pre id="l120"><span class="adr">018F</span>	2A 81 01            <span id="code120">lhld _puts_de</span></pre>
-<pre id="l121"><span class="adr">0192</span>	24                  <span id="code121">inr h</span></pre>
-<pre id="l122"><span class="adr">0193</span>	22 81 01            <span id="code122">shld _puts_de</span></pre>
-<pre id="l123"><span class="adr">0196</span>	EB                  <span id="code123">xchg</span></pre>
-<pre id="l124"><span class="adr"></span>	                <span id="code124"></span></pre>
-<pre id="l125"><span class="adr">0197</span>	21 00 00            <span id="code125">lxi h,0</span></pre>
-<pre id="l126"><span class="adr">019A</span>	39                  <span id="code126">dad sp</span></pre>
-<pre id="l127"><span class="adr">019B</span>	22 2E 01            <span id="code127">shld __savedsp</span></pre>
-<pre id="l128"><span class="adr"></span>	                <span id="code128"></span></pre>
-<pre id="l129"><span class="adr"></span>	                    <span class="cmt">; Найти адрес спрайта символа</span></pre>
-<pre id="l130"><span class="adr"></span>	                    <span class="cmt">; bc = (c-32)*8</span></pre>
-<pre id="l131"><span class="adr">019E</span>	79                  <span id="code131">mov a,c</span></pre>
-<pre id="l132"><span class="adr">019F</span>	D6 20               <span id="code132">sui 32</span></pre>
-<pre id="l133"><span class="adr">01A1</span>	4F                  <span id="code133">mov c, a</span></pre>
-<pre id="l134"><span class="adr">01A2</span>	07                  <span id="code134">rlc</span></pre>
-<pre id="l135"><span class="adr">01A3</span>	07                  <span id="code135">rlc</span></pre>
-<pre id="l136"><span class="adr">01A4</span>	07                  <span id="code136">rlc</span></pre>
-<pre id="l137"><span class="adr">01A5</span>	E6 07               <span id="code137">ani 7</span></pre>
-<pre id="l138"><span class="adr">01A7</span>	47                  <span id="code138">mov b,a</span></pre>
-<pre id="l139"><span class="adr">01A8</span>	79                  <span id="code139">mov a,c</span></pre>
-<pre id="l140"><span class="adr">01A9</span>	07                  <span id="code140">rlc</span></pre>
-<pre id="l141"><span class="adr">01AA</span>	07                  <span id="code141">rlc</span></pre>
-<pre id="l142"><span class="adr">01AB</span>	07                  <span id="code142">rlc</span></pre>
-<pre id="l143"><span class="adr">01AC</span>	E6 F8               <span id="code143">ani $f8</span></pre>
-<pre id="l144"><span class="adr">01AE</span>	4F                  <span id="code144">mov c,a</span></pre>
-<pre id="l145"><span class="adr">01AF</span>	21 D3 01            <span id="code145">lxi h, _font_table</span></pre>
-<pre id="l146"><span class="adr">01B2</span>	09                  <span id="code146">dad b</span></pre>
-<pre id="l147"><span class="adr">01B3</span>	F9                  <span id="code147">sphl        </span><span class="cmt">; sp -> char</span></pre>
-<pre id="l148"><span class="adr"></span>	                <span id="code148"></span></pre>
-<pre id="l149"><span class="adr">01B4</span>	21 00 E0            <span id="code149">lxi h, $e000</span></pre>
-<pre id="l150"><span class="adr">01B7</span>	19                  <span id="code150">dad d        </span><span class="cmt">; hl -> destination</span></pre>
-<pre id="l151"><span class="adr"></span>	                <span id="code151"></span></pre>
-<pre id="l152"><span class="adr"></span>	                    <span class="cmt">; Выдавить биты на экран</span></pre>
-<pre id="l153"><span class="adr">01B8</span>	C1 71 2D 70         <span id="code153">pop b\ mov m, c\ dcr l\ mov m, b\ dcr l</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01BC	2D <br/></pre>
-<pre id="l154"><span class="adr">01BD</span>	C1 71 2D 70         <span id="code154">pop b\ mov m, c\ dcr l\ mov m, b\ dcr l</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01C1	2D <br/></pre>
-<pre id="l155"><span class="adr">01C2</span>	C1 71 2D 70         <span id="code155">pop b\ mov m, c\ dcr l\ mov m, b\ dcr l</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01C6	2D <br/></pre>
-<pre id="l156"><span class="adr">01C7</span>	C1 71 2D 70         <span id="code156">pop b\ mov m, c\ dcr l\ mov m, b\ dcr l</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01CB	2D <br/></pre>
-<pre id="l157"><span class="adr"></span>	                <span id="code157"></span></pre>
-<pre id="l158"><span class="adr">01CC</span>	2A 2E 01            <span id="code158">lhld __savedsp</span></pre>
-<pre id="l159"><span class="adr">01CF</span>	F9                  <span id="code159">sphl</span></pre>
-<pre id="l160"><span class="adr">01D0</span>	3E 01               <span id="code160">mvi a, 1</span></pre>
-<pre id="l161"><span class="adr">01D2</span>	C9                  <span id="code161">ret    </span></pre>
-<pre id="l162"><span class="adr"></span>	                <span id="code162"></span></pre>
-<pre id="l163"><span class="adr"></span>	                <span class="l" id="label163">_font_table</span><span id="code163">:</span></pre>
-<pre id="l164"><span class="adr"></span>	                    <span class="cmt">; Font: 8X8!FONT.pf</span></pre>
-<pre id="l165"><span class="adr">01D3</span>	00 00 00 00         <span id="code165">db    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01D7	00 00 00 00 <br/></pre>
-<pre id="l166"><span class="adr">01DB</span>	30 78 78 30         <span id="code166">db    0x30, 0x78, 0x78, 0x30, 0x30, 0x00, 0x30, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01DF	30 00 30 00 <br/></pre>
-<pre id="l167"><span class="adr">01E3</span>	6C 6C 6C 00         <span id="code167">db    0x6C, 0x6C, 0x6C, 0x00, 0x00, 0x00, 0x00, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01E7	00 00 00 00 <br/></pre>
-<pre id="l168"><span class="adr">01EB</span>	6C 6C FE 6C         <span id="code168">db    0x6C, 0x6C, 0xFE, 0x6C, 0xFE, 0x6C, 0x6C, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01EF	FE 6C 6C 00 <br/></pre>
-<pre id="l169"><span class="adr">01F3</span>	30 7C C0 78         <span id="code169">db    0x30, 0x7C, 0xC0, 0x78, 0x0C, 0xF8, 0x30, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01F7	0C F8 30 00 <br/></pre>
-<pre id="l170"><span class="adr">01FB</span>	00 C6 CC 18         <span id="code170">db    0x00, 0xC6, 0xCC, 0x18, 0x30, 0x66, 0xC6, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>01FF	30 66 C6 00 <br/></pre>
-<pre id="l171"><span class="adr">0203</span>	38 6C 38 76         <span id="code171">db    0x38, 0x6C, 0x38, 0x76, 0xDC, 0xCC, 0x76, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0207	DC CC 76 00 <br/></pre>
-<pre id="l172"><span class="adr">020B</span>	60 60 C0 00         <span id="code172">db    0x60, 0x60, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>020F	00 00 00 00 <br/></pre>
-<pre id="l173"><span class="adr">0213</span>	18 30 60 60         <span id="code173">db    0x18, 0x30, 0x60, 0x60, 0x60, 0x30, 0x18, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0217	60 30 18 00 <br/></pre>
-<pre id="l174"><span class="adr">021B</span>	60 30 18 18         <span id="code174">db    0x60, 0x30, 0x18, 0x18, 0x18, 0x30, 0x60, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>021F	18 30 60 00 <br/></pre>
-<pre id="l175"><span class="adr">0223</span>	00 66 3C FF         <span id="code175">db    0x00, 0x66, 0x3C, 0xFF, 0x3C, 0x66, 0x00, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0227	3C 66 00 00 <br/></pre>
-<pre id="l176"><span class="adr">022B</span>	00 30 30 FC         <span id="code176">db    0x00, 0x30, 0x30, 0xFC, 0x30, 0x30, 0x00, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>022F	30 30 00 00 <br/></pre>
-<pre id="l177"><span class="adr">0233</span>	00 00 00 00         <span id="code177">db    0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x30, 0x60    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0237	00 30 30 60 <br/></pre>
-<pre id="l178"><span class="adr">023B</span>	00 00 00 FC         <span id="code178">db    0x00, 0x00, 0x00, 0xFC, 0x00, 0x00, 0x00, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>023F	00 00 00 00 <br/></pre>
-<pre id="l179"><span class="adr">0243</span>	00 00 00 00         <span id="code179">db    0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x30, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0247	00 30 30 00 <br/></pre>
-<pre id="l180"><span class="adr">024B</span>	06 0C 18 30         <span id="code180">db    0x06, 0x0C, 0x18, 0x30, 0x60, 0xC0, 0x80, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>024F	60 C0 80 00 <br/></pre>
-<pre id="l181"><span class="adr">0253</span>	7C C6 CE DE         <span id="code181">db    0x7C, 0xC6, 0xCE, 0xDE, 0xF6, 0xE6, 0x7C, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0257	F6 E6 7C 00 <br/></pre>
-<pre id="l182"><span class="adr">025B</span>	30 70 30 30         <span id="code182">db    0x30, 0x70, 0x30, 0x30, 0x30, 0x30, 0x30, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>025F	30 30 30 00 <br/></pre>
-<pre id="l183"><span class="adr">0263</span>	78 CC 0C 38         <span id="code183">db    0x78, 0xCC, 0x0C, 0x38, 0x60, 0xC0, 0xFC, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0267	60 C0 FC 00 <br/></pre>
-<pre id="l184"><span class="adr">026B</span>	78 CC 0C 38         <span id="code184">db    0x78, 0xCC, 0x0C, 0x38, 0x0C, 0xCC, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>026F	0C CC 78 00 <br/></pre>
-<pre id="l185"><span class="adr">0273</span>	1C 3C 6C CC         <span id="code185">db    0x1C, 0x3C, 0x6C, 0xCC, 0xFE, 0x0C, 0x0C, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0277	FE 0C 0C 00 <br/></pre>
-<pre id="l186"><span class="adr">027B</span>	FC C0 F8 0C         <span id="code186">db    0xFC, 0xC0, 0xF8, 0x0C, 0x0C, 0xCC, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>027F	0C CC 78 00 <br/></pre>
-<pre id="l187"><span class="adr">0283</span>	38 60 C0 F8         <span id="code187">db    0x38, 0x60, 0xC0, 0xF8, 0xCC, 0xCC, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0287	CC CC 78 00 <br/></pre>
-<pre id="l188"><span class="adr">028B</span>	FC 0C 0C 18         <span id="code188">db    0xFC, 0x0C, 0x0C, 0x18, 0x30, 0x30, 0x30, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>028F	30 30 30 00 <br/></pre>
-<pre id="l189"><span class="adr">0293</span>	78 CC CC 78         <span id="code189">db    0x78, 0xCC, 0xCC, 0x78, 0xCC, 0xCC, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0297	CC CC 78 00 <br/></pre>
-<pre id="l190"><span class="adr">029B</span>	78 CC CC 7C         <span id="code190">db    0x78, 0xCC, 0xCC, 0x7C, 0x0C, 0x18, 0x70, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>029F	0C 18 70 00 <br/></pre>
-<pre id="l191"><span class="adr">02A3</span>	00 30 30 00         <span id="code191">db    0x00, 0x30, 0x30, 0x00, 0x00, 0x30, 0x30, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02A7	00 30 30 00 <br/></pre>
-<pre id="l192"><span class="adr">02AB</span>	00 30 30 00         <span id="code192">db    0x00, 0x30, 0x30, 0x00, 0x00, 0x30, 0x30, 0x60    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02AF	00 30 30 60 <br/></pre>
-<pre id="l193"><span class="adr">02B3</span>	18 30 60 C0         <span id="code193">db    0x18, 0x30, 0x60, 0xC0, 0x60, 0x30, 0x18, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02B7	60 30 18 00 <br/></pre>
-<pre id="l194"><span class="adr">02BB</span>	00 00 FC 00         <span id="code194">db    0x00, 0x00, 0xFC, 0x00, 0x00, 0xFC, 0x00, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02BF	00 FC 00 00 <br/></pre>
-<pre id="l195"><span class="adr">02C3</span>	60 30 18 0C         <span id="code195">db    0x60, 0x30, 0x18, 0x0C, 0x18, 0x30, 0x60, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02C7	18 30 60 00 <br/></pre>
-<pre id="l196"><span class="adr">02CB</span>	78 CC 0C 18         <span id="code196">db    0x78, 0xCC, 0x0C, 0x18, 0x30, 0x00, 0x30, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02CF	30 00 30 00 <br/></pre>
-<pre id="l197"><span class="adr">02D3</span>	7C C6 DE DE         <span id="code197">db    0x7C, 0xC6, 0xDE, 0xDE, 0xDE, 0xC0, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02D7	DE C0 78 00 <br/></pre>
-<pre id="l198"><span class="adr">02DB</span>	18 3C 66 66         <span id="code198">db    0x18, 0x3C, 0x66, 0x66, 0x7E, 0x66, 0x66, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02DF	7E 66 66 00 <br/></pre>
-<pre id="l199"><span class="adr">02E3</span>	7C 66 66 7C         <span id="code199">db    0x7C, 0x66, 0x66, 0x7C, 0x66, 0x66, 0x7C, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02E7	66 66 7C 00 <br/></pre>
-<pre id="l200"><span class="adr">02EB</span>	3C 66 C0 C0         <span id="code200">db    0x3C, 0x66, 0xC0, 0xC0, 0xC0, 0x66, 0x3C, 0x00     </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02EF	C0 66 3C 00 <br/></pre>
-<pre id="l201"><span class="adr">02F3</span>	78 6C 66 66         <span id="code201">db    0x78, 0x6C, 0x66, 0x66, 0x66, 0x6C, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02F7	66 6C 78 00 <br/></pre>
-<pre id="l202"><span class="adr">02FB</span>	7E 60 60 78         <span id="code202">db    0x7E, 0x60, 0x60, 0x78, 0x60, 0x60, 0x7E, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>02FF	60 60 7E 00 <br/></pre>
-<pre id="l203"><span class="adr">0303</span>	7E 60 60 78         <span id="code203">db    0x7E, 0x60, 0x60, 0x78, 0x60, 0x60, 0x60, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0307	60 60 60 00 <br/></pre>
-<pre id="l204"><span class="adr">030B</span>	3C 66 C0 C0         <span id="code204">db    0x3C, 0x66, 0xC0, 0xC0, 0xCE, 0x66, 0x3E, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>030F	CE 66 3E 00 <br/></pre>
-<pre id="l205"><span class="adr">0313</span>	66 66 66 7E         <span id="code205">db    0x66, 0x66, 0x66, 0x7E, 0x66, 0x66, 0x66, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0317	66 66 66 00 <br/></pre>
-<pre id="l206"><span class="adr">031B</span>	18 18 18 18         <span id="code206">db    0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>031F	18 18 18 00 <br/></pre>
-<pre id="l207"><span class="adr">0323</span>	06 06 06 06         <span id="code207">db    0x06, 0x06, 0x06, 0x06, 0x66, 0x66, 0x3C, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0327	66 66 3C 00 <br/></pre>
-<pre id="l208"><span class="adr">032B</span>	66 66 6C 78         <span id="code208">db    0x66, 0x66, 0x6C, 0x78, 0x6C, 0x66, 0x66, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>032F	6C 66 66 00 <br/></pre>
-<pre id="l209"><span class="adr">0333</span>	60 60 60 60         <span id="code209">db    0x60, 0x60, 0x60, 0x60, 0x60, 0x60, 0x7E, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0337	60 60 7E 00 <br/></pre>
-<pre id="l210"><span class="adr">033B</span>	C6 EE FE FE         <span id="code210">db    0xC6, 0xEE, 0xFE, 0xFE, 0xD6, 0xC6, 0xC6, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>033F	D6 C6 C6 00 <br/></pre>
-<pre id="l211"><span class="adr">0343</span>	C6 E6 F6 DE         <span id="code211">db    0xC6, 0xE6, 0xF6, 0xDE, 0xCE, 0xC6, 0xC6, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0347	CE C6 C6 00 <br/></pre>
-<pre id="l212"><span class="adr">034B</span>	3C 66 66 66         <span id="code212">db    0x3C, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3C, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>034F	66 66 3C 00 <br/></pre>
-<pre id="l213"><span class="adr">0353</span>	7C 66 66 7C         <span id="code213">db    0x7C, 0x66, 0x66, 0x7C, 0x60, 0x60, 0x60, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0357	60 60 60 00 <br/></pre>
-<pre id="l214"><span class="adr">035B</span>	3C 66 66 66         <span id="code214">db    0x3C, 0x66, 0x66, 0x66, 0x6E, 0x3C, 0x0E, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>035F	6E 3C 0E 00 <br/></pre>
-<pre id="l215"><span class="adr">0363</span>	7C 66 66 7C         <span id="code215">db    0x7C, 0x66, 0x66, 0x7C, 0x6C, 0x66, 0x66, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0367	6C 66 66 00 <br/></pre>
-<pre id="l216"><span class="adr">036B</span>	3C 66 70 38         <span id="code216">db    0x3C, 0x66, 0x70, 0x38, 0x0E, 0x66, 0x3C, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>036F	0E 66 3C 00 <br/></pre>
-<pre id="l217"><span class="adr">0373</span>	7E 18 18 18         <span id="code217">db    0x7E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0377	18 18 18 00 <br/></pre>
-<pre id="l218"><span class="adr">037B</span>	66 66 66 66         <span id="code218">db    0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x3E, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>037F	66 66 3E 00 <br/></pre>
-<pre id="l219"><span class="adr">0383</span>	66 66 66 66         <span id="code219">db    0x66, 0x66, 0x66, 0x66, 0x66, 0x3C, 0x18, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0387	66 3C 18 00 <br/></pre>
-<pre id="l220"><span class="adr">038B</span>	C6 C6 C6 D6         <span id="code220">db    0xC6, 0xC6, 0xC6, 0xD6, 0xFE, 0xEE, 0xC6, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>038F	FE EE C6 00 <br/></pre>
-<pre id="l221"><span class="adr">0393</span>	66 66 3C 18         <span id="code221">db    0x66, 0x66, 0x3C, 0x18, 0x3C, 0x66, 0x66, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0397	3C 66 66 00 <br/></pre>
-<pre id="l222"><span class="adr">039B</span>	66 66 66 3C         <span id="code222">db    0x66, 0x66, 0x66, 0x3C, 0x18, 0x18, 0x18, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>039F	18 18 18 00 <br/></pre>
-<pre id="l223"><span class="adr">03A3</span>	FE 06 0C 18         <span id="code223">db    0xFE, 0x06, 0x0C, 0x18, 0x30, 0x60, 0xFE, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03A7	30 60 FE 00 <br/></pre>
-<pre id="l224"><span class="adr">03AB</span>	78 60 60 60         <span id="code224">db    0x78, 0x60, 0x60, 0x60, 0x60, 0x60, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03AF	60 60 78 00 <br/></pre>
-<pre id="l225"><span class="adr">03B3</span>	C0 60 30 18         <span id="code225">db    0xC0, 0x60, 0x30, 0x18, 0x0C, 0x06, 0x02, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03B7	0C 06 02 00 <br/></pre>
-<pre id="l226"><span class="adr">03BB</span>	78 18 18 18         <span id="code226">db    0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0x78, 0x00    </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03BF	18 18 78 00 <br/></pre>
-<pre id="l227"><span class="adr">03C3</span>	07 0E 39 63         <span id="code227">db    0x07, 0x0E, 0x39, 0x63, 0x83, 0x31, 0x1C, 0x07   </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03C7	83 31 1C 07 <br/></pre>
-<pre id="l228"><span class="adr">03CB</span>	C0 E0 38 8C         <span id="code228">db    0xC0, 0xE0, 0x38, 0x8C, 0x82, 0x18, 0x70, 0xC0  </span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03CF	82 18 70 C0 <br/></pre>
-<pre id="l229"><span class="adr"></span>	                <span id="code229"></span></pre>
-<pre id="l230"><span class="adr"></span>	                    <span id="code230">end</span></pre>
-<pre id="l231"><span class="adr"></span>	                </pre>
-<pre>Labels:</pre><div class="hordiv"></div><pre class="labeltable"><span class='t1' onclick="return gotoLabel('__savedsp');">__savedsp               012E</span><span class='t1' onclick="return gotoLabel('_clrscr_1');">_clrscr_1               0141</span><span class='t1' onclick="return gotoLabel('_font_table');">_font_table             01D3</span><span class='t2' onclick="return gotoLabel('_putchar');">_putchar                0183</span><br/><span class='t1' onclick="return gotoLabel('_puts_1');">_puts_1                 0178</span><span class='t1' onclick="return gotoLabel('_puts_de');">_puts_de                0181</span><span class='t1' onclick="return gotoLabel('_puts_sptr');">_puts_sptr              017F</span><span class='t2' onclick="return gotoLabel('_set_palette_1');">_set_palette_1          015E</span><br/><span class='t1' onclick="return gotoLabel('clrscr');">clrscr                  0130</span><span class='t1' onclick="return gotoLabel('end');">end                     03D3</span><span class='t1' onclick="return gotoLabel('gotoxy');">gotoxy                  0171</span><span class='t2' onclick="return gotoLabel('msg');">msg                     0120</span><br/><span class='t1' onclick="return gotoLabel('puts');">puts                    0175</span><span class='t1' onclick="return gotoLabel('rastint');">rastint                 0038</span><span class='t1' onclick="return gotoLabel('set_palette');">set_palette             0150</span></pre><div>&nbsp;</div><pre>Memory dump:</pre><div class="hordiv"></div><pre class="d0"> </pre><br/><pre class="d1">0100:  F3 AF D3 10 31 00 01 3E-C9 32 38 00 CD 30 01 CD  ....1..>.28..0..</pre><br/><pre class="d0">0110:  50 01 21 F8 00 CD 71 01-21 20 01 CD 75 01 F3 76  P.!...q.!...u..v</pre><br/><pre class="d1">0120:  48 45 4C 4C 4F 2C 20 57-4F 52 4C 44 21 00 00 00  HELLO,.WORLD!...</pre><br/><pre class="d0">0130:  F3 21 00 00 39 22 2E 01-31 00 00 01 00 00 11 00  .!..9"..1.......</pre><br/><pre class="d1">0140:  10 C5 C5 C5 C5 1B 7A B3-C2 41 01 2A 2E 01 F9 C9  ......z..A.*....</pre><br/><pre class="d0">0150:  FB 76 3E 88 D3 00 3E FF-D3 03 0E 0F 06 00 79 D3  .v>...>.......y.</pre><br/><pre class="d1">0160:  02 78 D3 0C D3 0C D3 0C-D3 0C 2F 47 0D F2 5E 01  .x......../G..^.</pre><br/><pre class="d0">0170:  C9 22 81 01 C9 22 7F 01-CD 83 01 C2 78 01 C9 00  ."..."......x...</pre><br/><pre class="d1">0180:  00 00 00 2A 7F 01 7E B7-C8 4F 23 22 7F 01 EB 2A  ...*..~..O#"...*</pre><br/><pre class="d0">0190:  81 01 24 22 81 01 EB 21-00 00 39 22 2E 01 79 D6  ..$"...!..9"..y.</pre><br/><pre class="d1">01A0:  20 4F 07 07 07 E6 07 47-79 07 07 07 E6 F8 4F 21  .O.....Gy.....O!</pre><br/><pre class="d0">01B0:  D3 01 09 F9 21 00 E0 19-C1 71 2D 70 2D C1 71 2D  ....!....q-p-.q-</pre><br/><pre class="d1">01C0:  70 2D C1 71 2D 70 2D C1-71 2D 70 2D 2A 2E 01 F9  p-.q-p-.q-p-*...</pre><br/><pre class="d0">01D0:  3E 01 C9 00 00 00 00 00-00 00 00 30 78 78 30 30  >..........0xx00</pre><br/><pre class="d1">01E0:  00 30 00 6C 6C 6C 00 00-00 00 00 6C 6C FE 6C FE  .0.lll.....ll.l.</pre><br/><pre class="d0">01F0:  6C 6C 00 30 7C C0 78 0C-F8 30 00 00 C6 CC 18 30  ll.0|.x..0.....0</pre><br/><pre class="d1">0200:  66 C6 00 38 6C 38 76 DC-CC 76 00 60 60 C0 00 00  f..8l8v..v.``...</pre><br/><pre class="d0">0210:  00 00 00 18 30 60 60 60-30 18 00 60 30 18 18 18  ....0```0..`0...</pre><br/><pre class="d1">0220:  30 60 00 00 66 3C FF 3C-66 00 00 00 30 30 FC 30  0`..f<.<f...00.0</pre><br/><pre class="d0">0230:  30 00 00 00 00 00 00 00-30 30 60 00 00 00 FC 00  0.......00`.....</pre><br/><pre class="d1">0240:  00 00 00 00 00 00 00 00-30 30 00 06 0C 18 30 60  ........00....0`</pre><br/><pre class="d0">0250:  C0 80 00 7C C6 CE DE F6-E6 7C 00 30 70 30 30 30  ...|.....|.0p000</pre><br/><pre class="d1">0260:  30 30 00 78 CC 0C 38 60-C0 FC 00 78 CC 0C 38 0C  00.x..8`...x..8.</pre><br/><pre class="d0">0270:  CC 78 00 1C 3C 6C CC FE-0C 0C 00 FC C0 F8 0C 0C  .x..<l..........</pre><br/><pre class="d1">0280:  CC 78 00 38 60 C0 F8 CC-CC 78 00 FC 0C 0C 18 30  .x.8`....x.....0</pre><br/><pre class="d0">0290:  30 30 00 78 CC CC 78 CC-CC 78 00 78 CC CC 7C 0C  00.x..x..x.x..|.</pre><br/><pre class="d1">02A0:  18 70 00 00 30 30 00 00-30 30 00 00 30 30 00 00  .p..00..00..00..</pre><br/><pre class="d0">02B0:  30 30 60 18 30 60 C0 60-30 18 00 00 00 FC 00 00  00`.0`.`0.......</pre><br/><pre class="d1">02C0:  FC 00 00 60 30 18 0C 18-30 60 00 78 CC 0C 18 30  ...`0...0`.x...0</pre><br/><pre class="d0">02D0:  00 30 00 7C C6 DE DE DE-C0 78 00 18 3C 66 66 7E  .0.|.....x..<ff~</pre><br/><pre class="d1">02E0:  66 66 00 7C 66 66 7C 66-66 7C 00 3C 66 C0 C0 C0  ff.|ff|ff|.<f...</pre><br/><pre class="d0">02F0:  66 3C 00 78 6C 66 66 66-6C 78 00 7E 60 60 78 60  f<.xlffflx.~``x`</pre><br/><pre class="d1">0300:  60 7E 00 7E 60 60 78 60-60 60 00 3C 66 C0 C0 CE  `~.~``x```.<f...</pre><br/><pre class="d0">0310:  66 3E 00 66 66 66 7E 66-66 66 00 18 18 18 18 18  f>.fff~fff......</pre><br/><pre class="d1">0320:  18 18 00 06 06 06 06 66-66 3C 00 66 66 6C 78 6C  .......ff<.fflxl</pre><br/><pre class="d0">0330:  66 66 00 60 60 60 60 60-60 7E 00 C6 EE FE FE D6  ff.``````~......</pre><br/><pre class="d1">0340:  C6 C6 00 C6 E6 F6 DE CE-C6 C6 00 3C 66 66 66 66  ...........<ffff</pre><br/><pre class="d0">0350:  66 3C 00 7C 66 66 7C 60-60 60 00 3C 66 66 66 6E  f<.|ff|```.<fffn</pre><br/><pre class="d1">0360:  3C 0E 00 7C 66 66 7C 6C-66 66 00 3C 66 70 38 0E  <..|ff|lff.<fp8.</pre><br/><pre class="d0">0370:  66 3C 00 7E 18 18 18 18-18 18 00 66 66 66 66 66  f<.~.......fffff</pre><br/><pre class="d1">0380:  66 3E 00 66 66 66 66 66-3C 18 00 C6 C6 C6 D6 FE  f>.fffff<.......</pre><br/><pre class="d0">0390:  EE C6 00 66 66 3C 18 3C-66 66 00 66 66 66 3C 18  ...ff<.<ff.fff<.</pre><br/><pre class="d1">03A0:  18 18 00 FE 06 0C 18 30-60 FE 00 78 60 60 60 60  .......0`..x````</pre><br/><pre class="d0">03B0:  60 78 00 C0 60 30 18 0C-06 02 00 78 18 18 18 18  `x..`0.....x....</pre><br/><pre class="d1">03C0:  18 78 00 07 0E 39 63 83-31 1C 07 C0 E0 38 8C 82  .x...9c.1....8..</pre><br/><pre class="d0">03D0:  18 70 C0               -                         .p..............</pre><br/></body></html>

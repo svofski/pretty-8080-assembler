@@ -141,9 +141,12 @@ oop.inherits(TokenTooltip, Tooltip);
         for (var k = 0; xrefs && k < xrefs.length; ++k) { 
             var i = xrefs[k];
             var text = this.editor.session.getLine(i);
-            var begin = text.search('\\b' + label + '\\b');
-            var range = new Range(i, begin, i, begin + label.length);
-            result.push(this.editor.session.addMarker(range, "ace_xref", "text"));
+
+            var re = new RegExp('\\b' + label + '\\b', 'gi');
+            for (var m = re.exec(text); m; m = re.exec(text)) {
+                var range = new Range(i, m.index, i, m.index + label.length);
+                result.push(this.editor.session.addMarker(range, "ace_xref", "text"));
+            }
         }
         return result;
     };

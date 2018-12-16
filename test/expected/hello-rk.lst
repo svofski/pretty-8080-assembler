@@ -1,0 +1,26 @@
+	                    ; 🐟 для Радио-86РК
+	                    .project hello.rk 
+	                    .tape rk-bin
+	                    .org 0
+	                prompt  equ 0F86Ch
+	                puts    equ 0F818h
+	                
+0000	21 09 00            lxi hl, msg
+0003	CD 18 F8            call puts
+0006	C3 6C F8            jmp prompt
+	                
+	                msg:
+0009	1F 70 72 69         db 1fh,'priwet, mir!',0dh,0ah,0
+	. . .
+0015	21 0D 0A 00 
+
+	                
+	                
+	                
+Labels:
+msg                     0009
+prompt                  F86C	puts                    F818
+
+Memory dump:
+0000:  21 09 00 CD 18 F8 C3 6C-F8 1F 70 72 69 77 65 74  !......l..priwet
+0010:  2C 20 6D 69 72 21 0D 0A-00                       ,.mir!..........

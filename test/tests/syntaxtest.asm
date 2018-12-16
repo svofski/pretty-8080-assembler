@@ -24,12 +24,12 @@ bob:    shld mike \ shld mike\shld mike\shld mike;fec\k
         shld 65535
         shld 65536      ; overflow
         lxi h,65536     ; overflow
-        lxi h,-32769
+        lxi h,-32769    ; overflow
         mvi a,256       ; overlofw
         mvi a,-129      ; overflow
-        mvi a, nonexistent
-        lxi h,nonexistent
-        shld nonexistent
+        mvi a, nonexistent ; no such label
+        lxi h,nonexistent ; no such label
+        shld nonexistent ; no such label
         lxi sp,-32768
         lxi sp,-32767
         db64 TG9uZyBiaW5hcnkgaW5pdGlhbGl6YXRpb24gc2VjdGlvbnMgY2FuIGJlIGRlZmluZWQgdXNpbmcgYmFzZTY0LWVuY29kZWQgc3RyaW5ncyENCiQ=
@@ -45,6 +45,17 @@ bob:    shld mike \ shld mike\shld mike\shld mike;fec\k
         mvi c,1111-1111 ; =0
         dad sp
         push psw
+	sui -1+1h       ; = 0
+	sui 1           ; = 1
+	sui 01          ; = 1
+	sui 08          ; = 8, not an octal
+	sui 1d          ; = 1 dec
+	sui 1h          ; = 1 hex
+	sui 1h+1        ; = 2
+	sui 1+1h        ; = 2
+	sui 01h         ; = 1
+	sui 07q         ; = 7 octal
+	sui 377q        ; = ff 
 cthulhu:
         ftagn   ; this is actually a label
         lxi d,ftagn

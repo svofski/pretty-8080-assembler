@@ -1,395 +1,0 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><link href="list-test.css" rel="stylesheet" type="text/css" media="screen"/><link href="../list-test.css" rel="stylesheet" type="text/css" media="screen"/></head><body><pre id="l0"><span class="adr"></span>	                                <span class="cmt">; 🐟 Рисование окружности по алгоритму Мичнера</span></pre>
-<pre id="l1"><span class="adr"></span>	                                <span class="cmt">; Иван Городецкий 28.11.2018-02.12.2018</span></pre>
-<pre id="l2"><span class="adr"></span>	                                <span class="cmt">; Версия с клиппингом и возможностью рисования эллипсов и дуг</span></pre>
-<pre id="l3"><span class="adr"></span>	                                <span class="cmt">;</span></pre>
-<pre id="l4"><span class="adr"></span>	                                <span class="cmt">; Пример рисования дуг</span></pre>
-<pre id="l5"><span class="adr"></span>	                                <span id="code5"></span></pre>
-<pre id="l6"><span class="adr"></span>	                                <span id="code6">.project circlearc.rom</span></pre>
-<pre id="l7"><span class="adr"></span>	                <span id="code7"></span></pre>
-<pre id="l8"><span class="adr"></span>	                <span class="l" id="label8">ARcorr</span>	        <span id="code8">.equ 400h</span></pre>
-<pre id="l9"><span class="adr"></span>	                <span id="code9"></span></pre>
-<pre id="l10"><span class="adr"></span>	                		<span id="code10">.org 100h</span></pre>
-<pre id="l11"><span class="adr"></span>	                <span id="code11"></span></pre>
-<pre id="l12"><span class="adr"></span>	                <span class="l" id="label12">start</span><span id="code12">:</span></pre>
-<pre id="l13"><span class="adr">0100</span>	AF              		<span id="code13">xra	a</span></pre>
-<pre id="l14"><span class="adr">0101</span>	D3 10           		<span id="code14">out	10h</span></pre>
-<pre id="l15"><span class="adr">0103</span>	31 00 01        		<span id="code15">lxi	sp,100h</span></pre>
-<pre id="l16"><span class="adr">0106</span>	3E C3           		<span id="code16">mvi	a,0C3h</span></pre>
-<pre id="l17"><span class="adr">0108</span>	32 00 00        		<span id="code17">sta	0</span></pre>
-<pre id="l18"><span class="adr">010B</span>	21 08 02        		<span id="code18">lxi	h,Restart</span></pre>
-<pre id="l19"><span class="adr">010E</span>	22 01 00        		<span id="code19">shld	1</span></pre>
-<pre id="l20"><span class="adr"></span>	                <span id="code20"></span></pre>
-<pre id="l21"><span class="adr">0111</span>	CD C8 03        		<span id="code21">call	Cls</span></pre>
-<pre id="l22"><span class="adr">0114</span>	3E C9           		<span id="code22">mvi	a,0C9h</span></pre>
-<pre id="l23"><span class="adr">0116</span>	32 38 00        		<span id="code23">sta	38h</span></pre>
-<pre id="l24"><span class="adr">0119</span>	FB              		<span id="code24">ei</span></pre>
-<pre id="l25"><span class="adr">011A</span>	76              		<span id="code25">hlt</span></pre>
-<pre id="l26"><span class="adr">011B</span>	21 E4 03        		<span id="code26">lxi	h, colors+15</span></pre>
-<pre id="l27"><span class="adr"></span>	                <span class="l" id="label27">colorset</span><span id="code27">:</span></pre>
-<pre id="l28"><span class="adr">011E</span>	3E 88           		<span id="code28">mvi	a, 88h</span></pre>
-<pre id="l29"><span class="adr">0120</span>	D3 00           		<span id="code29">out	0</span></pre>
-<pre id="l30"><span class="adr">0122</span>	0E 0F           		<span id="code30">mvi	c, 15</span></pre>
-<pre id="l31"><span class="adr">0124</span>	79              <span class="l" id="label31">colorset1</span><span id="code31">:	mov	a, c</span></pre>
-<pre id="l32"><span class="adr">0125</span>	D3 02           		<span id="code32">out	2</span></pre>
-<pre id="l33"><span class="adr">0127</span>	7E              		<span id="code33">mov	a, m</span></pre>
-<pre id="l34"><span class="adr">0128</span>	D3 0C           		<span id="code34">out	0Ch</span></pre>
-<pre id="l35"><span class="adr">012A</span>	2B              		<span id="code35">dcx	h</span></pre>
-<pre id="l36"><span class="adr">012B</span>	D3 0C           		<span id="code36">out	0Ch</span></pre>
-<pre id="l37"><span class="adr">012D</span>	D3 0C           		<span id="code37">out	0Ch</span></pre>
-<pre id="l38"><span class="adr">012F</span>	0D              		<span id="code38">dcr	c</span></pre>
-<pre id="l39"><span class="adr">0130</span>	D3 0C           		<span id="code39">out	0Ch</span></pre>
-<pre id="l40"><span class="adr">0132</span>	D3 0C           		<span id="code40">out	0Ch</span></pre>
-<pre id="l41"><span class="adr">0134</span>	D3 0C           		<span id="code41">out	0Ch</span></pre>
-<pre id="l42"><span class="adr">0136</span>	F2 24 01        		<span id="code42">jp	colorset1</span></pre>
-<pre id="l43"><span class="adr">0139</span>	3E FF           		<span id="code43">mvi	a,255</span></pre>
-<pre id="l44"><span class="adr">013B</span>	D3 03           		<span id="code44">out	3</span></pre>
-<pre id="l45"><span class="adr"></span>	                <span id="code45"></span></pre>
-<pre id="l46"><span class="adr">013D</span>	C3 08 02        		<span id="code46">jmp Restart</span></pre>
-<pre id="l47"><span class="adr"></span>	                		<span id="code47"></span></pre>
-<pre id="l48"><span class="adr"></span>	                		<span id="code48">.org 200h</span></pre>
-<pre id="l49"><span class="adr"></span>	                <span class="l" id="label49">PixelMask</span><span id="code49">:</span></pre>
-<pre id="l50"><span class="adr">0200</span>	80              		<span id="code50">.db 10000000b</span></pre>
-<pre id="l51"><span class="adr">0201</span>	40              		<span id="code51">.db 01000000b</span></pre>
-<pre id="l52"><span class="adr">0202</span>	20              		<span id="code52">.db 00100000b</span></pre>
-<pre id="l53"><span class="adr">0203</span>	10              		<span id="code53">.db 00010000b</span></pre>
-<pre id="l54"><span class="adr">0204</span>	08              		<span id="code54">.db 00001000b</span></pre>
-<pre id="l55"><span class="adr">0205</span>	04              		<span id="code55">.db 00000100b</span></pre>
-<pre id="l56"><span class="adr">0206</span>	02              		<span id="code56">.db 00000010b</span></pre>
-<pre id="l57"><span class="adr">0207</span>	01              		<span id="code57">.db 00000001b</span></pre>
-<pre id="l58"><span class="adr"></span>	                <span id="code58"></span></pre>
-<pre id="l59"><span class="adr"></span>	                <span id="code59"></span></pre>
-<pre id="l60"><span class="adr"></span>	                <span class="l" id="label60">Restart</span><span id="code60">:</span></pre>
-<pre id="l61"><span class="adr">0208</span>	CD C8 03        		<span id="code61">call	Cls</span></pre>
-<pre id="l62"><span class="adr"></span>	                		<span id="code62"></span></pre>
-<pre id="l63"><span class="adr">020B</span>	CD 6F 03        		<span id="code63">call IniCircle</span></pre>
-<pre id="l64"><span class="adr"></span>	                <span id="code64"></span></pre>
-<pre id="l65"><span class="adr"></span>	                <span id="code65"></span></pre>
-<pre id="l66"><span class="adr">020E</span>	21 80 80        		<span id="code66">lxi h,08080h	</span><span class="cmt">;H=xc, L=yc</span></pre>
-<pre id="l67"><span class="adr">0211</span>	06 7F           		<span id="code67">mvi b,127	</span><span class="cmt">;радиус</span></pre>
-<pre id="l68"><span class="adr">0213</span>	0E 80           		<span id="code68">mvi c,10000000b </span><span class="cmt">; маска дуги</span></pre>
-<pre id="l69"><span class="adr">0215</span>	11 10 0D        		<span id="code69">lxi d,13*256+16	</span><span class="cmt">;D=xcorr, E=ycorr</span></pre>
-<pre id="l70"><span class="adr"></span>	                <span class="l" id="label70">loop</span><span id="code70">:</span></pre>
-<pre id="l71"><span class="adr">0218</span>	C5              		<span id="code71">push b</span></pre>
-<pre id="l72"><span class="adr">0219</span>	E5              		<span id="code72">push h</span></pre>
-<pre id="l73"><span class="adr">021A</span>	D5              		<span id="code73">push d</span></pre>
-<pre id="l74"><span class="adr">021B</span>	CD 2E 02        		<span id="code74">call circle</span></pre>
-<pre id="l75"><span class="adr">021E</span>	D1              		<span id="code75">pop d</span></pre>
-<pre id="l76"><span class="adr">021F</span>	E1              		<span id="code76">pop h</span></pre>
-<pre id="l77"><span class="adr">0220</span>	C1              		<span id="code77">pop b</span></pre>
-<pre id="l78"><span class="adr">0221</span>	3E FC           		<span id="code78">mvi a, -4</span></pre>
-<pre id="l79"><span class="adr">0223</span>	80              		<span id="code79">add b</span></pre>
-<pre id="l80"><span class="adr">0224</span>	47              		<span id="code80">mov b,a</span></pre>
-<pre id="l81"><span class="adr">0225</span>	79              		<span id="code81">mov a,c</span></pre>
-<pre id="l82"><span class="adr">0226</span>	0F              		<span id="code82">rrc</span></pre>
-<pre id="l83"><span class="adr">0227</span>	4F              		<span id="code83">mov c,a</span></pre>
-<pre id="l84"><span class="adr">0228</span>	D2 18 02        		<span id="code84">jnc loop</span></pre>
-<pre id="l85"><span class="adr"></span>	                <span id="code85"></span></pre>
-<pre id="l86"><span class="adr">022B</span>	C3 2B 02        		<span id="code86">jmp $</span></pre>
-<pre id="l87"><span class="adr"></span>	                <span id="code87"></span></pre>
-<pre id="l88"><span class="adr"></span>	                <span class="l" id="label88">circle</span><span id="code88">:</span></pre>
-<pre id="l89"><span class="adr">022E</span>	3E 0F           		<span id="code89">mvi a,15</span></pre>
-<pre id="l90"><span class="adr">0230</span>	A2              		<span id="code90">ana d</span></pre>
-<pre id="l91"><span class="adr">0231</span>	C6 04           		<span id="code91">adi ARcorr>>8</span></pre>
-<pre id="l92"><span class="adr">0233</span>	32 B4 02        		<span id="code92">sta SetXcorr1+1</span></pre>
-<pre id="l93"><span class="adr">0236</span>	32 FA 02        		<span id="code93">sta SetXcorr2+1</span></pre>
-<pre id="l94"><span class="adr"></span>	                <span id="code94"></span></pre>
-<pre id="l95"><span class="adr">0239</span>	3E 0F           		<span id="code95">mvi a,15</span></pre>
-<pre id="l96"><span class="adr">023B</span>	A3              		<span id="code96">ana e</span></pre>
-<pre id="l97"><span class="adr">023C</span>	C6 04           		<span id="code97">adi ARcorr>>8</span></pre>
-<pre id="l98"><span class="adr">023E</span>	32 B8 02        		<span id="code98">sta SetYcorr1+1</span></pre>
-<pre id="l99"><span class="adr">0241</span>	32 FE 02        		<span id="code99">sta SetYcorr2+1</span></pre>
-<pre id="l100"><span class="adr">0244</span>	22 BB 02        		<span id="code100">shld ycxc+1</span></pre>
-<pre id="l101"><span class="adr"></span>	                <span id="code101"></span></pre>
-<pre id="l102"><span class="adr">0247</span>	21 5D 03        		<span id="code102">lxi h,setpixel_xy</span></pre>
-<pre id="l103"><span class="adr">024A</span>	22 C9 02        		<span id="code103">shld SetArc128+1</span></pre>
-<pre id="l104"><span class="adr">024D</span>	22 0C 03        		<span id="code104">shld SetArc64+1</span></pre>
-<pre id="l105"><span class="adr">0250</span>	22 1A 03        		<span id="code105">shld SetArc32+1</span></pre>
-<pre id="l106"><span class="adr">0253</span>	22 D7 02        		<span id="code106">shld SetArc16+1</span></pre>
-<pre id="l107"><span class="adr">0256</span>	22 E7 02        		<span id="code107">shld SetArc8+1</span></pre>
-<pre id="l108"><span class="adr">0259</span>	22 2A 03        		<span id="code108">shld SetArc4+1</span></pre>
-<pre id="l109"><span class="adr">025C</span>	22 37 03        		<span id="code109">shld SetArc2+1</span></pre>
-<pre id="l110"><span class="adr">025F</span>	22 F4 02        		<span id="code110">shld SetArc1+1</span></pre>
-<pre id="l111"><span class="adr"></span>	                		<span id="code111"></span></pre>
-<pre id="l112"><span class="adr">0262</span>	21 6E 03        		<span id="code112">lxi h,setpixel_xy_ret</span></pre>
-<pre id="l113"><span class="adr">0265</span>	79              		<span id="code113">mov a,c</span></pre>
-<pre id="l114"><span class="adr">0266</span>	87              		<span id="code114">add a</span></pre>
-<pre id="l115"><span class="adr">0267</span>	DA 6D 02        		<span id="code115">jc $+6</span></pre>
-<pre id="l116"><span class="adr">026A</span>	22 C9 02        		<span id="code116">shld SetArc128+1</span></pre>
-<pre id="l117"><span class="adr">026D</span>	87              		<span id="code117">add a</span></pre>
-<pre id="l118"><span class="adr">026E</span>	DA 74 02        		<span id="code118">jc $+6</span></pre>
-<pre id="l119"><span class="adr">0271</span>	22 0C 03        		<span id="code119">shld SetArc64+1</span></pre>
-<pre id="l120"><span class="adr">0274</span>	87              		<span id="code120">add a</span></pre>
-<pre id="l121"><span class="adr">0275</span>	DA 7B 02        		<span id="code121">jc $+6</span></pre>
-<pre id="l122"><span class="adr">0278</span>	22 1A 03        		<span id="code122">shld SetArc32+1</span></pre>
-<pre id="l123"><span class="adr">027B</span>	87              		<span id="code123">add a</span></pre>
-<pre id="l124"><span class="adr">027C</span>	DA 82 02        		<span id="code124">jc $+6</span></pre>
-<pre id="l125"><span class="adr">027F</span>	22 D7 02        		<span id="code125">shld SetArc16+1</span></pre>
-<pre id="l126"><span class="adr">0282</span>	87              		<span id="code126">add a</span></pre>
-<pre id="l127"><span class="adr">0283</span>	DA 89 02        		<span id="code127">jc $+6</span></pre>
-<pre id="l128"><span class="adr">0286</span>	22 E7 02        		<span id="code128">shld SetArc8+1</span></pre>
-<pre id="l129"><span class="adr">0289</span>	87              		<span id="code129">add a</span></pre>
-<pre id="l130"><span class="adr">028A</span>	DA 90 02        		<span id="code130">jc $+6</span></pre>
-<pre id="l131"><span class="adr">028D</span>	22 2A 03        		<span id="code131">shld SetArc4+1</span></pre>
-<pre id="l132"><span class="adr">0290</span>	87              		<span id="code132">add a</span></pre>
-<pre id="l133"><span class="adr">0291</span>	DA 97 02        		<span id="code133">jc $+6</span></pre>
-<pre id="l134"><span class="adr">0294</span>	22 37 03        		<span id="code134">shld SetArc2+1</span></pre>
-<pre id="l135"><span class="adr">0297</span>	87              		<span id="code135">add a</span></pre>
-<pre id="l136"><span class="adr">0298</span>	DA 9E 02        		<span id="code136">jc $+6</span></pre>
-<pre id="l137"><span class="adr">029B</span>	22 F4 02        		<span id="code137">shld SetArc1+1</span></pre>
-<pre id="l138"><span class="adr"></span>	                		<span id="code138"></span></pre>
-<pre id="l139"><span class="adr">029E</span>	68              		<span id="code139">mov l,b</span></pre>
-<pre id="l140"><span class="adr">029F</span>	26 00           		<span id="code140">mvi h,0</span></pre>
-<pre id="l141"><span class="adr">02A1</span>	29              		<span id="code141">dad h	</span><span class="cmt">;2*R</span></pre>
-<pre id="l142"><span class="adr">02A2</span>	3E 03           		<span id="code142">mvi a,3</span></pre>
-<pre id="l143"><span class="adr">02A4</span>	95              		<span id="code143">sub l</span></pre>
-<pre id="l144"><span class="adr">02A5</span>	6F              		<span id="code144">mov l,a</span></pre>
-<pre id="l145"><span class="adr">02A6</span>	3E 00           		<span id="code145">mvi a,0</span></pre>
-<pre id="l146"><span class="adr">02A8</span>	9C              		<span id="code146">sbb h</span></pre>
-<pre id="l147"><span class="adr">02A9</span>	67              		<span id="code147">mov h,a	</span><span class="cmt">;HL=3-2*R</span></pre>
-<pre id="l148"><span class="adr">02AA</span>	0E FF           		<span id="code148">mvi c,0FFh</span></pre>
-<pre id="l149"><span class="adr"></span>	                <span class="l" id="label149">circle_loop</span><span id="code149">:</span></pre>
-<pre id="l150"><span class="adr">02AC</span>	0C              		<span id="code150">inr c</span></pre>
-<pre id="l151"><span class="adr">02AD</span>	78              		<span id="code151">mov a,b</span></pre>
-<pre id="l152"><span class="adr">02AE</span>	B9              		<span id="code152">cmp c</span></pre>
-<pre id="l153"><span class="adr">02AF</span>	D8              		<span id="code153">rc</span></pre>
-<pre id="l154"><span class="adr">02B0</span>	E5              		<span id="code154">push h</span></pre>
-<pre id="l155"><span class="adr">02B1</span>	C5              		<span id="code155">push b</span></pre>
-<pre id="l156"><span class="adr">02B2</span>	69              		<span id="code156">mov l,c</span></pre>
-<pre id="l157"><span class="adr"></span>	                <span class="l" id="label157">SetXcorr1</span><span id="code157">:</span></pre>
-<pre id="l158"><span class="adr">02B3</span>	26 04           		<span id="code158">mvi h,ARcorr>>8</span></pre>
-<pre id="l159"><span class="adr">02B5</span>	4E              		<span id="code159">mov c,m</span></pre>
-<pre id="l160"><span class="adr">02B6</span>	68              		<span id="code160">mov l,b</span></pre>
-<pre id="l161"><span class="adr"></span>	                <span class="l" id="label161">SetYcorr1</span><span id="code161">:</span></pre>
-<pre id="l162"><span class="adr">02B7</span>	26 04           		<span id="code162">mvi h,ARcorr>>8</span></pre>
-<pre id="l163"><span class="adr">02B9</span>	46              		<span id="code163">mov b,m</span></pre>
-<pre id="l164"><span class="adr"></span>	                <span class="l" id="label164">ycxc</span><span id="code164">:		</span></pre>
-<pre id="l165"><span class="adr">02BA</span>	11 00 00        		<span id="code165">lxi d,0</span></pre>
-<pre id="l166"><span class="adr"></span>	                <span class="cmt">;xc+x, yc+y</span></pre>
-<pre id="l167"><span class="adr">02BD</span>	7A              		<span id="code167">mov a,d</span></pre>
-<pre id="l168"><span class="adr">02BE</span>	81              		<span id="code168">add c</span></pre>
-<pre id="l169"><span class="adr">02BF</span>	67              		<span id="code169">mov h,a</span></pre>
-<pre id="l170"><span class="adr">02C0</span>	BA              		<span id="code170">cmp d</span></pre>
-<pre id="l171"><span class="adr">02C1</span>	DA D9 02        		<span id="code171">jc Clip1</span></pre>
-<pre id="l172"><span class="adr">02C4</span>	7B              		<span id="code172">mov a,e</span></pre>
-<pre id="l173"><span class="adr">02C5</span>	80              		<span id="code173">add b</span></pre>
-<pre id="l174"><span class="adr">02C6</span>	6F              		<span id="code174">mov l,a</span></pre>
-<pre id="l175"><span class="adr">02C7</span>	BB              		<span id="code175">cmp e</span></pre>
-<pre id="l176"><span class="adr"></span>	                <span class="l" id="label176">SetArc128</span><span id="code176">:</span></pre>
-<pre id="l177"><span class="adr">02C8</span>	D4 5D 03        		<span id="code177">cnc setpixel_xy</span></pre>
-<pre id="l178"><span class="adr"></span>	                <span class="cmt">;xc+x, yc-y</span></pre>
-<pre id="l179"><span class="adr">02CB</span>	7B              		<span id="code179">mov a,e</span></pre>
-<pre id="l180"><span class="adr">02CC</span>	90              		<span id="code180">sub b</span></pre>
-<pre id="l181"><span class="adr">02CD</span>	6F              		<span id="code181">mov l,a</span></pre>
-<pre id="l182"><span class="adr">02CE</span>	3D              		<span id="code182">dcr a</span></pre>
-<pre id="l183"><span class="adr">02CF</span>	BB              		<span id="code183">cmp e</span></pre>
-<pre id="l184"><span class="adr">02D0</span>	D2 D9 02        		<span id="code184">jnc Clip1</span></pre>
-<pre id="l185"><span class="adr">02D3</span>	7A              		<span id="code185">mov a,d</span></pre>
-<pre id="l186"><span class="adr">02D4</span>	81              		<span id="code186">add c</span></pre>
-<pre id="l187"><span class="adr">02D5</span>	67              		<span id="code187">mov h,a</span></pre>
-<pre id="l188"><span class="adr"></span>	                <span class="l" id="label188">SetArc16</span><span id="code188">:</span></pre>
-<pre id="l189"><span class="adr">02D6</span>	CD 5D 03        		<span id="code189">call setpixel_xy</span></pre>
-<pre id="l190"><span class="adr"></span>	                <span id="code190"></span></pre>
-<pre id="l191"><span class="adr"></span>	                <span class="l" id="label191">Clip1</span><span id="code191">:</span></pre>
-<pre id="l192"><span class="adr"></span>	                <span class="cmt">;xc-x, yc-y</span></pre>
-<pre id="l193"><span class="adr">02D9</span>	7A              		<span id="code193">mov a,d</span></pre>
-<pre id="l194"><span class="adr">02DA</span>	91              		<span id="code194">sub c</span></pre>
-<pre id="l195"><span class="adr">02DB</span>	67              		<span id="code195">mov h,a</span></pre>
-<pre id="l196"><span class="adr">02DC</span>	3D              		<span id="code196">dcr a</span></pre>
-<pre id="l197"><span class="adr">02DD</span>	BA              		<span id="code197">cmp d</span></pre>
-<pre id="l198"><span class="adr">02DE</span>	D2 F6 02        		<span id="code198">jnc Clip2</span></pre>
-<pre id="l199"><span class="adr">02E1</span>	7B              		<span id="code199">mov a,e</span></pre>
-<pre id="l200"><span class="adr">02E2</span>	90              		<span id="code200">sub b</span></pre>
-<pre id="l201"><span class="adr">02E3</span>	6F              		<span id="code201">mov l,a</span></pre>
-<pre id="l202"><span class="adr">02E4</span>	3D              		<span id="code202">dcr a</span></pre>
-<pre id="l203"><span class="adr">02E5</span>	BB              		<span id="code203">cmp e</span></pre>
-<pre id="l204"><span class="adr"></span>	                <span class="l" id="label204">SetArc8</span><span id="code204">:</span></pre>
-<pre id="l205"><span class="adr">02E6</span>	DC 5D 03        		<span id="code205">cc setpixel_xy</span></pre>
-<pre id="l206"><span class="adr"></span>	                <span class="cmt">;xc-x, yc+y</span></pre>
-<pre id="l207"><span class="adr">02E9</span>	7B              		<span id="code207">mov a,e</span></pre>
-<pre id="l208"><span class="adr">02EA</span>	80              		<span id="code208">add b</span></pre>
-<pre id="l209"><span class="adr">02EB</span>	6F              		<span id="code209">mov l,a</span></pre>
-<pre id="l210"><span class="adr">02EC</span>	BB              		<span id="code210">cmp e</span></pre>
-<pre id="l211"><span class="adr">02ED</span>	DA F6 02        		<span id="code211">jc Clip2</span></pre>
-<pre id="l212"><span class="adr">02F0</span>	7A              		<span id="code212">mov a,d</span></pre>
-<pre id="l213"><span class="adr">02F1</span>	91              		<span id="code213">sub c</span></pre>
-<pre id="l214"><span class="adr">02F2</span>	67              		<span id="code214">mov h,a</span></pre>
-<pre id="l215"><span class="adr"></span>	                <span class="l" id="label215">SetArc1</span><span id="code215">:</span></pre>
-<pre id="l216"><span class="adr">02F3</span>	CD 5D 03        		<span id="code216">call setpixel_xy</span></pre>
-<pre id="l217"><span class="adr"></span>	                <span id="code217"></span></pre>
-<pre id="l218"><span class="adr"></span>	                <span class="l" id="label218">Clip2</span><span id="code218">:</span></pre>
-<pre id="l219"><span class="adr">02F6</span>	C1              		<span id="code219">pop b</span></pre>
-<pre id="l220"><span class="adr">02F7</span>	C5              		<span id="code220">push b</span></pre>
-<pre id="l221"><span class="adr">02F8</span>	68              		<span id="code221">mov l,b</span></pre>
-<pre id="l222"><span class="adr"></span>	                <span class="l" id="label222">SetXcorr2</span><span id="code222">:</span></pre>
-<pre id="l223"><span class="adr">02F9</span>	26 04           		<span id="code223">mvi h,ARcorr>>8</span></pre>
-<pre id="l224"><span class="adr">02FB</span>	46              		<span id="code224">mov b,m</span></pre>
-<pre id="l225"><span class="adr">02FC</span>	69              		<span id="code225">mov l,c</span></pre>
-<pre id="l226"><span class="adr"></span>	                <span class="l" id="label226">SetYcorr2</span><span id="code226">:</span></pre>
-<pre id="l227"><span class="adr">02FD</span>	26 04           		<span id="code227">mvi h,ARcorr>>8</span></pre>
-<pre id="l228"><span class="adr">02FF</span>	4E              		<span id="code228">mov c,m</span></pre>
-<pre id="l229"><span class="adr"></span>	                <span class="cmt">;xc+y, yc+x</span></pre>
-<pre id="l230"><span class="adr">0300</span>	7A              		<span id="code230">mov a,d</span></pre>
-<pre id="l231"><span class="adr">0301</span>	80              		<span id="code231">add b</span></pre>
-<pre id="l232"><span class="adr">0302</span>	67              		<span id="code232">mov h,a</span></pre>
-<pre id="l233"><span class="adr">0303</span>	BA              		<span id="code233">cmp d</span></pre>
-<pre id="l234"><span class="adr">0304</span>	DA 1C 03        		<span id="code234">jc Clip3</span></pre>
-<pre id="l235"><span class="adr">0307</span>	7B              		<span id="code235">mov a,e</span></pre>
-<pre id="l236"><span class="adr">0308</span>	81              		<span id="code236">add c</span></pre>
-<pre id="l237"><span class="adr">0309</span>	6F              		<span id="code237">mov l,a</span></pre>
-<pre id="l238"><span class="adr">030A</span>	BB              		<span id="code238">cmp e</span></pre>
-<pre id="l239"><span class="adr"></span>	                <span class="l" id="label239">SetArc64</span><span id="code239">:</span></pre>
-<pre id="l240"><span class="adr">030B</span>	D4 5D 03        		<span id="code240">cnc setpixel_xy</span></pre>
-<pre id="l241"><span class="adr"></span>	                <span class="cmt">;xc+y, yc-x</span></pre>
-<pre id="l242"><span class="adr">030E</span>	7B              		<span id="code242">mov a,e</span></pre>
-<pre id="l243"><span class="adr">030F</span>	91              		<span id="code243">sub c</span></pre>
-<pre id="l244"><span class="adr">0310</span>	6F              		<span id="code244">mov l,a</span></pre>
-<pre id="l245"><span class="adr">0311</span>	3D              		<span id="code245">dcr a</span></pre>
-<pre id="l246"><span class="adr">0312</span>	BB              		<span id="code246">cmp e</span></pre>
-<pre id="l247"><span class="adr">0313</span>	D2 1C 03        		<span id="code247">jnc Clip3</span></pre>
-<pre id="l248"><span class="adr">0316</span>	7A              		<span id="code248">mov a,d</span></pre>
-<pre id="l249"><span class="adr">0317</span>	80              		<span id="code249">add b</span></pre>
-<pre id="l250"><span class="adr">0318</span>	67              		<span id="code250">mov h,a</span></pre>
-<pre id="l251"><span class="adr"></span>	                <span class="l" id="label251">SetArc32</span><span id="code251">:</span></pre>
-<pre id="l252"><span class="adr">0319</span>	CD 5D 03        		<span id="code252">call setpixel_xy</span></pre>
-<pre id="l253"><span class="adr"></span>	                <span id="code253"></span></pre>
-<pre id="l254"><span class="adr"></span>	                <span class="l" id="label254">Clip3</span><span id="code254">:</span></pre>
-<pre id="l255"><span class="adr"></span>	                <span class="cmt">;xc-y, yc-x</span></pre>
-<pre id="l256"><span class="adr">031C</span>	7A              		<span id="code256">mov a,d</span></pre>
-<pre id="l257"><span class="adr">031D</span>	90              		<span id="code257">sub b</span></pre>
-<pre id="l258"><span class="adr">031E</span>	67              		<span id="code258">mov h,a</span></pre>
-<pre id="l259"><span class="adr">031F</span>	3D              		<span id="code259">dcr a</span></pre>
-<pre id="l260"><span class="adr">0320</span>	BA              		<span id="code260">cmp d</span></pre>
-<pre id="l261"><span class="adr">0321</span>	D2 39 03        		<span id="code261">jnc Clip4</span></pre>
-<pre id="l262"><span class="adr">0324</span>	7B              		<span id="code262">mov a,e</span></pre>
-<pre id="l263"><span class="adr">0325</span>	91              		<span id="code263">sub c</span></pre>
-<pre id="l264"><span class="adr">0326</span>	6F              		<span id="code264">mov l,a</span></pre>
-<pre id="l265"><span class="adr">0327</span>	3D              		<span id="code265">dcr a</span></pre>
-<pre id="l266"><span class="adr">0328</span>	BB              		<span id="code266">cmp e</span></pre>
-<pre id="l267"><span class="adr"></span>	                <span class="l" id="label267">SetArc4</span><span id="code267">:</span></pre>
-<pre id="l268"><span class="adr">0329</span>	DC 5D 03        		<span id="code268">cc setpixel_xy</span></pre>
-<pre id="l269"><span class="adr"></span>	                <span class="cmt">;xc-y, yc+x</span></pre>
-<pre id="l270"><span class="adr">032C</span>	7B              		<span id="code270">mov a,e</span></pre>
-<pre id="l271"><span class="adr">032D</span>	81              		<span id="code271">add c</span></pre>
-<pre id="l272"><span class="adr">032E</span>	6F              		<span id="code272">mov l,a</span></pre>
-<pre id="l273"><span class="adr">032F</span>	BB              		<span id="code273">cmp e</span></pre>
-<pre id="l274"><span class="adr">0330</span>	DA 39 03        		<span id="code274">jc Clip4</span></pre>
-<pre id="l275"><span class="adr">0333</span>	7A              		<span id="code275">mov a,d</span></pre>
-<pre id="l276"><span class="adr">0334</span>	90              		<span id="code276">sub b</span></pre>
-<pre id="l277"><span class="adr">0335</span>	67              		<span id="code277">mov h,a</span></pre>
-<pre id="l278"><span class="adr"></span>	                <span class="l" id="label278">SetArc2</span><span id="code278">:</span></pre>
-<pre id="l279"><span class="adr">0336</span>	CD 5D 03        		<span id="code279">call setpixel_xy</span></pre>
-<pre id="l280"><span class="adr"></span>	                <span class="l" id="label280">Clip4</span><span id="code280">:</span></pre>
-<pre id="l281"><span class="adr">0339</span>	C1              		<span id="code281">pop b</span></pre>
-<pre id="l282"><span class="adr">033A</span>	D1              		<span id="code282">pop d</span></pre>
-<pre id="l283"><span class="adr"></span>	                <span id="code283"></span></pre>
-<pre id="l284"><span class="adr">033B</span>	AF              		<span id="code284">xra a</span></pre>
-<pre id="l285"><span class="adr">033C</span>	B2              		<span id="code285">ora d</span></pre>
-<pre id="l286"><span class="adr">033D</span>	F2 4D 03        		<span id="code286">jp DmoreZ</span></pre>
-<pre id="l287"><span class="adr"></span>	                <span class="cmt">;D<0</span></pre>
-<pre id="l288"><span class="adr">0340</span>	69              		<span id="code288">mov l,c</span></pre>
-<pre id="l289"><span class="adr">0341</span>	26 00           		<span id="code289">mvi h,0</span></pre>
-<pre id="l290"><span class="adr">0343</span>	29              		<span id="code290">dad h</span></pre>
-<pre id="l291"><span class="adr">0344</span>	29              		<span id="code291">dad h</span></pre>
-<pre id="l292"><span class="adr">0345</span>	19              		<span id="code292">dad d</span></pre>
-<pre id="l293"><span class="adr">0346</span>	11 06 00        		<span id="code293">lxi d,6</span></pre>
-<pre id="l294"><span class="adr">0349</span>	19              		<span id="code294">dad d</span></pre>
-<pre id="l295"><span class="adr">034A</span>	C3 AC 02        		<span id="code295">jmp circle_loop</span></pre>
-<pre id="l296"><span class="adr"></span>	                <span id="code296"></span></pre>
-<pre id="l297"><span class="adr"></span>	                <span class="l" id="label297">DmoreZ</span><span id="code297">:</span></pre>
-<pre id="l298"><span class="adr">034D</span>	79              		<span id="code298">mov a,c</span></pre>
-<pre id="l299"><span class="adr">034E</span>	90              		<span id="code299">sub b</span></pre>
-<pre id="l300"><span class="adr">034F</span>	6F              		<span id="code300">mov l,a</span></pre>
-<pre id="l301"><span class="adr">0350</span>	26 FF           		<span id="code301">mvi h,0FFh</span></pre>
-<pre id="l302"><span class="adr">0352</span>	29              		<span id="code302">dad h</span></pre>
-<pre id="l303"><span class="adr">0353</span>	29              		<span id="code303">dad h</span></pre>
-<pre id="l304"><span class="adr">0354</span>	19              		<span id="code304">dad d</span></pre>
-<pre id="l305"><span class="adr">0355</span>	11 0A 00        		<span id="code305">lxi d,10</span></pre>
-<pre id="l306"><span class="adr">0358</span>	19              		<span id="code306">dad d</span></pre>
-<pre id="l307"><span class="adr">0359</span>	05              		<span id="code307">dcr b</span></pre>
-<pre id="l308"><span class="adr">035A</span>	C3 AC 02        		<span id="code308">jmp circle_loop</span></pre>
-<pre id="l309"><span class="adr"></span>	                <span id="code309"></span></pre>
-<pre id="l310"><span class="adr"></span>	                <span class="cmt">; ---</span></pre>
-<pre id="l311"><span class="adr"></span>	                <span class="cmt">; вход:</span></pre>
-<pre id="l312"><span class="adr"></span>	                <span class="cmt">; H - X</span></pre>
-<pre id="l313"><span class="adr"></span>	                <span class="cmt">; L - Y</span></pre>
-<pre id="l314"><span class="adr"></span>	                <span class="cmt">; адрес пикселя =  base + (x / 8) << 8 + y</span></pre>
-<pre id="l315"><span class="adr"></span>	                <span class="cmt">; номер пикселя = x % 8</span></pre>
-<pre id="l316"><span class="adr"></span>	                <span class="l" id="label316">setpixel_xy</span><span id="code316">:</span></pre>
-<pre id="l317"><span class="adr">035D</span>	3E 07           		<span id="code317">mvi a, 111b 		</span><span class="cmt">; сначала вычисляем смещение </span></pre>
-<pre id="l318"><span class="adr">035F</span>	A4              		<span id="code318">ana h 			</span><span class="cmt">; пикселя в PixelMask</span></pre>
-<pre id="l319"><span class="adr">0360</span>	32 6A 03        		<span id="code319">sta SetPixelMaskAdr_xy+1</span></pre>
-<pre id="l320"><span class="adr">0363</span>	AC              		<span id="code320">xra h</span></pre>
-<pre id="l321"><span class="adr">0364</span>	0F              		<span id="code321">rrc 			</span><span class="cmt">; </span></pre>
-<pre id="l322"><span class="adr">0365</span>	0F              		<span id="code322">rrc 			</span><span class="cmt">; </span></pre>
-<pre id="l323"><span class="adr">0366</span>	37              		<span id="code323">stc 			</span><span class="cmt">; </span></pre>
-<pre id="l324"><span class="adr">0367</span>	1F              		<span id="code324">rar 			</span><span class="cmt">; </span></pre>
-<pre id="l325"><span class="adr">0368</span>	67              		<span id="code325">mov h,a 		</span><span class="cmt">; h = 0x8000 | (a >> 3)</span></pre>
-<pre id="l326"><span class="adr"></span>	                <span class="l" id="label326">SetPixelMaskAdr_xy</span><span id="code326">:</span></pre>
-<pre id="l327"><span class="adr">0369</span>	3A 00 02        		<span id="code327">lda PixelMask</span></pre>
-<pre id="l328"><span class="adr">036C</span>	B6              		<span id="code328">ora m 			</span><span class="cmt">; a = память с пикселем</span></pre>
-<pre id="l329"><span class="adr">036D</span>	77              		<span id="code329">mov m,a 		</span><span class="cmt">; записать в память</span></pre>
-<pre id="l330"><span class="adr"></span>	                <span class="l" id="label330">setpixel_xy_ret</span><span id="code330">:</span></pre>
-<pre id="l331"><span class="adr">036E</span>	C9              		<span id="code331">ret</span></pre>
-<pre id="l332"><span class="adr"></span>	                <span id="code332"></span></pre>
-<pre id="l333"><span class="adr"></span>	                <span class="l" id="label333">IniCircle</span><span id="code333">:</span></pre>
-<pre id="l334"><span class="adr">036F</span>	3E 0F           		<span id="code334">mvi a,15</span></pre>
-<pre id="l335"><span class="adr">0371</span>	32 B7 03        		<span id="code335">sta SetA+1</span></pre>
-<pre id="l336"><span class="adr">0374</span>	01 10 00        		<span id="code336">lxi b,16</span></pre>
-<pre id="l337"><span class="adr">0377</span>	11 00 05        		<span id="code337">lxi d,ARcorr+256</span></pre>
-<pre id="l338"><span class="adr"></span>	                <span class="l" id="label338">GenARcorr</span><span id="code338">:</span></pre>
-<pre id="l339"><span class="adr">037A</span>	68              		<span id="code339">mov l,b</span></pre>
-<pre id="l340"><span class="adr">037B</span>	63              		<span id="code340">mov h,e</span></pre>
-<pre id="l341"><span class="adr">037C</span>	29 D2 81 03     		<span id="code341">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0380	09 <br/></pre>
-<pre id="l342"><span class="adr">0381</span>	29 D2 86 03     		<span id="code342">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0385	09 <br/></pre>
-<pre id="l343"><span class="adr">0386</span>	29 D2 8B 03     		<span id="code343">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>038A	09 <br/></pre>
-<pre id="l344"><span class="adr">038B</span>	29 D2 90 03     		<span id="code344">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>038F	09 <br/></pre>
-<pre id="l345"><span class="adr">0390</span>	29 D2 95 03     		<span id="code345">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0394	09 <br/></pre>
-<pre id="l346"><span class="adr">0395</span>	29 D2 9A 03     		<span id="code346">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>0399	09 <br/></pre>
-<pre id="l347"><span class="adr">039A</span>	29 D2 9F 03     		<span id="code347">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>039E	09 <br/></pre>
-<pre id="l348"><span class="adr">039F</span>	29 D2 A4 03     		<span id="code348">dad h\ jnc $+4\ dad b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03A3	09 <br/></pre>
-<pre id="l349"><span class="adr">03A4</span>	AF              		<span id="code349">xra a</span></pre>
-<pre id="l350"><span class="adr">03A5</span>	B5              		<span id="code350">ora l</span></pre>
-<pre id="l351"><span class="adr">03A6</span>	F2 AA 03        		<span id="code351">jp $+4</span></pre>
-<pre id="l352"><span class="adr">03A9</span>	24              		<span id="code352">inr h</span></pre>
-<pre id="l353"><span class="adr">03AA</span>	EB              		<span id="code353">xchg</span></pre>
-<pre id="l354"><span class="adr">03AB</span>	72              		<span id="code354">mov m,d</span></pre>
-<pre id="l355"><span class="adr">03AC</span>	EB              		<span id="code355">xchg</span></pre>
-<pre id="l356"><span class="adr">03AD</span>	1C              		<span id="code356">inr e</span></pre>
-<pre id="l357"><span class="adr">03AE</span>	C2 7A 03        		<span id="code357">jnz GenARcorr</span></pre>
-<pre id="l358"><span class="adr">03B1</span>	3E 10           		<span id="code358">mvi a,16</span></pre>
-<pre id="l359"><span class="adr">03B3</span>	81              		<span id="code359">add c</span></pre>
-<pre id="l360"><span class="adr">03B4</span>	4F              		<span id="code360">mov c,a</span></pre>
-<pre id="l361"><span class="adr">03B5</span>	14              		<span id="code361">inr d</span></pre>
-<pre id="l362"><span class="adr"></span>	                <span class="l" id="label362">SetA</span><span id="code362">:</span></pre>
-<pre id="l363"><span class="adr">03B6</span>	3E 00           		<span id="code363">mvi a,0</span></pre>
-<pre id="l364"><span class="adr">03B8</span>	3D              		<span id="code364">dcr a</span></pre>
-<pre id="l365"><span class="adr">03B9</span>	32 B7 03        		<span id="code365">sta SetA+1</span></pre>
-<pre id="l366"><span class="adr">03BC</span>	C2 7A 03        		<span id="code366">jnz GenARcorr</span></pre>
-<pre id="l367"><span class="adr"></span>	                		<span id="code367"></span></pre>
-<pre id="l368"><span class="adr">03BF</span>	21 00 04        		<span id="code368">lxi h,ARcorr</span></pre>
-<pre id="l369"><span class="adr"></span>	                <span class="l" id="label369">GenARcorr2</span><span id="code369">:</span></pre>
-<pre id="l370"><span class="adr">03C2</span>	75              		<span id="code370">mov m,l</span></pre>
-<pre id="l371"><span class="adr">03C3</span>	2C              		<span id="code371">inr l</span></pre>
-<pre id="l372"><span class="adr">03C4</span>	C2 C2 03        		<span id="code372">jnz GenARcorr2</span></pre>
-<pre id="l373"><span class="adr">03C7</span>	C9              		<span id="code373">ret</span></pre>
-<pre id="l374"><span class="adr"></span>	                <span id="code374"></span></pre>
-<pre id="l375"><span class="adr"></span>	                <span class="l" id="label375">Cls</span><span id="code375">:</span></pre>
-<pre id="l376"><span class="adr">03C8</span>	21 00 80        		<span id="code376">lxi	h,08000h</span></pre>
-<pre id="l377"><span class="adr">03CB</span>	1E 00           		<span id="code377">mvi	e,0</span></pre>
-<pre id="l378"><span class="adr">03CD</span>	AF              		<span id="code378">xra	a</span></pre>
-<pre id="l379"><span class="adr"></span>	                <span class="l" id="label379">ClrScr</span><span id="code379">:</span></pre>
-<pre id="l380"><span class="adr">03CE</span>	73              		<span id="code380">mov	m,e</span></pre>
-<pre id="l381"><span class="adr">03CF</span>	23              		<span id="code381">inx	h</span></pre>
-<pre id="l382"><span class="adr">03D0</span>	BC              		<span id="code382">cmp	h</span></pre>
-<pre id="l383"><span class="adr">03D1</span>	C2 CE 03        		<span id="code383">jnz	ClrScr</span></pre>
-<pre id="l384"><span class="adr">03D4</span>	C9              		<span id="code384">ret</span></pre>
-<pre id="l385"><span class="adr"></span>	                <span id="code385"></span></pre>
-<pre id="l386"><span class="adr"></span>	                		<span id="code386">.end</span></pre>
-<pre id="l387"><span class="adr"></span>	                <span id="code387"></span></pre>
-<pre id="l388"><span class="adr"></span>	                <span class="l" id="label388">colors</span><span id="code388">:</span></pre>
-<pre id="l389"><span class="adr">03D5</span>	00 09 12 1B     		<span id="code389">.db 00000000b,00001001b,00010010b,00011011b,00100100b,00101101b,00110110b,00111111b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03D9	24 2D 36 3F <br/></pre>
-<pre id="l390"><span class="adr">03DD</span>	FF 09 12 1B     		<span id="code390">.db 11111111b,00001001b,00010010b,00011011b,00100100b,00101101b,00110110b,00111111b</span><br/>	.&nbsp;.&nbsp;.&nbsp;<br/>03E1	24 2D 36 3F <br/></pre>
-<pre id="l391"><span class="adr"></span>	                		<span id="code391"></span></pre>
-<pre id="l392"><span class="adr"></span>	                	<span id="code392"></span></pre>
-<pre id="l393"><span class="adr"></span>	                </pre>
-<pre>Labels:</pre><div class="hordiv"></div><pre class="labeltable"><span class='t1' onclick="return gotoLabel('arcorr');">arcorr                  0400</span><span class='t1' onclick="return gotoLabel('circle');">circle                  022E</span><span class='t1' onclick="return gotoLabel('circle_loop');">circle_loop             02AC</span><span class='t2' onclick="return gotoLabel('clip1');">clip1                   02D9</span><br/><span class='t1' onclick="return gotoLabel('clip2');">clip2                   02F6</span><span class='t1' onclick="return gotoLabel('clip3');">clip3                   031C</span><span class='t1' onclick="return gotoLabel('clip4');">clip4                   0339</span><span class='t2' onclick="return gotoLabel('clrscr');">clrscr                  03CE</span><br/><span class='t1' onclick="return gotoLabel('cls');">cls                     03C8</span><span class='t1' onclick="return gotoLabel('colors');">colors                  03D5</span><span class='t1' onclick="return gotoLabel('colorset');">colorset                011E</span><span class='t2' onclick="return gotoLabel('colorset1');">colorset1               0124</span><br/><span class='t1' onclick="return gotoLabel('dmorez');">dmorez                  034D</span><span class='t1' onclick="return gotoLabel('genarcorr');">genarcorr               037A</span><span class='t1' onclick="return gotoLabel('genarcorr2');">genarcorr2              03C2</span><span class='t2' onclick="return gotoLabel('inicircle');">inicircle               036F</span><br/><span class='t1' onclick="return gotoLabel('loop');">loop                    0218</span><span class='t1' onclick="return gotoLabel('pixelmask');">pixelmask               0200</span><span class='t1' onclick="return gotoLabel('restart');">restart                 0208</span><span class='t2' onclick="return gotoLabel('seta');">seta                    03B6</span><br/><span class='t1' onclick="return gotoLabel('setarc1');">setarc1                 02F3</span><span class='t1' onclick="return gotoLabel('setarc128');">setarc128               02C8</span><span class='t1' onclick="return gotoLabel('setarc16');">setarc16                02D6</span><span class='t2' onclick="return gotoLabel('setarc2');">setarc2                 0336</span><br/><span class='t1' onclick="return gotoLabel('setarc32');">setarc32                0319</span><span class='t1' onclick="return gotoLabel('setarc4');">setarc4                 0329</span><span class='t1' onclick="return gotoLabel('setarc64');">setarc64                030B</span><span class='t2' onclick="return gotoLabel('setarc8');">setarc8                 02E6</span><br/><span class='t1' onclick="return gotoLabel('setpixel_xy');">setpixel_xy             035D</span><span class='t1' onclick="return gotoLabel('setpixel_xy_ret');">setpixel_xy_ret         036E</span><span class='t1' onclick="return gotoLabel('setpixelmaskadr_xy');">setpixelmaskadr_xy      0369</span><span class='t2' onclick="return gotoLabel('setxcorr1');">setxcorr1               02B3</span><br/><span class='t1' onclick="return gotoLabel('setxcorr2');">setxcorr2               02F9</span><span class='t1' onclick="return gotoLabel('setycorr1');">setycorr1               02B7</span><span class='t1' onclick="return gotoLabel('setycorr2');">setycorr2               02FD</span><span class='t2' onclick="return gotoLabel('start');">start                   0100</span><br/><span class='t1' onclick="return gotoLabel('ycxc');">ycxc                    02BA</span></pre><div>&nbsp;</div><pre>Memory dump:</pre><div class="hordiv"></div><pre class="d0"> </pre><br/><pre class="d1">0100:  AF D3 10 31 00 01 3E C3-32 00 00 21 08 02 22 01  ...1..>.2..!..".</pre><br/><pre class="d0">0110:  00 CD C8 03 3E C9 32 38-00 FB 76 21 E4 03 3E 88  ....>.28..v!..>.</pre><br/><pre class="d1">0120:  D3 00 0E 0F 79 D3 02 7E-D3 0C 2B D3 0C D3 0C 0D  ....y..~..+.....</pre><br/><pre class="d0">0130:  D3 0C D3 0C D3 0C F2 24-01 3E FF D3 03 C3 08 02  .......$.>......</pre><br/><pre class="d1"> </pre><br/><pre class="d0">0200:  80 40 20 10 08 04 02 01-CD C8 03 CD 6F 03 21 80  .@..........o.!.</pre><br/><pre class="d1">0210:  80 06 7F 0E 80 11 10 0D-C5 E5 D5 CD 2E 02 D1 E1  ................</pre><br/><pre class="d0">0220:  C1 3E FC 80 47 79 0F 4F-D2 18 02 C3 2B 02 3E 0F  .>..Gy.O....+.>.</pre><br/><pre class="d1">0230:  A2 C6 04 32 B4 02 32 FA-02 3E 0F A3 C6 04 32 B8  ...2..2..>....2.</pre><br/><pre class="d0">0240:  02 32 FE 02 22 BB 02 21-5D 03 22 C9 02 22 0C 03  .2.."..!].".."..</pre><br/><pre class="d1">0250:  22 1A 03 22 D7 02 22 E7-02 22 2A 03 22 37 03 22  ".."..".."*."7."</pre><br/><pre class="d0">0260:  F4 02 21 6E 03 79 87 DA-6D 02 22 C9 02 87 DA 74  ..!n.y..m."....t</pre><br/><pre class="d1">0270:  02 22 0C 03 87 DA 7B 02-22 1A 03 87 DA 82 02 22  ."....{."......"</pre><br/><pre class="d0">0280:  D7 02 87 DA 89 02 22 E7-02 87 DA 90 02 22 2A 03  ......"......"*.</pre><br/><pre class="d1">0290:  87 DA 97 02 22 37 03 87-DA 9E 02 22 F4 02 68 26  ...."7....."..h&</pre><br/><pre class="d0">02A0:  00 29 3E 03 95 6F 3E 00-9C 67 0E FF 0C 78 B9 D8  .)>..o>..g...x..</pre><br/><pre class="d1">02B0:  E5 C5 69 26 04 4E 68 26-04 46 11 00 00 7A 81 67  ..i&.Nh&.F...z.g</pre><br/><pre class="d0">02C0:  BA DA D9 02 7B 80 6F BB-D4 5D 03 7B 90 6F 3D BB  ....{.o..].{.o=.</pre><br/><pre class="d1">02D0:  D2 D9 02 7A 81 67 CD 5D-03 7A 91 67 3D BA D2 F6  ...z.g.].z.g=...</pre><br/><pre class="d0">02E0:  02 7B 90 6F 3D BB DC 5D-03 7B 80 6F BB DA F6 02  .{.o=..].{.o....</pre><br/><pre class="d1">02F0:  7A 91 67 CD 5D 03 C1 C5-68 26 04 46 69 26 04 4E  z.g.]...h&.Fi&.N</pre><br/><pre class="d0">0300:  7A 80 67 BA DA 1C 03 7B-81 6F BB D4 5D 03 7B 91  z.g....{.o..].{.</pre><br/><pre class="d1">0310:  6F 3D BB D2 1C 03 7A 80-67 CD 5D 03 7A 90 67 3D  o=....z.g.].z.g=</pre><br/><pre class="d0">0320:  BA D2 39 03 7B 91 6F 3D-BB DC 5D 03 7B 81 6F BB  ..9.{.o=..].{.o.</pre><br/><pre class="d1">0330:  DA 39 03 7A 90 67 CD 5D-03 C1 D1 AF B2 F2 4D 03  .9.z.g.]......M.</pre><br/><pre class="d0">0340:  69 26 00 29 29 19 11 06-00 19 C3 AC 02 79 90 6F  i&.))........y.o</pre><br/><pre class="d1">0350:  26 FF 29 29 19 11 0A 00-19 05 C3 AC 02 3E 07 A4  &.)).........>..</pre><br/><pre class="d0">0360:  32 6A 03 AC 0F 0F 37 1F-67 3A 00 02 B6 77 C9 3E  2j....7.g:...w.></pre><br/><pre class="d1">0370:  0F 32 B7 03 01 10 00 11-00 05 68 63 29 D2 81 03  .2........hc)...</pre><br/><pre class="d0">0380:  09 29 D2 86 03 09 29 D2-8B 03 09 29 D2 90 03 09  .)....)....)....</pre><br/><pre class="d1">0390:  29 D2 95 03 09 29 D2 9A-03 09 29 D2 9F 03 09 29  )....)....)....)</pre><br/><pre class="d0">03A0:  D2 A4 03 09 AF B5 F2 AA-03 24 EB 72 EB 1C C2 7A  .........$.r...z</pre><br/><pre class="d1">03B0:  03 3E 10 81 4F 14 3E 00-3D 32 B7 03 C2 7A 03 21  .>..O.>.=2...z.!</pre><br/><pre class="d0">03C0:  00 04 75 2C C2 C2 03 C9-21 00 80 1E 00 AF 73 23  ..u,....!.....s#</pre><br/><pre class="d1">03D0:  BC C2 CE 03 C9 00 09 12-1B 24 2D 36 3F FF 09 12  .........$-6?...</pre><br/><pre class="d0">03E0:  1B 24 2D 36 3F         -                         .$-6?...........</pre><br/></body></html>

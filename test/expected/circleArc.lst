@@ -1,0 +1,483 @@
+	                                ; 🐟 Рисование окружности по алгоритму Мичнера
+	                                ; Иван Городецкий 28.11.2018-02.12.2018
+	                                ; Версия с клиппингом и возможностью рисования эллипсов и дуг
+	                                ;
+	                                ; Пример рисования дуг
+	                                
+	                                .project circlearc.rom
+	                
+	                ARcorr	        .equ 400h
+	                
+	                		.org 100h
+	                
+	                start:
+0100	AF              		xra	a
+0101	D3 10           		out	10h
+0103	31 00 01        		lxi	sp,100h
+0106	3E C3           		mvi	a,0C3h
+0108	32 00 00        		sta	0
+010B	21 08 02        		lxi	h,Restart
+010E	22 01 00        		shld	1
+	                
+0111	CD C8 03        		call	Cls
+0114	3E C9           		mvi	a,0C9h
+0116	32 38 00        		sta	38h
+0119	FB              		ei
+011A	76              		hlt
+011B	21 E4 03        		lxi	h, colors+15
+	                colorset:
+011E	3E 88           		mvi	a, 88h
+0120	D3 00           		out	0
+0122	0E 0F           		mvi	c, 15
+0124	79              colorset1:	mov	a, c
+0125	D3 02           		out	2
+0127	7E              		mov	a, m
+0128	D3 0C           		out	0Ch
+012A	2B              		dcx	h
+012B	D3 0C           		out	0Ch
+012D	D3 0C           		out	0Ch
+012F	0D              		dcr	c
+0130	D3 0C           		out	0Ch
+0132	D3 0C           		out	0Ch
+0134	D3 0C           		out	0Ch
+0136	F2 24 01        		jp	colorset1
+0139	3E FF           		mvi	a,255
+013B	D3 03           		out	3
+	                
+013D	C3 08 02        		jmp Restart
+	                		
+	                		.org 200h
+	                PixelMask:
+0200	80              		.db 10000000b
+0201	40              		.db 01000000b
+0202	20              		.db 00100000b
+0203	10              		.db 00010000b
+0204	08              		.db 00001000b
+0205	04              		.db 00000100b
+0206	02              		.db 00000010b
+0207	01              		.db 00000001b
+	                
+	                
+	                Restart:
+0208	CD C8 03        		call	Cls
+	                		
+020B	CD 6F 03        		call IniCircle
+	                
+	                
+020E	21 80 80        		lxi h,08080h	;H=xc, L=yc
+0211	06 7F           		mvi b,127	;радиус
+0213	0E 80           		mvi c,10000000b ; маска дуги
+0215	11 10 0D        		lxi d,13*256+16	;D=xcorr, E=ycorr
+	                loop:
+0218	C5              		push b
+0219	E5              		push h
+021A	D5              		push d
+021B	CD 2E 02        		call circle
+021E	D1              		pop d
+021F	E1              		pop h
+0220	C1              		pop b
+0221	3E FC           		mvi a, -4
+0223	80              		add b
+0224	47              		mov b,a
+0225	79              		mov a,c
+0226	0F              		rrc
+0227	4F              		mov c,a
+0228	D2 18 02        		jnc loop
+	                
+022B	C3 2B 02        		jmp $
+	                
+	                circle:
+022E	3E 0F           		mvi a,15
+0230	A2              		ana d
+0231	C6 04           		adi ARcorr>>8
+0233	32 B4 02        		sta SetXcorr1+1
+0236	32 FA 02        		sta SetXcorr2+1
+	                
+0239	3E 0F           		mvi a,15
+023B	A3              		ana e
+023C	C6 04           		adi ARcorr>>8
+023E	32 B8 02        		sta SetYcorr1+1
+0241	32 FE 02        		sta SetYcorr2+1
+0244	22 BB 02        		shld ycxc+1
+	                
+0247	21 5D 03        		lxi h,setpixel_xy
+024A	22 C9 02        		shld SetArc128+1
+024D	22 0C 03        		shld SetArc64+1
+0250	22 1A 03        		shld SetArc32+1
+0253	22 D7 02        		shld SetArc16+1
+0256	22 E7 02        		shld SetArc8+1
+0259	22 2A 03        		shld SetArc4+1
+025C	22 37 03        		shld SetArc2+1
+025F	22 F4 02        		shld SetArc1+1
+	                		
+0262	21 6E 03        		lxi h,setpixel_xy_ret
+0265	79              		mov a,c
+0266	87              		add a
+0267	DA 6D 02        		jc $+6
+026A	22 C9 02        		shld SetArc128+1
+026D	87              		add a
+026E	DA 74 02        		jc $+6
+0271	22 0C 03        		shld SetArc64+1
+0274	87              		add a
+0275	DA 7B 02        		jc $+6
+0278	22 1A 03        		shld SetArc32+1
+027B	87              		add a
+027C	DA 82 02        		jc $+6
+027F	22 D7 02        		shld SetArc16+1
+0282	87              		add a
+0283	DA 89 02        		jc $+6
+0286	22 E7 02        		shld SetArc8+1
+0289	87              		add a
+028A	DA 90 02        		jc $+6
+028D	22 2A 03        		shld SetArc4+1
+0290	87              		add a
+0291	DA 97 02        		jc $+6
+0294	22 37 03        		shld SetArc2+1
+0297	87              		add a
+0298	DA 9E 02        		jc $+6
+029B	22 F4 02        		shld SetArc1+1
+	                		
+029E	68              		mov l,b
+029F	26 00           		mvi h,0
+02A1	29              		dad h	;2*R
+02A2	3E 03           		mvi a,3
+02A4	95              		sub l
+02A5	6F              		mov l,a
+02A6	3E 00           		mvi a,0
+02A8	9C              		sbb h
+02A9	67              		mov h,a	;HL=3-2*R
+02AA	0E FF           		mvi c,0FFh
+	                circle_loop:
+02AC	0C              		inr c
+02AD	78              		mov a,b
+02AE	B9              		cmp c
+02AF	D8              		rc
+02B0	E5              		push h
+02B1	C5              		push b
+02B2	69              		mov l,c
+	                SetXcorr1:
+02B3	26 04           		mvi h,ARcorr>>8
+02B5	4E              		mov c,m
+02B6	68              		mov l,b
+	                SetYcorr1:
+02B7	26 04           		mvi h,ARcorr>>8
+02B9	46              		mov b,m
+	                ycxc:		
+02BA	11 00 00        		lxi d,0
+	                ;xc+x, yc+y
+02BD	7A              		mov a,d
+02BE	81              		add c
+02BF	67              		mov h,a
+02C0	BA              		cmp d
+02C1	DA D9 02        		jc Clip1
+02C4	7B              		mov a,e
+02C5	80              		add b
+02C6	6F              		mov l,a
+02C7	BB              		cmp e
+	                SetArc128:
+02C8	D4 5D 03        		cnc setpixel_xy
+	                ;xc+x, yc-y
+02CB	7B              		mov a,e
+02CC	90              		sub b
+02CD	6F              		mov l,a
+02CE	3D              		dcr a
+02CF	BB              		cmp e
+02D0	D2 D9 02        		jnc Clip1
+02D3	7A              		mov a,d
+02D4	81              		add c
+02D5	67              		mov h,a
+	                SetArc16:
+02D6	CD 5D 03        		call setpixel_xy
+	                
+	                Clip1:
+	                ;xc-x, yc-y
+02D9	7A              		mov a,d
+02DA	91              		sub c
+02DB	67              		mov h,a
+02DC	3D              		dcr a
+02DD	BA              		cmp d
+02DE	D2 F6 02        		jnc Clip2
+02E1	7B              		mov a,e
+02E2	90              		sub b
+02E3	6F              		mov l,a
+02E4	3D              		dcr a
+02E5	BB              		cmp e
+	                SetArc8:
+02E6	DC 5D 03        		cc setpixel_xy
+	                ;xc-x, yc+y
+02E9	7B              		mov a,e
+02EA	80              		add b
+02EB	6F              		mov l,a
+02EC	BB              		cmp e
+02ED	DA F6 02        		jc Clip2
+02F0	7A              		mov a,d
+02F1	91              		sub c
+02F2	67              		mov h,a
+	                SetArc1:
+02F3	CD 5D 03        		call setpixel_xy
+	                
+	                Clip2:
+02F6	C1              		pop b
+02F7	C5              		push b
+02F8	68              		mov l,b
+	                SetXcorr2:
+02F9	26 04           		mvi h,ARcorr>>8
+02FB	46              		mov b,m
+02FC	69              		mov l,c
+	                SetYcorr2:
+02FD	26 04           		mvi h,ARcorr>>8
+02FF	4E              		mov c,m
+	                ;xc+y, yc+x
+0300	7A              		mov a,d
+0301	80              		add b
+0302	67              		mov h,a
+0303	BA              		cmp d
+0304	DA 1C 03        		jc Clip3
+0307	7B              		mov a,e
+0308	81              		add c
+0309	6F              		mov l,a
+030A	BB              		cmp e
+	                SetArc64:
+030B	D4 5D 03        		cnc setpixel_xy
+	                ;xc+y, yc-x
+030E	7B              		mov a,e
+030F	91              		sub c
+0310	6F              		mov l,a
+0311	3D              		dcr a
+0312	BB              		cmp e
+0313	D2 1C 03        		jnc Clip3
+0316	7A              		mov a,d
+0317	80              		add b
+0318	67              		mov h,a
+	                SetArc32:
+0319	CD 5D 03        		call setpixel_xy
+	                
+	                Clip3:
+	                ;xc-y, yc-x
+031C	7A              		mov a,d
+031D	90              		sub b
+031E	67              		mov h,a
+031F	3D              		dcr a
+0320	BA              		cmp d
+0321	D2 39 03        		jnc Clip4
+0324	7B              		mov a,e
+0325	91              		sub c
+0326	6F              		mov l,a
+0327	3D              		dcr a
+0328	BB              		cmp e
+	                SetArc4:
+0329	DC 5D 03        		cc setpixel_xy
+	                ;xc-y, yc+x
+032C	7B              		mov a,e
+032D	81              		add c
+032E	6F              		mov l,a
+032F	BB              		cmp e
+0330	DA 39 03        		jc Clip4
+0333	7A              		mov a,d
+0334	90              		sub b
+0335	67              		mov h,a
+	                SetArc2:
+0336	CD 5D 03        		call setpixel_xy
+	                Clip4:
+0339	C1              		pop b
+033A	D1              		pop d
+	                
+033B	AF              		xra a
+033C	B2              		ora d
+033D	F2 4D 03        		jp DmoreZ
+	                ;D<0
+0340	69              		mov l,c
+0341	26 00           		mvi h,0
+0343	29              		dad h
+0344	29              		dad h
+0345	19              		dad d
+0346	11 06 00        		lxi d,6
+0349	19              		dad d
+034A	C3 AC 02        		jmp circle_loop
+	                
+	                DmoreZ:
+034D	79              		mov a,c
+034E	90              		sub b
+034F	6F              		mov l,a
+0350	26 FF           		mvi h,0FFh
+0352	29              		dad h
+0353	29              		dad h
+0354	19              		dad d
+0355	11 0A 00        		lxi d,10
+0358	19              		dad d
+0359	05              		dcr b
+035A	C3 AC 02        		jmp circle_loop
+	                
+	                ; ---
+	                ; вход:
+	                ; H - X
+	                ; L - Y
+	                ; адрес пикселя =  base + (x / 8) << 8 + y
+	                ; номер пикселя = x % 8
+	                setpixel_xy:
+035D	3E 07           		mvi a, 111b 		; сначала вычисляем смещение 
+035F	A4              		ana h 			; пикселя в PixelMask
+0360	32 6A 03        		sta SetPixelMaskAdr_xy+1
+0363	AC              		xra h
+0364	0F              		rrc 			; 
+0365	0F              		rrc 			; 
+0366	37              		stc 			; 
+0367	1F              		rar 			; 
+0368	67              		mov h,a 		; h = 0x8000 | (a >> 3)
+	                SetPixelMaskAdr_xy:
+0369	3A 00 02        		lda PixelMask
+036C	B6              		ora m 			; a = память с пикселем
+036D	77              		mov m,a 		; записать в память
+	                setpixel_xy_ret:
+036E	C9              		ret
+	                
+	                IniCircle:
+036F	3E 0F           		mvi a,15
+0371	32 B7 03        		sta SetA+1
+0374	01 10 00        		lxi b,16
+0377	11 00 05        		lxi d,ARcorr+256
+	                GenARcorr:
+037A	68              		mov l,b
+037B	63              		mov h,e
+037C	29 D2 81 03     		dad h\ jnc $+4\ dad b
+	. . .
+0380	09 
+
+0381	29 D2 86 03     		dad h\ jnc $+4\ dad b
+	. . .
+0385	09 
+
+0386	29 D2 8B 03     		dad h\ jnc $+4\ dad b
+	. . .
+038A	09 
+
+038B	29 D2 90 03     		dad h\ jnc $+4\ dad b
+	. . .
+038F	09 
+
+0390	29 D2 95 03     		dad h\ jnc $+4\ dad b
+	. . .
+0394	09 
+
+0395	29 D2 9A 03     		dad h\ jnc $+4\ dad b
+	. . .
+0399	09 
+
+039A	29 D2 9F 03     		dad h\ jnc $+4\ dad b
+	. . .
+039E	09 
+
+039F	29 D2 A4 03     		dad h\ jnc $+4\ dad b
+	. . .
+03A3	09 
+
+03A4	AF              		xra a
+03A5	B5              		ora l
+03A6	F2 AA 03        		jp $+4
+03A9	24              		inr h
+03AA	EB              		xchg
+03AB	72              		mov m,d
+03AC	EB              		xchg
+03AD	1C              		inr e
+03AE	C2 7A 03        		jnz GenARcorr
+03B1	3E 10           		mvi a,16
+03B3	81              		add c
+03B4	4F              		mov c,a
+03B5	14              		inr d
+	                SetA:
+03B6	3E 00           		mvi a,0
+03B8	3D              		dcr a
+03B9	32 B7 03        		sta SetA+1
+03BC	C2 7A 03        		jnz GenARcorr
+	                		
+03BF	21 00 04        		lxi h,ARcorr
+	                GenARcorr2:
+03C2	75              		mov m,l
+03C3	2C              		inr l
+03C4	C2 C2 03        		jnz GenARcorr2
+03C7	C9              		ret
+	                
+	                Cls:
+03C8	21 00 80        		lxi	h,08000h
+03CB	1E 00           		mvi	e,0
+03CD	AF              		xra	a
+	                ClrScr:
+03CE	73              		mov	m,e
+03CF	23              		inx	h
+03D0	BC              		cmp	h
+03D1	C2 CE 03        		jnz	ClrScr
+03D4	C9              		ret
+	                
+	                		.end
+	                
+	                colors:
+03D5	00 09 12 1B     		.db 00000000b,00001001b,00010010b,00011011b,00100100b,00101101b,00110110b,00111111b
+	. . .
+03D9	24 2D 36 3F 
+
+03DD	FF 09 12 1B     		.db 11111111b,00001001b,00010010b,00011011b,00100100b,00101101b,00110110b,00111111b
+	. . .
+03E1	24 2D 36 3F 
+
+	                		
+	                	
+	                
+Labels:
+.end                    03D5
+arcorr                  0400	circle                  022E
+circle_loop             02AC	clip1                   02D9
+clip2                   02F6	clip3                   031C
+clip4                   0339	clrscr                  03CE
+cls                     03C8	colors                  03D5
+colorset                011E	colorset1               0124
+dmorez                  034D	genarcorr               037A
+genarcorr2              03C2	inicircle               036F
+loop                    0218	pixelmask               0200
+restart                 0208	seta                    03B6
+setarc1                 02F3	setarc128               02C8
+setarc16                02D6	setarc2                 0336
+setarc32                0319	setarc4                 0329
+setarc64                030B	setarc8                 02E6
+setpixel_xy             035D	setpixel_xy_ret         036E
+setpixelmaskadr_xy      0369	setxcorr1               02B3
+setxcorr2               02F9	setycorr1               02B7
+setycorr2               02FD	start                   0100
+ycxc                    02BA	
+Memory dump:
+ 
+0100:  AF D3 10 31 00 01 3E C3-32 00 00 21 08 02 22 01  ...1..>.2..!..".
+0110:  00 CD C8 03 3E C9 32 38-00 FB 76 21 E4 03 3E 88  ....>.28..v!..>.
+0120:  D3 00 0E 0F 79 D3 02 7E-D3 0C 2B D3 0C D3 0C 0D  ....y..~..+.....
+0130:  D3 0C D3 0C D3 0C F2 24-01 3E FF D3 03 C3 08 02  .......$.>......
+ 
+0200:  80 40 20 10 08 04 02 01-CD C8 03 CD 6F 03 21 80  .@..........o.!.
+0210:  80 06 7F 0E 80 11 10 0D-C5 E5 D5 CD 2E 02 D1 E1  ................
+0220:  C1 3E FC 80 47 79 0F 4F-D2 18 02 C3 2B 02 3E 0F  .>..Gy.O....+.>.
+0230:  A2 C6 04 32 B4 02 32 FA-02 3E 0F A3 C6 04 32 B8  ...2..2..>....2.
+0240:  02 32 FE 02 22 BB 02 21-5D 03 22 C9 02 22 0C 03  .2.."..!].".."..
+0250:  22 1A 03 22 D7 02 22 E7-02 22 2A 03 22 37 03 22  ".."..".."*."7."
+0260:  F4 02 21 6E 03 79 87 DA-6D 02 22 C9 02 87 DA 74  ..!n.y..m."....t
+0270:  02 22 0C 03 87 DA 7B 02-22 1A 03 87 DA 82 02 22  ."....{."......"
+0280:  D7 02 87 DA 89 02 22 E7-02 87 DA 90 02 22 2A 03  ......"......"*.
+0290:  87 DA 97 02 22 37 03 87-DA 9E 02 22 F4 02 68 26  ...."7....."..h&
+02A0:  00 29 3E 03 95 6F 3E 00-9C 67 0E FF 0C 78 B9 D8  .)>..o>..g...x..
+02B0:  E5 C5 69 26 04 4E 68 26-04 46 11 00 00 7A 81 67  ..i&.Nh&.F...z.g
+02C0:  BA DA D9 02 7B 80 6F BB-D4 5D 03 7B 90 6F 3D BB  ....{.o..].{.o=.
+02D0:  D2 D9 02 7A 81 67 CD 5D-03 7A 91 67 3D BA D2 F6  ...z.g.].z.g=...
+02E0:  02 7B 90 6F 3D BB DC 5D-03 7B 80 6F BB DA F6 02  .{.o=..].{.o....
+02F0:  7A 91 67 CD 5D 03 C1 C5-68 26 04 46 69 26 04 4E  z.g.]...h&.Fi&.N
+0300:  7A 80 67 BA DA 1C 03 7B-81 6F BB D4 5D 03 7B 91  z.g....{.o..].{.
+0310:  6F 3D BB D2 1C 03 7A 80-67 CD 5D 03 7A 90 67 3D  o=....z.g.].z.g=
+0320:  BA D2 39 03 7B 91 6F 3D-BB DC 5D 03 7B 81 6F BB  ..9.{.o=..].{.o.
+0330:  DA 39 03 7A 90 67 CD 5D-03 C1 D1 AF B2 F2 4D 03  .9.z.g.]......M.
+0340:  69 26 00 29 29 19 11 06-00 19 C3 AC 02 79 90 6F  i&.))........y.o
+0350:  26 FF 29 29 19 11 0A 00-19 05 C3 AC 02 3E 07 A4  &.)).........>..
+0360:  32 6A 03 AC 0F 0F 37 1F-67 3A 00 02 B6 77 C9 3E  2j....7.g:...w.>
+0370:  0F 32 B7 03 01 10 00 11-00 05 68 63 29 D2 81 03  .2........hc)...
+0380:  09 29 D2 86 03 09 29 D2-8B 03 09 29 D2 90 03 09  .)....)....)....
+0390:  29 D2 95 03 09 29 D2 9A-03 09 29 D2 9F 03 09 29  )....)....)....)
+03A0:  D2 A4 03 09 AF B5 F2 AA-03 24 EB 72 EB 1C C2 7A  .........$.r...z
+03B0:  03 3E 10 81 4F 14 3E 00-3D 32 B7 03 C2 7A 03 21  .>..O.>.=2...z.!
+03C0:  00 04 75 2C C2 C2 03 C9-21 00 80 1E 00 AF 73 23  ..u,....!.....s#
+03D0:  BC C2 CE 03 C9 00 09 12-1B 24 2D 36 3F FF 09 12  .........$-6?...
+03E0:  1B 24 2D 36 3F         -                         .$-6?...........

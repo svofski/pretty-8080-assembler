@@ -52,6 +52,7 @@
 //
 // TODO: evaluation should ignore precedence, it's all left-to-right
 //
+// -- all of the above is kept for historical reasons only --
 
 importScripts('encodings.js');
 importScripts('util.js');
@@ -67,6 +68,7 @@ function Assembler() {
 
 
     this.labels = {};
+    this.xref = {};
     this.mem = [];
     this.org = undefined;
     this.textlabels= [];
@@ -411,15 +413,19 @@ Assembler.prototype.useExpression = function(s, addr, length, linenumber)
     return result;
 };
 
-Assembler.prototype.labelResolution = function(label, value, addr)
+Assembler.prototype.labelResolution = function(label, value, addr, lineno, 
+    rewrite)
 {
+    if (this.label_resolutions[label] && !rewrite) {
+        return undefined;
+    }
     var numberwang = this.resolveNumber(value);
     var lr = {};
     if (numberwang !== undefined) {
-        lr = {number: numberwang};
+        lr = {number: numberwang, linenumber: lineno};
     }
     else {
-        lr = {expression: value, addr: addr};
+        lr = {expression: value, addr: addr, linenumber: lineno};
     }
     this.label_resolutions[label] = lr;
     return lr;
@@ -679,7 +685,8 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
 
         if (mnemonic == ".org" || mnemonic == "org") {
             this.processLabelResolutions();
-            let n = this.evaluateExpression2(parts.slice(1).join(' '), addr);
+            let n = this.evaluateExpression2(parts.slice(1).join(' '), addr, 
+                linenumber);
             if (n >= 0 && n < 65536) {
                 if (this.org === undefined || n < this.org) {
                     this.org = n;
@@ -723,9 +730,11 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
 
         // assign immediate value to label
         if (mnemonic == ".equ" || mnemonic == "equ") {
-            if (label_obj === undefined) return -1;
+            if (labelTag === undefined) {
+                return -1;
+            }
             var ex = new Expression(-1, 2, parts.slice(1), linenumber);
-            this.labelResolution(labelTag, ex.text, addr);
+            this.labelResolution(labelTag, ex.text, addr, linenumber, true);
             result = 0;
             break;
         }
@@ -748,7 +757,8 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
             break;
         }
         if (mnemonic == 'ds' || mnemonic == '.ds') {
-            let size = this.evaluateExpression2(parts.slice(1).join(' '), addr);
+            let size = this.evaluateExpression2(parts.slice(1).join(' '), addr, 
+                linenumber);
             if (size >= 0) {
                 for (let i = 0; i < size; i++) {
                     this.setmem8(addr+i, 0);
@@ -772,7 +782,12 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
         if (labelTag === undefined) {
             var splat = mnemonic.split(':');
             labelTag = splat[0];
-            label_obj = this.labelResolution(labelTag, String(addr), addr);
+            label_obj = this.labelResolution(labelTag, String(addr), addr,
+                linenumber);
+            if (label_obj === undefined) {
+                result = -1;
+                break;
+            }
             parts.splice(0, 1, splat.slice(1).join(':'));
             continue;
         }
@@ -805,9 +820,7 @@ Assembler.prototype.labelList = function() {
     }
     sorted.sort();
 
-    var result = "<pre>Labels:</pre>";
-    result += '<div class="hordiv"></div>';
-    result += '<pre class="labeltable">';
+    var result = "Labels:\n";
     var col = 1;
     for (var j = 0; j < sorted.length; j++) {
         let i = sorted[j];
@@ -817,17 +830,16 @@ Assembler.prototype.labelList = function() {
         if (label === undefined) continue;
         if (i.length === 0) continue; // resolved expressions
         var resultClass = (col%4 === 0 ? 't2' : 't1');
-        if (label < 0) resultClass += ' errorline';
 
-        result += "<span class='" + resultClass +  
-            "' onclick=\"return gotoLabel('"+i+"');\"";
-        result += ">";
         result += f(i,label);
-        result += "</span>";
-        if (col % 4 === 0) result += "<br/>";
+        if ((col + 1) % 2 === 0) {
+            result += "\n";
+        } 
+        else {
+            result += "\t";
+        }
         col++;
     }
-    result += "</pre>";
 
     return result;
 };
@@ -844,10 +856,7 @@ Assembler.prototype.dumpspan = function(org, mode) {
             result += (i > org && i%8 === 0) ? "-" : " ";
             if (this.mem[i] === undefined) {
                 result += '  ';
-            }
-            else if (this.mem[i] < 0) {
-                result += '<span class="errorline">' + conv(this.mem[i]) + '</span>';
-            } else {
+            } else{
                 result += conv(this.mem[i]);
             }
         }
@@ -861,28 +870,27 @@ Assembler.prototype.dump = function() {
 
     if (org % 16 !== 0) org = org - org % 16;
 
-    var result = "<pre>Memory dump:</pre>";
-    result += '<div class="hordiv"></div>';
+    var result = "Memory dump:\n";
     var lastempty;
 
     var printline = 0;
 
     for (var i = org, end_i = this.mem.length; i < end_i; i += 16) {
         var span = this.dumpspan(i, 0);
-        if (span || !lastempty) {
-            result += '<pre ' + 'class="d' + (printline++%2) + '"';
-            result += ">";
-        }
+        //if (span || !lastempty) {
+        //    result += '<pre ' + 'class="d' + (printline++%2) + '"';
+        //    result += ">";
+        //}
         if (span) {
             result += Util.hex16(i) + ": ";
             result += span;
             result += '  ';
             result += this.dumpspan(i, 1);
-            result += "</pre><br/>";
+            result += '\n';
             lastempty = false;
         } 
         if (!span && !lastempty) {
-            result += " </pre><br/>";
+            result += ' \n';//" </pre><br/>";
             lastempty = true;
         }
     }
@@ -1009,9 +1017,6 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
             remainder = remainder.substring(0, 128) + "&hellip;";
         }
 
-        // processRegUsage will add tags to remainder so it cannot be truncated after this
-        //remainder = this.processRegUsage(remainder, i);
-
         var id = "l" + i;
         var labelid = "label" + i;
         var remid = "code" + i;
@@ -1028,24 +1033,10 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
         }
         hexes += "                ".substring(width);
 
-        result.push('<pre id="' + id + '"');
-
-        if (unresolved || this.errors[i] !== undefined) {
-            result.push(' class="errorline" ');
-        }
-
-        result.push('>',
-                '<span class="adr">' + (lengths[i] > 0 ? Util.hex16(addresses[i]) : "") + "</span>",
-                '\t',
-                hexes);
+        result.push((lengths[i] > 0 ? Util.hex16(addresses[i]) : "") + "\t" + hexes);
 
         if (labeltext.length > 0) {
-            result.push('<span class="l" id="' + labelid + '">' + labeltext +
-                '</span>');
-            //result.push('<span class="l" id="' + labelid + '"' +
-            //        ' onmouseover="return mouseovel('+i+');"' + 
-            //        ' onmouseout="return mouseout('+i+');"' +
-            //        '>' + labeltext + '</span>');
+            result.push(labeltext);
         }
         var padding = '';
         for (var b = 0; b < remainder.length && Util.isWhitespace(remainder[b]); b++) {
@@ -1054,20 +1045,16 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
         result.push(padding);
         remainder = remainder.substring(b);
         if (remainder.length > 0) {
-            result.push('<span id="' + remid + '">' + remainder + '</span>');
-            //result.push('<span id="' + remid + '"' +
-            //        ' onmouseover="return mouseover('+i+');"' + 
-            //        ' onmouseout="return mouseout('+i+');"' +
-            //        '>' + remainder + '</span>');
+            result.push(remainder);
         }
 
         if (comment.length > 0) {
-            result.push('<span class="cmt">' + comment + '</span>');
+            result.push(comment);
         }
 
         // display only first and last lines of db thingies
         if (len < lengths[i]) {
-            result.push('<br/>\t.&nbsp;.&nbsp;.&nbsp;<br/>');
+            result.push('\n\t. . .\n');
             var subresult = '';
             for (var subline = 1; subline*4 < lengths[i]; subline++) {
                 subresult = '';
@@ -1079,25 +1066,23 @@ Assembler.prototype.listing = function(text,lengths,addresses) {
                     }
                 }
             }
-            result.push(subresult + "<br/>");
+            result.push(subresult + '\n');
         }
-        result.push('</pre>\n');
+        result.push('\n');
 
         addr += lengths[i];
     }
 
     result.push(this.labelList());
 
-    result.push("<div>&nbsp;</div>");
+    result.push('\n');
 
     if (this.doHexDump) {
         result.push(this.dump());
     }
 
     if (this.doIntelHex) {
-        result.push("<div>&nbsp;</div>",
-                this.intelHex(),
-                "<div>&nbsp;</div>");
+        result.push(this.intelHex());
     }
 
     return result.join("");
@@ -1137,12 +1122,11 @@ Assembler.prototype.assemble = function(src,listobj) {
     this.labels = [];
     this.mem.length = 0;
     this.org = undefined;
-    this.references.length = 0;
-    this.textlabels.length = 0;
     this.errors.length = 0;
     this.postbuild = '';
     this.objCopy = 'gobjcopy';
     this.hexText = '';
+    this.xref = {};
 
     this.expressions = [];          // expressions to evaluate after label resolution
     this.label_resolutions = {};    // labels, resolved and not
@@ -1188,8 +1172,15 @@ Assembler.prototype.assemble = function(src,listobj) {
     }
 };
 
+Assembler.prototype.addxref = function(ident, linenumber)
+{
+    if (this.xref[ident] === undefined) {
+        this.xref[ident] = [];
+    }
+    this.xref[ident].push(linenumber);
+}
 
-Assembler.prototype.evaluateExpression2 = function(input, addr0) {
+Assembler.prototype.evaluateExpression2 = function(input, addr0, linenumber) {
     var originput = input;
     input = this.evalPrepareExpr(input, addr0);
     if (!input) {
@@ -1205,12 +1196,13 @@ Assembler.prototype.evaluateExpression2 = function(input, addr0) {
             expr += 'var _' + qident + '=' + addr +';\n';
             var rx = new RegExp('\\b'+qident+'\\b', 'gm');
             input = input.replace(rx, '_' + qident);
+            this.addxref(qident, linenumber);
         }
     }
     //console.log('0 input=',  input);
     //console.log('1 expr=', expr);
     var that = this;
-    expr += input.replace(/\b0x[0-9a-fA-F]+\b|\b[0-9][0-9a-fA-F]+[hbqdHBQD]\b|'.'/g,
+    expr += input.replace(/\b0x[0-9a-fA-F]+\b|\b[0-9][0-9a-fA-F]*[hbqdHBQD]?\b|'.'/g,
             function(m) {
                 return that.resolveNumber(m);
             });
@@ -1226,7 +1218,8 @@ Assembler.prototype.processLabelResolutions_once = function()
     for (var label in this.label_resolutions) {
         var lr = this.label_resolutions[label];
         if (lr.expression) {
-            var ev = this.evaluateExpression2(lr.expression, lr.addr);
+            var ev = this.evaluateExpression2(lr.expression, lr.addr, 
+                lr.linenumber);
             if (ev === undefined) {
                 lr2[label] = lr;
                 ++unresolved_count;
@@ -1237,6 +1230,7 @@ Assembler.prototype.processLabelResolutions_once = function()
         }
         else {
             this.labels[label] = lr.number;
+            this.addxref(label, lr.linenumber);
         }
     }
     //console.log('resolveExpressions: labels=', this.labels, ' lr2=', lr2);
@@ -1259,7 +1253,8 @@ Assembler.prototype.resolveExpressions = function()
     this.processLabelResolutions();
     for (var i = 0; i < this.expressions.length; ++i) {
         var eobj = this.expressions[i];
-        var ev = this.evaluateExpression2(eobj.text, eobj.addr-1);
+        var ev = this.evaluateExpression2(eobj.text, eobj.addr-1,
+            eobj.linenumber);
         if (ev !== undefined) {
             if (eobj.length === 1) {
                 if (ev >= -128 && ev < 256) {
@@ -1325,8 +1320,10 @@ self.addEventListener('message', function(e) {
                 {//'listing':asm.listingText, 
                     'gutter':asm.gutterContent,
                     'errors':asm.errors,
-                    'textlabels':asm.textlabels,
-                    'references':asm.references,
+                    //'textlabels':asm.textlabels,
+                    //'references':asm.references,
+                    'org':asm.org,
+                    'xref':asm.xref,
                     'labels':asm.labels,
                     'kind':'assemble',
                 });
