@@ -69,12 +69,26 @@
 	                        ftagn   ; this is actually a label
 0114	11 14 01                lxi d,ftagn
 0117	D6 00                   sui ftagn-cthulhu ; d6 00
-	                        
+	                
+0119	21 1C 01                lxi h, FredFuchs	; a reference to equ label 
+	                FredFuchs       equ $           ; should highlight both reference and label
+011C	11 1F 01                lxi d, Globow  ; a reference to mixed case label
+011F	00              Globow  nop		; should highlight all instances
+	                
+0120	20 01 20 01     multi	dw multi,multi,multi,multi ; multi-pulti highlights every instance
+	. . .
+0124	20 01 20 01 
+
+	                
+	                
+	                          
 	                
 Labels:
 bob                     000E
-cthulhu                 0114	ftagn                   0114
-mike                    000D	
+cthulhu                 0114	fredfuchs               011C
+ftagn                   0114	globow                  011F
+mike                    000D	multi                   0120
+
 Memory dump:
 0000:  AF 78 F5 78 21 0E 00 31-0D 00 C3 0D 00 00 22 0D  .x.x!..1......".
 0010:  00 22 0D 00 22 0D 00 22-0D 00 00 22 38 77 66 6F  ."..".."..."8wfo
@@ -91,4 +105,5 @@ Memory dump:
 00E0:  20 73 74 72 69 6E 67 73-21 0D 0A 24 F3 22 00 00  .strings!..$."..
 00F0:  22 FF FF 31 FF FF 3E 01-06 FF 0E 00 39 F5 D6 00  "..1..>.....9...
 0100:  D6 01 D6 01 D6 08 D6 01-D6 01 D6 02 D6 02 D6 01  ................
-0110:  D6 07 D6 FF 11 14 01 D6-00                       ................
+0110:  D6 07 D6 FF 11 14 01 D6-00 21 1C 01 11 1F 01 00  .........!......
+0120:  20 01 20 01 20 01 20 01-                         ................

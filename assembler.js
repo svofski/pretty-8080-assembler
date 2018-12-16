@@ -1174,6 +1174,7 @@ Assembler.prototype.assemble = function(src,listobj) {
 
 Assembler.prototype.addxref = function(ident, linenumber)
 {
+    ident = ident.toLowerCase();
     if (this.xref[ident] === undefined) {
         this.xref[ident] = [];
     }
@@ -1226,6 +1227,7 @@ Assembler.prototype.processLabelResolutions_once = function()
             }
             else {
                 this.labels[label] = ev;
+                this.addxref(label, lr.linenumber);
             }
         }
         else {

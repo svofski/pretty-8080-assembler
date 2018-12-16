@@ -60,4 +60,13 @@ cthulhu:
         ftagn   ; this is actually a label
         lxi d,ftagn
         sui ftagn-cthulhu ; d6 00
-        
+
+        lxi h, FredFuchs	; a reference to equ label 
+FredFuchs       equ $           ; should highlight both reference and label
+        lxi d, Globow  ; a reference to mixed case label
+Globow  nop		; should highlight all instances
+
+multi	dw multi,multi,multi,multi ; multi-pulti highlights every instance
+
+
+          
