@@ -641,10 +641,8 @@ function load_ryba(url)
     oReq.responseType = "text";
 
     oReq.onload = function(oEvent) {
-        //console.log(oReq.response);
         let status = oReq.status;
         if (status >= 200 && status < 300 || status === 304) {
-            //document.getElementById('source').value = oReq.response;
             editor.setValue(oReq.response, 0);
             editor.clearSelection();
             assemble();
@@ -706,6 +704,7 @@ function i18n() {
     var explang = document.URL.split('?')[1];
     var messages = languages[lang];
     var ryba;
+    var extryba;
     if (explang) {
         var params = explang.split(',');
         for (var i = 0; i < params.length; ++i) {
@@ -713,13 +712,19 @@ function i18n() {
             if (forcedlang) {
                 messages = forcedlang;
             }
+            if (params[i].startsWith("http://") || params[i].startsWith("https://")) {
+                extryba = params[i];
+            }
             ryba = rybas[params[i]];
         }
     }
     if (explang !== undefined) lang = explang;
     if (!messages) messages = languages["en"];
 
-    if (ryba) {
+    if (extryba) {
+        load_ryba(extryba);
+    }
+    else if (ryba) {
         load_ryba(document.URL.split('?')[0] + ryba[1]);
     }
 
