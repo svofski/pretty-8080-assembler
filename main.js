@@ -635,12 +635,18 @@ var rybas =
 function load_ryba(url) 
 {
     console.log("Trying to load ", url);
+    if (window.loadryba_state && window.loadryba_state === "try-cors") {
+             window.loadryba_state = "tried-and-failed";
+    } else {
+         window.loadryba_state = "try-cors";
+    }
 
-    var oReq = new XMLHttpRequest();
+    var oReq = j();
     oReq.open("GET", url, true);
     oReq.responseType = "text";
 
     oReq.onload = function(oEvent) {
+        window.loadryba_state = false;
         let status = oReq.status;
         if (status >= 200 && status < 300 || status === 304) {
             editor.setValue(oReq.response, 0);
@@ -649,7 +655,8 @@ function load_ryba(url)
         }
     };
     oReq.onerror = function(oEvent) {
-        console.log("XMLHttpRequest error", oEvent);
+        //console.log("XMLHttpRequest error", oEvent);
+        load_ryba("https://cors.io?" + url);
     };
 
     oReq.send();
