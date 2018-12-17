@@ -655,8 +655,9 @@ function load_ryba(url)
         }
     };
     oReq.onerror = function(oEvent) {
-        //console.log("XMLHttpRequest error", oEvent);
-        load_ryba("https://cors.io?" + url);
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            load_ryba("https://cors.io?" + url);
+        }
     };
 
     oReq.send();
@@ -719,8 +720,9 @@ function i18n() {
             if (forcedlang) {
                 messages = forcedlang;
             }
-            if (params[i].startsWith("http://") || params[i].startsWith("https://")) {
-                extryba = params[i];
+            if (params[i].startsWith("http://") || params[i].startsWith("https://")
+                || params[i].startsWith("data:")) {
+                extryba = params.slice(i).join(',');
             }
             ryba = rybas[params[i]];
         }
