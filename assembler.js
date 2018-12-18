@@ -1187,6 +1187,7 @@ Assembler.prototype.evaluateExpression2 = function(input, addr0, linenumber) {
     if (!input) {
         return -1;
     }
+    try {
     var q = input.split(/<<|>>|[+\-*\/()\^\&\|]/);
     var expr = '';
     for (var ident = 0; ident < q.length; ident++) {
@@ -1209,6 +1210,11 @@ Assembler.prototype.evaluateExpression2 = function(input, addr0, linenumber) {
             });
     //console.log('expr=', expr);
     return this.evalInvoke(expr.toLowerCase());
+    }
+    catch(err) {
+        this.errors[linenumber] = err.toString();
+        return -1;
+    }
 };
 
 
