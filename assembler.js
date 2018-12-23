@@ -447,7 +447,7 @@ Assembler.prototype.splitParts = function(s)
     var parts = [];
     var state = 0;
     var cork = undefined;
-    var remainder = s.trimStart();
+    var remainder = s.trimLeft();
     for(;state !== 100;) {
         switch (state) {
             case 0:
@@ -467,13 +467,13 @@ Assembler.prototype.splitParts = function(s)
                     case '\\':
                         lines.push(parts);
                         parts = [];
-                        remainder = remainder.slice(1).trimStart();
+                        remainder = remainder.slice(1).trimLeft();
                         break;
                     default:
                         var at = remainder.search(/[\s\\;"']/);
                         if (at >= 0) {
                             parts.push(remainder.slice(0, at));
-                            remainder = remainder.slice(at).trimStart();
+                            remainder = remainder.slice(at).trimLeft();
                         } 
                         else {
                             parts.push(remainder);
@@ -487,7 +487,7 @@ Assembler.prototype.splitParts = function(s)
                 if (n > 0) {
                     n += 2;
                     parts.push(remainder.slice(0, n));
-                    remainder = remainder.slice(n).trimStart();
+                    remainder = remainder.slice(n).trimLeft();
                     state = 0;
                 }
                 else {
