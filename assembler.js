@@ -586,11 +586,13 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
 
         // single register, im8
         if ((opcs = Assembler.opsRegIm8[mnemonic]) !== undefined) {
-            let subparts = parts.slice(1).join(" ").split(",");
-            if (subparts.length < 2) {
+            let args = parts.slice(1).join(""); // #14 test: mvi a, ','
+            let comma = args.indexOf(",");
+            if (comma < 1) {
                 result = -2;
                 break;
             }
+            let subparts = [args.substring(0, comma), args.substring(comma+1)];
             var reg = Assembler.parseRegister(subparts[0]);
             if (reg == -1) {
                 result = -2;
