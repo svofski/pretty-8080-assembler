@@ -146,7 +146,7 @@ TapeFormat.prototype.makewav = function()
     var params = {sampleRate:22050, channels: 1};
     wav = new Wav(params);
     wav.setBuffer(encoded);
-    var stream = wav.getBuffer(encoded.length);
+    var stream = wav.getBuffer(encoded.length + WAV_HEADER_SIZE * 2);
     return stream;
 }
 

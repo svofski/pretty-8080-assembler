@@ -68,8 +68,8 @@ Wav.prototype.getWavUint8Array = function(buffer){
     intBuffer[0] = 0x4952; // "RI"
     intBuffer[1] = 0x4646; // "FF"
 
-    intBuffer[2] = (buffer.length + WAV_HEADER_SIZE - 8) & 0x0000ffff; // RIFF size
-    intBuffer[3] = ((buffer.length + WAV_HEADER_SIZE - 8) & 0xffff0000) >> 16; // RIFF size
+    intBuffer[2] = (buffer.length + WAV_HEADER_SIZE * 2 - 8) & 0x0000ffff; // RIFF size
+    intBuffer[3] = ((buffer.length + WAV_HEADER_SIZE * 2 - 8) & 0xffff0000) >> 16; // RIFF size
 
     intBuffer[4] = 0x4157; // "WA"
     intBuffer[5] = 0x4556; // "VE"
