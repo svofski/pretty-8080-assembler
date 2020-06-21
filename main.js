@@ -629,6 +629,7 @@ var rybas =
     "circle": ["Вектор-06ц: окружность", "circle.asm"],
     "circlearc": ["Вектор-06ц: дуга", "circleArc.asm"],
     "circleellip": ["Вектор-06ц: эллипс", "circleClipAndEllip.asm"],
+    "arkmus": ["Вектор-06ц: музон из Арканоида", "arkmus.asm"],
     
 };
 
