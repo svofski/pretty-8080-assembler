@@ -5,6 +5,8 @@
 		; svofski, ivagor  2022
 		;
                 .encoding cp1251
+		.project text80.rom
+		.tape v06c-rom
 rastint	        .equ 38h ; прервывание обратного хода луча
 
 		.org 100h
