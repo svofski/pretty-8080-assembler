@@ -630,7 +630,7 @@ var rybas =
     "circlearc": ["Вектор-06ц: дуга", "circleArc.asm"],
     "circleellip": ["Вектор-06ц: эллипс", "circleClipAndEllip.asm"],
     "arkmus": ["Вектор-06ц: музон из Арканоида", "arkmus.asm"],
-    
+    "text80-color": ["Вектор-06ц: цветной текст 80 символов", "text80-color.asm"],
 };
 
 function load_ryba(url) 
