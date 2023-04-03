@@ -33,6 +33,12 @@ var TapeFormat = function(fmt, forfile) {
             this.format = TapeFormat.prototype.v06c_rom;
             this.speed = 5;
             break;
+        case 'v06c-cas':  /* BASIC 2.5 BLOAD */
+        case 'v06c-bload':
+        case 'v06c-basic':
+            this.format = TapeFormat.prototype.v06c_cas;
+            this.speed = 8;
+            break;
         case 'krista-rom':
             this.format = TapeFormat.prototype.krista;
             this.speed = 8;
@@ -58,16 +64,16 @@ var TapeFormat = function(fmt, forfile) {
     return this;
 }
 
-/* 
- * Элемент  Размер, байт 
- * Ракорд (нулевые байты)   256 
- * Синхробайт (E6h)         1 
- * Начальный адрес в ОЗУ    2 
- * Конечный адрес в ОЗУ     2 
- * Данные   (конечный адрес - начальный адрес + 1) 
- * Ракорд (нулевые байты)   2 
- * Синхробайт (E6h)         1 
- * Контрольная сумма        2 
+/*
+ * Элемент  Размер, байт
+ * Ракорд (нулевые байты)   256
+ * Синхробайт (E6h)         1
+ * Начальный адрес в ОЗУ    2
+ * Конечный адрес в ОЗУ     2
+ * Данные   (конечный адрес - начальный адрес + 1)
+ * Ракорд (нулевые байты)   2
+ * Синхробайт (E6h)         1
+ * Контрольная сумма        2
  * 0 0 0 0 0 svo: pad with some zeroes in the end
  */
 TapeFormat.prototype.nekrosha = function(mem, org, name) {
@@ -111,7 +117,7 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     }
 
     console.log('checksum rk=', Util.hex8(cs_hi&0xff), Util.hex8(cs_lo&0xff));
-    console.log('checksum microsha=', Util.hex8(csm_hi&0xff), 
+    console.log('checksum microsha=', Util.hex8(csm_hi&0xff),
             Util.hex8(csm_lo&0xff));
 
     if (this.variant === 'mikrosha') {
@@ -169,10 +175,10 @@ TapeFormat.prototype.biphase = function(data, halfperiod) {
 
 /* 4[ 25[00] 25[55] ]  record preamble
  * 16[00]   block preamble
- *  4[55] [E6] 
+ *  4[55] [E6]
  *      4[00] 25[filename] 2[00]  [hi(addr)] [block count] [block number] [cs0]
  *  4[00] [E6]
- *      [80] [cs0] 
+ *      [80] [cs0]
  *      32[data] [checksum_data]
  *  4[00] [E6]
  *      [81] [cs0]
@@ -182,7 +188,7 @@ TapeFormat.prototype.biphase = function(data, halfperiod) {
  *      [87] [cs0]
  *      32[data] [checksum_data]
  *
- * Sizes: 
+ * Sizes:
  *      record preamble                 =200
  *
  *      one block:
@@ -209,16 +215,16 @@ TapeFormat.prototype.v06c_rom = function(mem, org, name) {
         var cs0 = 0;
 
         /* Block preamble */
-        for (var i = 0; i < 16; ++i) data[dofs++] = 0;  
+        for (var i = 0; i < 16; ++i) data[dofs++] = 0;
         /* Name subblock id */
-        for (var i = 0; i < 4; ++i) data[dofs++] = 0x55; 
+        for (var i = 0; i < 4; ++i) data[dofs++] = 0x55;
         data[dofs++] = 0xE6;
         for (var i = 0; i < 4; ++i) data[dofs++] = 0x00;
         /* Name */
         for (var i = 0; i < 25; ++i) {
             cs0 += data[dofs++] = i < name.length ? name.charCodeAt(i) : 0x20;
         }
-        data[dofs++] = data[dofs++] = 0; 
+        data[dofs++] = data[dofs++] = 0;
         /* High nibble of org address */
         cs0 += data[dofs++] = 0xff & (org >> 8); /* TODO: fix misaligned org */
         /* Block count */
@@ -241,6 +247,58 @@ TapeFormat.prototype.v06c_rom = function(mem, org, name) {
         }
     }
     this.data = data;
+    return this;
+};
+
+TapeFormat.prototype.v06c_cas = function(mem, org, name) {
+    var data = new Uint8Array(65536);
+    var dofs = 0;
+
+    // preamble for wav, not included in cas
+    // 256[00] [E6]
+    if (!this.forfile) {
+        for (var i = 0; i < 256; ++i) data[dofs++] = 0;
+        data[dofs++] = 0xe6;
+    }
+
+    // header
+    for (var i = 0; i < 4; ++i) data[dofs++] = 0xd2;
+    // file name
+    name = name.toUpperCase();
+    if (name.length > 127) {
+        name = name.substring(0, 127);
+    }
+    if (name.endsWith('.CAS')) {
+        name = name.substring(0, name.length - 4);
+    }
+    for (var i = 0; i < name.length; ++i) {
+        data[dofs++] = name.charCodeAt(i);
+    }
+    for (var i = 0; i < 3; ++i) data[dofs++] = 0;
+
+    // data preamble
+    for (var i = 0; i < 256; ++i) data[dofs++] = 0;
+    data[dofs++] = 0xe6;
+
+    // msb,lsb start addr
+    data[dofs++] = 0xff & (org >> 8);
+    data[dofs++] = 0xff & org;
+
+    var end = org + mem.length - 1;
+
+    // msb, lsb end addr
+    data[dofs++] = 0xff & (end >> 8);
+    data[dofs++] = 0xff & end;
+
+    var cs = 0;
+    for (var i = 0; i < mem.length; ++i) {
+        cs += data[dofs++] = mem[i] & 0xff;
+    }
+
+    data[dofs++] = cs & 0xff;
+
+    this.data = data.slice(0, dofs);
+
     return this;
 };
 
@@ -267,18 +325,18 @@ TapeFormat.prototype.krista = function(mem, org, name) {
     cs += data[dofs++] = 0xff & (startblock + nblocks);
     data[dofs++] = cs;
     //data[dofs++] = data[dofs++] = 0;
-    
+
     /* Blocks */
     for (var block = startblock; block < startblock + nblocks; ++block) {
         cs = 0;
 
         /* Block preamble */
-        for (var i = 0; i < 16; ++i) data[dofs++] = 0x55;  
+        for (var i = 0; i < 16; ++i) data[dofs++] = 0x55;
         data[dofs++] = 0xE6;
         data[dofs++] = block; /* hi byte of block address */
         data[dofs++] = 0;     /* low byte of block address */
         data[dofs++] = 0;     /* payload size + 1 */
-        
+
         /* Data: 256 octets */
         for (var i = 0; i < 256; ++i) {
             cs += data[dofs++] = sofs < mem.length ? mem[sofs++] : 0;
@@ -289,7 +347,7 @@ TapeFormat.prototype.krista = function(mem, org, name) {
     return this;
 };
 
-/* Специалистъ: 
+/* Специалистъ:
  * <RAKK_256>,0E6H,0D9H,0D9H,0D9H,<ASCII_NAME>,
  * <RAKK_768>,0E6H,<ADR_BEG>,<ADR_END>,<BIN_CODE>,<CHECK_SUM>
  */
@@ -315,7 +373,7 @@ TapeFormat.prototype.specialist = function(mem, org, name) {
                 data[dptr++] = name.charCodeAt(i);
             }
         }
-        
+
         for (var i = 0; i < 768; ++i) {
             data[dptr++] = 0;
         }
