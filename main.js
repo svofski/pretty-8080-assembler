@@ -464,6 +464,40 @@ function ruslat(on) {
     ruslat_light.className = on ? "on" : "";
 }
 
+function autoload()
+{
+    try {
+        let src = sessionStorage.getItem("source");
+        if (src) {
+            editor.setValue(src, 0);
+            editor.clearSelection();
+            let cur_row = sessionStorage.getItem("cursor_position_row");
+            let cur_column = sessionStorage.getItem("cursor_position_column");
+            console.log("autoload cursor_position:", cur_row, cur_column);
+            editor.moveCursorTo(cur_row, cur_column);
+            editor.scrollToRow(sessionStorage.getItem("first_visible_row"));
+            editor.focus();
+            assemble();
+        }
+    } catch(err) {
+        console.log("autoload failed", err);
+    }
+}
+
+function autosave()
+{
+    try {
+        var src = editor.session.getLines(0, editor.session.getLength()).join("\n");
+        sessionStorage.setItem("source", src);
+        let cur = editor.getCursorPosition();
+        sessionStorage.setItem("cursor_position_row", cur.row);
+        sessionStorage.setItem("cursor_position_column", cur.column);
+        sessionStorage.setItem("first_visible_row", editor.getFirstVisibleRow());
+    } catch(err) {
+        console.log("autosave failed", err);
+    }
+}
+
 function loaded() {
     if (navigator.appName === 'Microsoft Internet Explorer' || 
             navigator.appVersion.indexOf('MSIE') != -1) {
@@ -475,7 +509,12 @@ function loaded() {
 
     if (window) {
         window.onresize = updateSizes;
+        window.onbeforeunload = function() {
+            autosave();
+        }
     }
+
+    autoload();
 
     updateSizes();
 
