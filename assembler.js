@@ -771,7 +771,7 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
             }
             break;
         }
-        if (mnemonic == 'db64') {
+        if (mnemonic == 'db64' || mnemonic == '.db64') {
             result = this.parseDeclBase64(parts, addr, linenumber);
             break;
         }
@@ -960,16 +960,37 @@ Assembler.prototype.getLabel = function(l) {
 };
 
 
-Assembler.prototype.gutter = function(text,lengths,addresses) {
-    var result = [];
-    var addr = 0;
+function unwrap_inner_gutter(inner)
+{
+    let hexes = [];
+    let error = false;
+    for (let i = 0; i < inner.length; ++i) {
+        hexes.push(...inner[i].hex);
+        if (!error && inner[i].error) {
+            error = inner[i].error;
+        }
+    }
+    return [hexes, error];
+}
 
-    for(var i = 0, end_i = text.length; i < end_i; i += 1) {
-        var unresolved = false;
-        var width = 0;
-        var hexes = new Int32Array(lengths[i]);
+// text: nest: integer, text: string
+Assembler.prototype.gutter = function(text, lengths, addresses) 
+{
+    let addr = 0;
+    let nest = 0;
+
+    let gutstack = [];
+    gutstack.push([]);
+
+    let by_file = {};
+    let mainfile;
+
+    for(let i = 0, end_i = text.length; i < end_i; i += 1) {
+        let unresolved = false;
+        let width = 0;
+        let hexes = [];//new Int32Array(lengths[i]);
         for (let b = 0; b < lengths[i]; ++b) {
-            var bytte = this.mem[addresses[i]+b];
+            let bytte = this.mem[addresses[i]+b];
             if (bytte === undefined || bytte < 0) {
                 unresolved = true;
                 hexes[b] = -1;
@@ -979,18 +1000,84 @@ Assembler.prototype.gutter = function(text,lengths,addresses) {
             }
         }
 
-        var err = this.errors[i] || unresolved !== false;
+        let err = this.errors[i] || unresolved !== false;
 
-        var gutobj = {
+        let gutobj = {
             addr : addresses[i],
             hex : hexes,
-            error: err
+            error: err,
+            file: text[i].file
         };
 
-        result.push(gutobj);
+        if (!mainfile && text[i].nest == 0 && text[i].file) {
+            mainfile = text[i].file;
+        }
+
+        if (text[i].nest == nest) {
+            gutstack.at(-1).push(gutobj);   // just a normal line
+        }
+        else if (text[i].nest > nest) {     // next nest, can be several levels deep at once
+            while (text[i].nest > nest) {
+                gutstack.push([]);          // next level gutter
+                nest += 1;
+            }
+            gutstack.at(-1).push(gutobj);   // push current line at its nest level
+        }
+        else {
+            // go up: collect inner hexes
+            let innerhex = []; 
+            let inneraddr;
+            let innererr = false;
+            while (text[i].nest < nest) {
+                let inner = gutstack.pop(); // current nest
+                if (inner.length > 0) {
+                    if (!by_file[inner[0].file]) {
+                        by_file[inner[0].file] = inner;   // save inner gutter
+                    }
+                }
+
+                let [h, err] = unwrap_inner_gutter(inner);
+                innerhex.push(...h);
+                if (err && !innererr) {
+                    innererr = err;
+                }
+                inneraddr = inner.length > 0 ? inner[0].addr : 0;
+                nest -= 1;
+            }
+            gutstack.at(-1).push({addr: inneraddr, hex: innerhex, error: innererr});
+            gutstack.at(-1).push(gutobj);
+        }
     }
 
-    return result;
+    if (gutstack[0].length > 0) {
+        by_file[mainfile] = gutstack[0];
+    }
+
+    return [gutstack[0], by_file];
+}
+
+// this.xref[ident] = [linenumber1, linenumber2...]
+//    --> tossed_xrefs[ident] = {file1:[linenumber1, ...], file2:[linenumber2, ...]}
+Assembler.prototype.toss_xrefs = function(text)
+{
+    let tossed_xrefs = {};
+    for (let ident in this.xref) {
+        let toss = {};
+        tossed_xrefs[ident] = toss;
+        for (let i in this.xref[ident]) {
+            let globline = this.xref[ident][i];
+            const file = text[globline].file || undefined;
+            if (file) {
+                let lines = toss[file];
+                if (!lines) {
+                    lines = [];
+                    toss[file] = lines;
+                }
+                lines.push(text[globline].line_num);
+            }
+        }
+    }
+    return tossed_xrefs;
 }
 
 Assembler.prototype.listing = function(text,lengths,addresses) { 
@@ -1114,11 +1201,9 @@ Expression.prototype.update = function(arr)
 }
 
 // assembler main entry point
-Assembler.prototype.assemble = function(src,listobj) {
+Assembler.prototype.assemble = function(inputlines, listobj) {
     var lengths = Array();
     var addresses = Array();
-
-    var inputlines = src.split('\n');
 
     var addr = 0;
     this.labels = [];
@@ -1134,7 +1219,8 @@ Assembler.prototype.assemble = function(src,listobj) {
     this.label_resolutions = {};    // labels, resolved and not
 
     for (var line = 0, end = inputlines.length; line < end; line += 1) {
-        var encodedLine = Util.toTargetEncoding(inputlines[line].trim(), this.targetEncoding);
+        let input_text = inputlines[line].text;
+        var encodedLine = Util.toTargetEncoding(input_text.trim(), this.targetEncoding);
         var sublines = this.splitParts(encodedLine);
 
         for (var sul = 0; sul < sublines.length; ++sul) {
@@ -1169,6 +1255,7 @@ Assembler.prototype.assemble = function(src,listobj) {
     }
 
     this.gutterContent = this.gutter(inputlines, lengths, addresses);
+    this.tossed_xrefs = this.toss_xrefs(inputlines);
     if (listobj) {
         listobj.text = this.listing(inputlines, lengths, addresses);
     }
@@ -1321,19 +1408,62 @@ Assembler.prototype.evalInvoke = function(expr) {
     return undefined;
 };
 
+
 var asm = new Assembler();
+
+function preprocessFile(project, file, nest)
+{
+    let result = [];
+    const text = project.files[file];
+
+    let input = text.split('\n');
+    for (let i = 0; i < input.length; ++i) {
+        const line = input[i].trimStart();
+        if (line.startsWith(".include")) {
+            const parts = line.split(/\s+/);
+            let include = parts.length > 1 ? parts[1].replace(/^\"+|\"+$/g, '') : undefined;
+            
+            if (project.files[include]) {
+                let included = preprocessFile(project, include, nest + 1);
+                result.push(...included);
+            }
+            else {
+                result.push(
+                    {nest: nest + 1,
+                        text: ";* ERROR: include file \"" + include + "\" not found",
+                        file: file,
+                        line_num: i});
+            }
+        }
+        else {
+            result.push({nest: nest, text: line, file: file, line_num: i});
+        }
+    }
+
+    return result;
+}
+
+function assembleProject(project)
+{
+    let main = Object.keys(project.files)[0];
+    let preprocessed = preprocessFile(project, main, 0);
+    asm.assemble(preprocessed);
+}
+
 self.addEventListener('message', function(e) {
     var cmd = e.data['command'];
     if (cmd == 'assemble') {
-        asm.assemble(e.data['src']);
+        assembleProject(e.data['project']);
         self.postMessage(
                 {//'listing':asm.listingText, 
-                    'gutter':asm.gutterContent,
+                    'gutter':asm.gutterContent[0],
+                    'by_file':asm.gutterContent[1],
                     'errors':asm.errors,
                     //'textlabels':asm.textlabels,
                     //'references':asm.references,
                     'org':asm.org,
                     'xref':asm.xref,
+                    'xref_by_file':asm.tossed_xrefs,
                     'labels':asm.labels,
                     'kind':'assemble',
                 });

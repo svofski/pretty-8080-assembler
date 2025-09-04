@@ -62,30 +62,6 @@ oop.inherits(TokenTooltip, Tooltip);
             return;
         }
 
-
-        //            var tokenText = token.type;
-        //            if (token.state)
-        //                tokenText += "|" + token.state;
-        //            if (token.merge)
-        //                tokenText += "\n  merge";
-        //            if (token.stateTransitions)
-        //                tokenText += "\n  " + token.stateTransitions.join("\n  ");
-
-        //var tokenText = token.value.replace(/[,\s]/g,'');
-        //var ref = "";
-        //for (var i = 0; i < asmcache.textlabels.length; ++i) {
-        //    if (asmcache.textlabels[i] == tokenText) {
-        //        //ref += i;
-        //        /* found label, show address */
-        //        for (var k = 0;ref.length === 0 && k < 20; ++k) {
-        //            var gc = editor.session.gutter_contents[i+k];
-        //            if (gc) {
-        //                ref = gc.text.trim();
-        //            }
-        //        }
-        //    }
-        //}
-
         var tokenText = token.value.replace(/[:\s]/g, '');
         var addr = asmcache.labels[tokenText.toLowerCase()];
         var ref = "";
@@ -146,33 +122,43 @@ oop.inherits(TokenTooltip, Tooltip);
 
     this.collectXrefs = function(label, textobj) {
         var result = [];
-        label = label.toLowerCase();
-        var xrefs = asmcache.xref[label];
-        for (var k = 0; xrefs && k < xrefs.length; ++k) { 
-            var i = xrefs[k];
-            var text = this.editor.session.getLine(i);
 
-            var precomment = [
-                Util.hex16(editor.session.gutter_contents[i].addr) + " " + 
-                text.slice(0,80)];
-            if (text.toLowerCase().match('^\s*' + label + '\\b')) {
-                for (var cmt = i - 1; cmt >= 0; --cmt) {
-                    var t = this.editor.session.getLine(cmt);
-                    if (t && t.match(/^\s*;/)) {
-                        precomment.push(t);
-                    } 
-                    else break;
+        label = label.toLowerCase();
+        var xfiles = asmcache.xref_by_file[label];
+
+        for (let file in xfiles) {
+            let xrefs = xfiles[file];
+            let s = sessions[file];
+
+            if (!s || !xrefs) continue;
+
+            for (var k = 0; xrefs && k < xrefs.length; ++k) { 
+                var i = xrefs[k];
+                var text = s.getLine(i);
+
+                var precomment = [
+                    Util.hex16(s.gutter_contents[i].addr) + " " + 
+                    text.slice(0,80)];
+                if (text.toLowerCase().match('^\s*' + label + '\\b')) {
+                    for (var cmt = i - 1; cmt >= 0; --cmt) {
+                        var t = s.getLine(cmt);
+                        if (t && t.match(/^\s*;/)) {
+                            precomment.push(t);
+                        } 
+                        else break;
+                    }
+                }
+
+                textobj.text.push(precomment.reverse().join('\n'));
+
+                var re = new RegExp('\\b' + label + '\\b', 'gi');
+                for (var m = re.exec(text); m; m = re.exec(text)) {
+                    var range = new Range(i, m.index, i, m.index + label.length);
+                    result.push(s.addMarker(range, "ace_xref", "text"));
                 }
             }
-
-            textobj.text.push(precomment.reverse().join('\n'));
-
-            var re = new RegExp('\\b' + label + '\\b', 'gi');
-            for (var m = re.exec(text); m; m = re.exec(text)) {
-                var range = new Range(i, m.index, i, m.index + label.length);
-                result.push(this.editor.session.addMarker(range, "ace_xref", "text"));
-            }
         }
+
         return result;
     };
 
@@ -224,6 +210,7 @@ function GutnikBox(editor) {
     editor.on('mousemove', this.hide);
 }
 
+// gutter popup
 (function() {
     this.beginShowing = function(e) {
         var row = e.getDocumentPosition().row;
@@ -278,17 +265,17 @@ function GutnikBox(editor) {
 }).call(GutnikBox.prototype);
 
 
-function AceHook() {
-    editor = ace.edit("source");
-    editor.setTheme("ace/theme/twilight");
-    editor.session.setOptions({
+function createAceSession(text)
+{
+    let session = ace.createEditSession(text, "ace/mode/assembly_8080");
+    session.setOptions({
         mode: "ace/mode/assembly_8080",
         tabSize: 8,
         useSoftTabs: true,
         wrap: true,
     });
-    editor.session.gutter_contents = [];
-    editor.session.gutterRenderer =  {
+    session.gutter_contents = [];
+    session.gutterRenderer =  {
         getWidth: function(session, lastLineNumber, config) {
             return 20 * config.characterWidth;
             return lastLineNumber.toString().length * config.characterWidth;
@@ -299,6 +286,34 @@ function AceHook() {
             return "*";//String.fromCharCode(row + 65);
         }
     };
+
+    return session;
+}
+
+function AceHook() {
+    editor = ace.edit("source");
+    editor.setTheme("ace/theme/twilight");
+
+    default_ryba = editor.getValue();
+    //editor.session.setOptions({
+    //    mode: "ace/mode/assembly_8080",
+    //    tabSize: 8,
+    //    useSoftTabs: true,
+    //    wrap: true,
+    //});
+    //decorateAceSession(editor.session);
+    //editor.session.gutter_contents = [];
+    //editor.session.gutterRenderer =  {
+    //    getWidth: function(session, lastLineNumber, config) {
+    //        return 20 * config.characterWidth;
+    //        return lastLineNumber.toString().length * config.characterWidth;
+    //    },
+    //    getText: function(session, row) {
+    //        var gc = session.gutter_contents[row];
+    //        if (gc) return Util.formatGutterBrief(gc.addr,gc.hex) || "*";
+    //        return "*";//String.fromCharCode(row + 65);
+    //    }
+    //};
 
     new TokenTooltip(editor);
 

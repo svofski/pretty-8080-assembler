@@ -71,11 +71,13 @@ function Asmcache() {
     this.textlabels = [];
     this.binFileName = "";
     this.labels = [];
+    this.xref_by_file = {};
 }
 var asmcache = new Asmcache();
 
-function updateReferences(xref, labels, org) {
+function updateReferences(xref, xref_by_file, labels, org) {
     asmcache.xref = xref;
+    asmcache.xref_by_file = xref_by_file;
     asmcache.labels = labels;
     asmcache.org = org || 256;
 }
@@ -154,43 +156,52 @@ var last_src = null;
 
 // assembler main entry point
 function assemble() {
-    var src = editor.session.getLines(0, editor.session.getLength()).join("\n");
+    //var src = editor.session.getLines(0, editor.session.getLength()).join("\n");
 
-    if (last_src === src) {
-        return;
-    } 
+    //if (last_src === src) {
+    //    return;
+    //} 
 
     if (assemblerWorker) {
-        last_src = src;
-        assemblerWorker.postMessage({'command': 'assemble', 'src': src});
+        //last_src = src;
+
+        assemblerWorker.postMessage({'command': 'assemble', 'project': project});
         if (!listing_listener_added) {
             listing_listener_added = true;
             assemblerWorker.addEventListener('message',
                     function(e) {
                         if (e.data['kind'] !== 'assemble') return;
-                        var gut = e.data['gutter'] || [];
-                        editor.session.gutter_contents = gut;
+                        //var gut = e.data['gutter'] || [];
+                        //editor.session.gutter_contents = gut;
 
-                        var mrkrs = editor.session.mymarkers || [];
-                        for (var i = 0; i < mrkrs.length; ++i) {
-                            editor.session.removeMarker(mrkrs[i]);
-                        }
-                        editor.session.mymarkers = [];
-                            
-                        for (var i = 0; i < gut.length; ++i) {
-                            if (gut[i].error) {
-                                editor.session.mymarkers.push(
-                                    editor.session.addMarker(
-                                        new Range(i,0,i,1),
-                                        "error_marker", "fullLine"));
+                        const by_file = e.data['by_file'] || [];
+                        for (let file in by_file) {
+                            let s = sessions[file];
+                            if (s) {
+                                s.gutter_contents = by_file[file];
+
+                                let mrkrs = s.mymarkers || [];
+                                for (let i = 0; i < mrkrs.length; ++i) {
+                                    s.removeMarker(mrkrs[i]);
+                                }
+                                s.mymarkers = [];
+
+                                for (let i in s.gutter_contents) {
+                                    if (s.gutter_contents[i].error) {
+                                        s.mymarkers.push(
+                                            s.addMarker(new Range(i,0,i,1),
+                                                "error_marker", "fullLine"));
+                                    }
+                                }
                             }
                         }
 
                         editor.resize(true);
-                        var labels = e.data['labels'];
-                        var xref = e.data['xref'];
-                        var org = e.data['org'];
-                        updateReferences(xref, labels, org);
+                        const labels = e.data['labels'];
+                        const xref = e.data['xref'];
+                        const xref_by_file = e.data['xref_by_file'];
+                        const org = e.data['org'];
+                        updateReferences(xref, xref_by_file, labels, org);
                         updateSizes();
                         autotranslate = false;
                     });
@@ -198,7 +209,7 @@ function assemble() {
     } else if (assembler) {
         assembler.assemble(src);
         updateSizes();
-        last_src = src;
+        //last_src = src;
         autotranslate = false;
     }
 }
@@ -518,7 +529,7 @@ function loaded() {
 
     updateSizes();
 
-    editor.session.on('change', keypress);
+    //editor.session.on('change', keypress);
 
     var translate = document.getElementById('dl-bin');
     if (translate) {
@@ -689,7 +700,9 @@ function load_ryba(url)
         window.loadryba_state = false;
         let status = oReq.status;
         if (status >= 200 && status < 300 || status === 304) {
-            editor.setValue(oReq.response, 0);
+            const filename = url.split("/").pop();
+            newProject(false, filename, oReq.response);
+            //editor.setValue(oReq.response, 0);
             editor.clearSelection();
             assemble();
         }
@@ -701,6 +714,13 @@ function load_ryba(url)
     };
 
     oReq.send();
+}
+
+function defaultProject()
+{
+    newProject(true, "test.asm", default_ryba);
+    editor.clearSelection();
+    assemble();
 }
 
 function create_ryba_menu()

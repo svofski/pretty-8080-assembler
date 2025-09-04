@@ -14,8 +14,11 @@ Rev.L: Worker + Base64
 <script type="text/javascript" src="makewav.js"></script>
 <script type="text/javascript" src="tape.js"></script>
 <script type="text/javascript" src="main.js"></script>
+<script src="jszip.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="FileSaver.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="ace-local/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="ace-hook.js" type="text/javascript" charset="utf-8"></script>
+<script src="ide.js" type="text/javascript" charset="utf-8"></script>
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
 <link href="ace-extras.css" rel="stylesheet" type="text/css" media="screen"/>
 <!-- styleSheets[1] -->
@@ -38,6 +41,12 @@ Rev.L: Worker + Base64
 </head>
 <body id='main' onload="loaded(); return false;">
 
+<div id="tabContextMenu" class="context-menu">
+  <div class="menu-item" data-action="rename">Rename</div>
+  <div class="menu-item" data-action="random-color">Random color</div>
+  <div class="menu-item" data-action="close">Delete</div>
+</div>
+
 <div id="toolbar" 
 onclick="scrollBack(); return false;"
 onmouseover="magicToolbar(0); return false;"
@@ -46,13 +55,20 @@ onmouseout="magicToolbar(2); return false;"
 &#x25c0;
 </div>
 
-<div id="header" 
-onmouseover="magicToolbar(0); return false;"
-onmouseout="magicToolbar(2); return false;"
->
-<a id="header-text" href="https://github.com/svofski/pretty-8080-assembler" target=_>
+<div id="header" onmouseover="magicToolbar(0); return false;" onmouseout="magicToolbar(2); return false;">
+  <div id="tabbar">
+      <div class="toolbar-btn">test.asm</div>
+  </div>
+  <span class="spacer"></span>
+  <div id="header-right">
+      <span id="header-link">
+  <a id="header-text" href="https://github.com/svofski/pretty-8080-assembler" target=_>
     Прекрасный ассемблер КР580ВМ80А</a>
+      </span>
+  </div>
+
 </div>
+
 <div id="textinput">
 <div id="emulator">
 <div id="emulator-vert">
@@ -123,10 +139,22 @@ delay:
 <div class="baton" id="run">RUN</div>
 <div class="baton" id="sounds">WAV&nbsp;&nbsp;
     <span id="wav-dl">⬇</span>&nbsp;&nbsp;&nbsp;<span id="wav-play">▶</span></div>
+
+<span class="spacer"> </span>
+
+<div class="baton" onclick="exportProject()">Export ZIP</div>
+<input type="file" id="importInput" style="display:none" onchange="importProject(this.files)">
+<div class="baton" onclick="document.getElementById('importInput').click()">Import ZIP</div>
+<div class="baton" onclick="defaultProject()">New</div>
+
 </div>
+
+
+
 
 <script>
     AceHook();
+    IdeStart();
 </script>
 
 </body>
