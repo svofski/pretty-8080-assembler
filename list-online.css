@@ -36,8 +36,9 @@ body {font-size:small; background-color: #333; font-family: Monaco, Lucida Conso
     -khtml-user-select: none;
 }
 
-a#header-text:visited {
-    color: inherit;
+#header-text,
+#header-text:visited {
+    color: #ccc;
 }
 #header-link {
     position: absolute;

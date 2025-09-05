@@ -109,7 +109,7 @@ function renderTabs() {
 
 function addNewFile(e)
 {
-    newFile("; Pretty 8080 Assembler");
+    newFile("; this file can be included using .include directive");
 }
 
 function randomColor() {
@@ -132,9 +132,9 @@ function newFile(text) {
     while (project.files[name] !== undefined) {
         name = "untitled" + (i++) + ".asm";
     }
-    project.files[name] = text;
+    project.files[name] = text || "";
     project.colors[name] = randomColor();
-    sessions[name] = createAceSession(text);
+    sessions[name] = createAceSession(project.files[name]);
     attachOnChange(sessions[name], name);
     switchFile(name);
     saveState();

@@ -419,9 +419,8 @@ function load_vector06js() {
             var emulator_pane = document.getElementById("emulator");
             var container = document.getElementById("emulator-container");
             var iframe = document.createElement("iframe");
-            //iframe.src = "../scalar/vector06js?i+";
-            //iframe.src = "http://sensi.org/scalar/vector06js?i+"; // don't push this to github!
-            iframe.src="https://svofski.github.io/vector06js?i+";
+            let src_url = location.protocol + "//" + location.hostname + "/vector06js?i+";
+            iframe.src = src_url;
             iframe.id = "emulator-iframe";
             container.appendChild(iframe);
             emulator_pane.className += " visible";
