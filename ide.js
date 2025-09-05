@@ -25,7 +25,10 @@ function attachOnChange(session, file)
 function loadState() {
     let data = localStorage.getItem("prettyasmproject");
     if (data) project = JSON.parse(data);
-    if (!project.files || Object.keys(project.files).length === 0) newFile();
+    if (!project.files || Object.keys(project.files).length === 0) {
+        defaultProject(/*ask*/false);
+    }
+
     if (!project.colors) {
         project.colors = {};
     }

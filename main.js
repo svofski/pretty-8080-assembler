@@ -757,9 +757,9 @@ function load_ryba(url)
     oReq.send();
 }
 
-function defaultProject()
+function defaultProject(ask=true)
 {
-    newProject(true, "test.asm", default_ryba);
+    newProject(ask, "test.asm", default_ryba);
     editor.clearSelection();
     assemble();
 }
