@@ -314,8 +314,13 @@ function hex2binMessageListener(e) {
 
     switch (e.data['download']) {
         case 'bin':
-            __download(data.slice(start, end), filename,
-                "application/octet-stream");
+            if (e.data.extra === 'r') {
+                run_vector06js(data.slice(start, end), filename);
+            }
+            else {
+                __download(data.slice(start, end), filename,
+                    "application/octet-stream");
+            }
             break;
         case 'hex':
             __download(e.data['hex'], filename, "text/plain");
@@ -412,6 +417,42 @@ function load_play(moda) {
     assemblerWorker.postMessage({'command': 'getwav', 'mode': moda});
 }
 
+function run_vector06js(bytes, filename) {
+
+    let emulator_pane = document.getElementById("emulator");
+    let container = document.getElementById("emulator-container");
+    let iframe = document.createElement("iframe");
+    let src_url = location.protocol + "//" + location.hostname + "/vector06js?i+";
+    iframe.src = src_url;
+    iframe.id = "emulator-iframe";
+    container.appendChild(iframe);
+    emulator_pane.className += " visible";
+    emulator_pane.onclick = function() {
+        container.removeChild(iframe);
+        emulator_pane.className = 
+            emulator_pane.className.replace(/ visible/g, "");
+        var run = document.getElementById("run");
+        run.className = run.className.replace(/ disabled/g, "");
+        blinkCount = 16;
+    };
+
+    let listener = (e) => {
+        if (e.data.type === "ready") {
+            const file = new File([bytes], filename, { type: "application/octet-stream" });
+            iframe.contentWindow.postMessage({cmd: "loadfile", file}, "https://caglrc.cc");
+
+            window.removeEventListener("message", listener);
+        }
+    };
+
+    window.addEventListener("message", listener);
+
+    iframe.onload = function() {
+        iframe.contentWindow.focus();
+    };
+}
+
+// old version
 function load_vector06js() {
     if (!binary_listener_added) {
         binary_listener_added = true;
@@ -554,7 +595,8 @@ function loaded() {
     var run = document.getElementById("run");
     if (run) {
         run.onclick = function() {
-            load_vector06js();
+            //load_vector06js();
+            load_hex2bin('bin,r');
             run.className += " disabled";
         };
     }

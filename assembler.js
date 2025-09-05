@@ -1475,11 +1475,17 @@ self.addEventListener('message', function(e) {
             'tapeFormat':asm.tapeFormat,
             'download':false});
     } 
-    else if (cmd == 'getbin') {
+    else if (cmd.startsWith('getbin')) {
+        let parts = cmd.split(',');
+        let extra;
+        if (parts.length > 1) {
+            extra = parts[1];
+        }
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
             'filename': asm.getBinFileName(),
-            'download':'bin'
+            'download':'bin',
+            'extra': extra
         });
     } 
     else if (cmd == 'gethex') {
