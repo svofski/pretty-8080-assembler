@@ -403,6 +403,15 @@ span#wav-dl:hover {
 .context-menu .menu-item:hover { background:#444; }
 .spacer { flex:1; }
 
+.context-menu .menu-item.checked::before {
+    content: "☑";
+    margin-right:5px;
+}
+.context-menu .menu-item.unchecked::before {
+    content: "☐";
+    margin-right:5px;
+}
+
 #tabbar {
     display:flex; 
     background:transparent;
@@ -415,7 +424,10 @@ span#wav-dl:hover {
     font-weight: normal;
 }
 
-
+.shawarma-menu {
+    display: inline-block;
+    padding: 6px 20px 6px 0px;
+}
  
 .tab {
   position: relative;

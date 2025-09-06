@@ -1,7 +1,3 @@
-//const editor = ace.edit("editor");
-//editor.setTheme("ace/theme/twilight");
-//editor.session.setMode("ace/mode/assembly_8080");
-
 let project = {
     files: {},
     colors: {},
@@ -9,9 +5,10 @@ let project = {
 };
 let sessions = {};
 
-function saveState() {
-    localStorage.setItem("prettyasmproject", JSON.stringify(project));
-}
+let options = {
+    keyboard: null,
+    theme: "twilight"
+};
 
 function attachOnChange(session, file)
 {
@@ -22,7 +19,25 @@ function attachOnChange(session, file)
     });
 }
 
+function saveState() {
+    localStorage.setItem("prettyasmoptions", JSON.stringify(options));
+    localStorage.setItem("prettyasmproject", JSON.stringify(project));
+}
+
+function loadOptions()
+{
+    let opts = localStorage.getItem("prettyasmoptions");
+    if (opts) options = JSON.parse(opts);
+    if (!options.theme) {
+        options.theme = "twilight";
+    }
+    editor.setTheme("ace/theme/" + options.theme);
+    editor.setKeyboardHandler(options.keyboard);
+}
+
 function loadState() {
+    loadOptions();
+
     let data = localStorage.getItem("prettyasmproject");
     if (data) project = JSON.parse(data);
     if (!project.files || Object.keys(project.files).length === 0) {
@@ -42,9 +57,153 @@ function loadState() {
     switchFile(project.current || Object.keys(project.files)[0]);
 }
 
+const themelist = [
+    "ambiance",
+    "chaos",
+    "chrome",
+    "clouds",
+    "clouds_midnight",
+    "cobalt",
+    "crimson_editor",
+    "dawn",
+    "dracula",
+    "dreamweaver",
+    "eclipse",
+    "github",
+    "gob",
+    "gruvbox",
+    "idle_fingers",
+    "iplastic",
+    "katzenmilch",
+    "kr_theme",
+    "kuroir",
+    "merbivore",
+    "merbivore_soft",
+    "mono_industrial",
+    "monokai",
+    "nord_dark",
+    "one_dark",
+    "pastel_on_dark",
+    "solarized_dark",
+    "solarized_light",
+    "sqlserver",
+    "terminal",
+    "textmate",
+    "tomorrow",
+    "tomorrow_night",
+    "tomorrow_night_blue",
+    "tomorrow_night_bright",
+    "tomorrow_night_eighties",
+    "twilight",
+    "vibrant_ink",
+    "xcode"
+];
+
+function createThemeMenuItems()
+{
+    const menu = document.getElementById("shawarmaMenu");
+    for (let theme of themelist) {
+        let item = document.createElement("div");
+        item.className = "menu-item unchecked theme";
+        item.id = "menu-theme-" + theme;
+        item.dataset.action = "theme-select";
+        item.innerText = theme;
+        menu.appendChild(item);
+    }
+}
+
+function updateThemeMenuItems()
+{
+    // themes
+    document.querySelectorAll(".menu-item.theme").forEach(item => {
+        item.classList.remove("checked");
+        item.classList.remove("unchecked");
+
+        let item_theme = themeNameFromId(item.id);
+        if (item_theme === options.theme) {
+            item.classList.add("checked");
+        }
+        else {
+            item.classList.add("unchecked");
+        }
+    });
+}
+
+function themeNameFromId(id)
+{
+    let parts = id.split("-");
+    return parts.length > 2 ? parts[2] : null;
+}
+
+function showShawarmaMenu(x, y)
+{
+    const menu = document.getElementById("shawarmaMenu");
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+    menu.style.display = "block";
+
+    const vim = document.getElementById("menu-toggle-vim");
+    if (vim) {
+        vim.classList.remove("unchecked");
+        vim.classList.remove("checked");
+
+        if (options.keyboard == "ace/keyboard/vim") {
+            vim.classList.add("checked");
+        }
+        else {
+            vim.classList.add("unchecked");
+        }
+    }
+
+    updateThemeMenuItems();
+
+    attachPopupDestructor();
+}
+
+function renderShawarmaMenu(bar)
+{
+    const menu = document.createElement("div");
+    menu.className = "shawarma-menu";
+    menu.textContent = "🌯";
+    menu.addEventListener("click", (e) => {
+        showShawarmaMenu(e.pageX, e.pageY)
+    });
+    menu.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        showShawarmaMenu(e.pageX, e.pageY);
+    });
+
+    bar.appendChild(menu);
+}
+
+function toggleVimKeybindings(item)
+{
+    if (item.classList.contains("checked")) {
+        item.classList.remove("checked");
+        item.classList.add("unchecked");
+        setKeyboard(null);
+    }
+    else if (item.classList.contains("unchecked")) {
+        item.classList.remove("unchecked");
+        item.classList.add("checked");
+        setKeyboard("ace/keyboard/vim");
+    }
+}
+
+function selectTheme(item)
+{
+    let theme = themeNameFromId(item.id);
+    options.theme = theme;
+    editor.setTheme("ace/theme/" + options.theme);
+    saveState();
+    updateThemeMenuItems();
+}
+
 function renderTabs() {
     const bar = document.getElementById("tabbar");
     bar.innerHTML = "";
+
+    renderShawarmaMenu(bar);
 
     let index = 0;
     let active_index = 0;
@@ -269,24 +428,72 @@ function showTabContextMenu(x, y, filename) {
     menu.style.top = y + "px";
     menu.style.display = "block";
     menu.dataset.filename = filename;
+
+    attachPopupDestructor();
+}
+
+function popupDestructor(e)
+{
+    document.getElementById("tabContextMenu").style.display = "none";
+    document.getElementById("shawarmaMenu").style.display = "none";
+    document.removeEventListener("click", popupDestructor);
+}
+
+function attachPopupDestructor()
+{
+    setTimeout(() => document.addEventListener("click", popupDestructor), 100);
+    window.addEventListener("blur", popupDestructor);
 }
 
 function IdeStart() {
     loadState();
     renderTabs();
-
-    document.addEventListener("click", () => {
-        document.getElementById("tabContextMenu").style.display = "none";
-    });
     
-    document.querySelectorAll("#tabContextMenu .menu-item").forEach(item => {
+    createThemeMenuItems();
+
+    document.querySelectorAll(".menu-item").forEach(item => {
         item.addEventListener("click", () => {
             const filename = document.getElementById("tabContextMenu").dataset.filename;
-            if (item.dataset.action === "rename") renameFilePrompt(filename);
-            else if (item.dataset.action === "close") closeFile(filename);
-            else if (item.dataset.action === "random-color") changeColor(filename);
+            switch (item.dataset.action) {
+                case "rename":
+                    renameFilePrompt(filename);
+                    break;
+                case "close":
+                    closeFile(filename);
+                    break;
+                case "random-color":
+                    changeColor(filename);
+                    break;
+                case "toggle-vim":
+                    toggleVimKeybindings(item);
+                    break;
+                case "theme-select":
+                    selectTheme(item);
+                    break;
+            }
+
             document.getElementById("tabContextMenu").style.display = "none";
         });
-    });
 
+        item.addEventListener("contextmenu", (e) => {
+            switch (item.dataset.action) {
+                case "toggle-vim":
+                    e.preventDefault();
+                    toggleVimKeybindings(item);
+                    break;
+                case "theme-select":
+                    e.preventDefault();
+                    selectTheme(item);
+                    break;
+            }
+        });
+    });
 }
+
+function setKeyboard(keymap)
+{
+    options.keyboard = keymap;
+    saveState();  
+    editor.setKeyboardHandler(options.keyboard);
+}
+

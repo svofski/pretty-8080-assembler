@@ -295,33 +295,10 @@ function createAceSession(text)
 
 function AceHook() {
     editor = ace.edit("source");
-    editor.setTheme("ace/theme/twilight");
-    //editor.setKeyboardHandler("ace/keyboard/vim");
-
+    editor.setTheme("ace/theme/" + options.theme);
     default_ryba = editor.getValue();
-    //editor.session.setOptions({
-    //    mode: "ace/mode/assembly_8080",
-    //    tabSize: 8,
-    //    useSoftTabs: true,
-    //    wrap: true,
-    //});
-    //decorateAceSession(editor.session);
-    //editor.session.gutter_contents = [];
-    //editor.session.gutterRenderer =  {
-    //    getWidth: function(session, lastLineNumber, config) {
-    //        return 20 * config.characterWidth;
-    //        return lastLineNumber.toString().length * config.characterWidth;
-    //    },
-    //    getText: function(session, row) {
-    //        var gc = session.gutter_contents[row];
-    //        if (gc) return Util.formatGutterBrief(gc.addr,gc.hex) || "*";
-    //        return "*";//String.fromCharCode(row + 65);
-    //    }
-    //};
 
     new TokenTooltip(editor);
-
-
     new GutnikBox(editor);
 }
 
