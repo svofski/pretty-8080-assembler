@@ -23,6 +23,7 @@ function TokenTooltip(editor) {
 oop.inherits(TokenTooltip, Tooltip);
 
 (function() {
+    this.visible = false;
     this.token = {};
     this.range = new Range();
     this.update = function() {
@@ -92,6 +93,7 @@ oop.inherits(TokenTooltip, Tooltip);
 
             if (tokenText.length) {
                 this.show(null, this.x, this.y);
+                this.visible = true;
             }
 
             this.token = token;
@@ -101,6 +103,7 @@ oop.inherits(TokenTooltip, Tooltip);
         }
         else {
             this.disappear();
+            this.visible = false;
         }
     };
 
@@ -170,7 +173,7 @@ oop.inherits(TokenTooltip, Tooltip);
             this.setPosition(this.x, this.y);
         }
         if (!this.$timer)
-            this.$timer = setTimeout(this.update, 100);
+            this.$timer = setTimeout(this.update, this.visible ? 100 : 1000);
     };
 
     this.onMouseOut = function(e) {

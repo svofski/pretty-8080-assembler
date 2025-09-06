@@ -616,7 +616,7 @@ function loaded() {
 function updateSizes() {
     var header_height = document.getElementById('header').clientHeight;
     var bottom_height = document.getElementById('buttons-below').clientHeight;
-    var height = window.innerHeight - header_height - bottom_height - 10;
+    var height = window.innerHeight - header_height - bottom_height - 2;
 
     var ti = document.getElementById('source');
     ti.style.height = height + "px";
@@ -788,21 +788,27 @@ function create_ryba_menu()
     
     var text = document.getElementById("source");
     (function(text, menu) {
-        text.onclick = function(e) {
-            var selectionRange = editor.getSelectionRange();
-            selectionRange.start.column -= 2;
-            var r1 = editor.session.getTextRange(selectionRange);
-            selectionRange.moveBy(0,2);
-            var r2 = editor.session.getTextRange(selectionRange);
-            
-            if (r1 === "🐟" || r2 === "🐟") {
-                var parnt = document.getElementById("textinput");
+        editor.on("mousemove", function(e) {
+            const pos = e.getDocumentPosition();
+            const token = e.editor.getSession().getTokenAt(pos.row, pos.column);
+
+            const isFish = token && token.type === "fish";
+            editor.container.classList.toggle("cursor-default", !!isFish);
+        });
+        editor.on("click", function(e) {
+            const pos = e.getDocumentPosition();
+            const token = e.editor.getSession().getTokenAt(pos.row, pos.column);
+
+            const isFish = token && token.type === "fish";
+            if (isFish) {
+                editor.container.style.cursor = "pointer";
+                let parnt = document.getElementById("textinput");
                 parnt && parnt.appendChild(menu);
 
                 menu.style.left = (e.clientX - 25) + "px";
                 menu.style.top = (e.clientY - 25) + "px";
-             }
-        };
+            }
+        });
     })(text, menu);
 }
 

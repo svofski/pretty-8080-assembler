@@ -31,7 +31,9 @@ var AssemblyX86HighlightRules = function() {
                 caseInsensitive: true,
                 next: 'args',
             },
-            { token: 'comment.assembly', regex: ';.*$' },
+            { token: ['comment.assembly', 'fish', 'comment.assembly'], regex: /(;.*?)(🐟)(.*)/ },
+            { token: 'comment.assembly', regex: ';.*'},
+
             { token: 'entity.name.function.assembly',
               regex: '[_a-zA-Z][_a-zA-Z0-9]+(\:?)'},
         ],

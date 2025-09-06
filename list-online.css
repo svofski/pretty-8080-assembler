@@ -469,3 +469,15 @@ span#wav-dl:hover {
 #buttons-below {
     display: flex;
 }
+
+.ace_fish {
+}
+
+.ace_editor.cursor-default,
+.ace_editor.cursor-default .ace_scroller,
+.ace_editor.cursor-default .ace_content,
+.ace_editor.cursor-default .ace_text-layer,
+.ace_editor.cursor-default .ace_text-input {
+      cursor: default !important;
+  }
+
