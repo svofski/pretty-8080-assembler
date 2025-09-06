@@ -16,7 +16,8 @@ Rev.L: Worker + Base64
 <script type="text/javascript" src="main.js"></script>
 <script src="jszip.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="FileSaver.min.js" type="text/javascript" charset="utf-8"></script>
-<script src="ace-local/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="ace-local/ace1.32.3.js" type="text/javascript" charset="utf-8"></script>
+<script src="ace-local/keybinding-vim.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="ace-hook.js" type="text/javascript" charset="utf-8"></script>
 <script src="ide.js" type="text/javascript" charset="utf-8"></script>
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
@@ -142,10 +143,10 @@ delay:
 
 <span class="spacer"> </span>
 
-<div class="baton" onclick="exportProject()">Export ZIP</div>
+<div class="baton project" onclick="exportProject()">Export ZIP</div>
 <input type="file" id="importInput" style="display:none" onchange="importProject(this.files)">
-<div class="baton" onclick="document.getElementById('importInput').click()">Import ZIP</div>
-<div class="baton" onclick="defaultProject()">New</div>
+<div class="baton project" onclick="document.getElementById('importInput').click()">Import ZIP</div>
+<div class="baton project" onclick="defaultProject()"><span class="baton-icon">&#128196;</span><span class="baton-text">New</span></div>
 
 </div>
 

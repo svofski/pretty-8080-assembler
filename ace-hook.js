@@ -296,6 +296,7 @@ function createAceSession(text)
 function AceHook() {
     editor = ace.edit("source");
     editor.setTheme("ace/theme/twilight");
+    //editor.setKeyboardHandler("ace/keyboard/vim");
 
     default_ryba = editor.getValue();
     //editor.session.setOptions({

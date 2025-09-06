@@ -616,7 +616,7 @@ function loaded() {
 function updateSizes() {
     var header_height = document.getElementById('header').clientHeight;
     var bottom_height = document.getElementById('buttons-below').clientHeight;
-    var height = window.innerHeight - header_height - bottom_height - 2;
+    var height = window.innerHeight - header_height - bottom_height - 10;
 
     var ti = document.getElementById('source');
     ti.style.height = height + "px";
@@ -713,7 +713,8 @@ var rybas =
 
     "okean": ["Океан-240 🌊", "hello-okean240.asm"],
 
-    "baboon-dissolve": ["Вектор-06ц: 🐒", "baboon-dissolve.asm"],
+    //"baboon-dissolve": ["Вектор-06ц: 🐒", "baboon-dissolve.asm"],
+    "baboon-dissolve-multipart": ["Вектор-06ц: 🐒", "baboon-dissolve-multipart.asm", "baboon-picture.inc"],
 
     "line-ei": ["Вектор-06ц: быстрая линия", "line-ei.asm"],
 
@@ -724,7 +725,7 @@ var rybas =
     "text80-color": ["Вектор-06ц: цветной текст 80 символов", "text80-color.asm"],
 };
 
-function load_ryba(url) 
+function load_ryba(url,extrafiles) 
 {
     console.log("Trying to load ", url);
     if (window.loadryba_state && window.loadryba_state === "try-cors") {
@@ -733,28 +734,60 @@ function load_ryba(url)
          window.loadryba_state = "try-cors";
     }
 
-    var oReq = j();
-    oReq.open("GET", url, true);
-    oReq.responseType = "text";
+    let urls = [url];
+    if (extrafiles) {
+        urls = urls.concat(extrafiles);
+    }
 
-    oReq.onload = function(oEvent) {
-        window.loadryba_state = false;
-        let status = oReq.status;
-        if (status >= 200 && status < 300 || status === 304) {
-            const filename = url.split("/").pop();
-            newProject(false, filename, oReq.response);
-            //editor.setValue(oReq.response, 0);
-            editor.clearSelection();
-            assemble();
-        }
-    };
-    oReq.onerror = function(oEvent) {
-        if (url.startsWith("http://") || url.startsWith("https://")) {
-            load_ryba("https://cors.io?" + url);
-        }
+    project = {
+        files: {},
+        colors: {},
+        current: null
     };
 
-    oReq.send();
+    let mkrequest = function(urls) {
+        let url = urls[0];
+        let oReq = j();
+        oReq.open("GET", url, true);
+        oReq.responseType = "text";
+
+        oReq.onload = function(oEvent) {
+            window.loadryba_state = false;
+            let status = oReq.status;
+            if (status >= 200 && status < 300 || status === 304) {
+                const filename = url.split("/").pop();
+                if (project.current == null) {
+                    newProject(false, filename, oReq.response);
+                }
+                else {
+                    newFile(oReq.response);
+                    renameFile("untitled.asm", filename);
+                }
+
+                let cdr = urls.slice(1);
+                if (cdr && cdr.length) {
+                    // load next file
+                    mkrequest(cdr).send();
+                }
+                else {
+                    // done
+                    switchFile(Object.keys(project.files)[0]);
+                    editor.clearSelection();
+                    assemble();
+                }
+            }
+        };
+        oReq.onerror = function(oEvent) {
+            if (url.startsWith("http://") || url.startsWith("https://")) {
+                load_ryba("https://cors.io?" + url);
+            }
+        };
+
+        return oReq;
+    };
+
+
+    mkrequest(urls).send();
 }
 
 function defaultProject(ask=true)
@@ -773,12 +806,13 @@ function create_ryba_menu()
         var item = document.createElement("div");
         item.setAttribute("class", "ryba-item");
         item.innerText = rybas[k][0];
-        (function(href) {
+        let extrafiles = rybas[k].slice(2);
+        (function(href, extrafiles) {
             item.onclick = function() {
                 menu.parentElement.removeChild(menu);
-                load_ryba(href);
+                load_ryba(href, extrafiles);
             };
-        })(rybas[k][1]);
+        })(rybas[k][1], extrafiles);
         menu.onmouseleave = function() {
             menu.parentElement.removeChild(menu);
         };
