@@ -34,6 +34,7 @@ function setKeyboardHandler()
     editor.setKeyboardHandler(options.keyboard);
     if (options.keyboard === "ace/keyboard/vim") {
         Vim = ace.require("ace/keyboard/vim").CodeMirror.Vim;
+        applyVimModelines();
     }
 }
 
@@ -48,19 +49,22 @@ function loadOptions()
     setKeyboardHandler();
 }
 
-function applyVimModelines(text)
+function applyVimModelines()
 {
     if (Vim && editor && editor.state && editor.state.cm) {
-        // Vim.handleEx(editor.state.cm, ...)
-        const modeline = /^;\s*vim:\s*(.*)$/i;
-        for (let line of text.split('\n')) {
-            let match = modeline.exec(line);
-            if (modeline.test(line)) {
-                console.log("modeline: ", match[1]);
-                const happenings = match[1].split("|");
-                for (let ex of happenings) {
-                    console.log("modeline cmd: ", ex);
-                    Vim.handleEx(editor.state.cm, ex);
+        for (let f in project.files) {
+            let text = project.files[f];
+            // Vim.handleEx(editor.state.cm, ...)
+            const modeline = /^;\s*vim:\s*(.*)$/i;
+            for (let line of text.split('\n')) {
+                let match = modeline.exec(line);
+                if (modeline.test(line)) {
+                    console.log("modeline: ", match[1]);
+                    const happenings = match[1].split("|");
+                    for (let ex of happenings) {
+                        console.log("modeline cmd: ", ex);
+                        Vim.handleEx(editor.state.cm, ex);
+                    }
                 }
             }
         }
@@ -85,9 +89,9 @@ function loadState() {
         }
         sessions[f] = createAceSession(project.files[f]);
         attachOnChange(sessions[f], f);
-        applyVimModelines(project.files[f]);
     }
     switchFile(project.current || Object.keys(project.files)[0]);
+    applyVimModelines();
 }
 
 const themelist = [
