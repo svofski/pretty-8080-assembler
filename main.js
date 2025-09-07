@@ -619,8 +619,10 @@ function loaded() {
         };
     }
 
+    // global shortcuts handler
     document.addEventListener("keydown", (e) => {
         console.log("document.keyDown", e);
+        // ctrl+alt+b to launch emulator (also :run)
         if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
             let run_button  = document.getElementById("run");
             if (run_button) {
@@ -631,6 +633,11 @@ function loaded() {
                     runEmulator();
                 }
             }
+        }
+        // alt+1..9 to switch buffers
+        if (e.altKey && !e.ctrlKey) {
+            let buf_num = "123456789".indexOf(e.key);
+            switchFileNum(buf_num);
         }
     }, {capture: true});
 

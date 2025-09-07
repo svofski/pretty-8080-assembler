@@ -304,6 +304,8 @@ function renderTabs() {
         }
         tab.style = style;
 
+        tab.title = "Alt+" + (index + 1);
+
         // insert shadow
         const shadow = document.createElement("div");
         shadow.className = "tab-shadow";
@@ -368,6 +370,14 @@ function switchFile(name) {
     renderTabs();
     saveState();
     assemble();
+}
+
+function switchFileNum(num)
+{
+    let filenames = Object.keys(project.files);
+    if (num >= 0 && num < filenames.length) {
+        switchFile(filenames[num]);
+    }
 }
 
 function renameFile(oldName, newName) {
