@@ -501,7 +501,7 @@ function IdeStart() {
     createThemeMenuItems();
 
     document.querySelectorAll(".menu-item").forEach(item => {
-        item.addEventListener("click", () => {
+        let processClick = (e) => {
             const filename = document.getElementById("tabContextMenu").dataset.filename;
             switch (item.dataset.action) {
                 case "rename":
@@ -522,7 +522,11 @@ function IdeStart() {
             }
 
             document.getElementById("tabContextMenu").style.display = "none";
+        };
+        item.addEventListener("touchstart", (e) => {
+            processClick(e);
         });
+        item.addEventListener("click", processClick);
 
         let showContextMenu = (e) => {
             e.preventDefault();
