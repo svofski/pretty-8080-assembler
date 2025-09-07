@@ -831,6 +831,19 @@ function defaultProject(ask=true)
     assemble();
 }
 
+function getFishfulToken(e)
+{
+    const pos = e.getDocumentPosition();
+    let token = e.editor.getSession().getTokenAt(pos.row, pos.column);
+
+    if (token && token.type === "fish") return token;
+
+    token = e.editor.getSession().getTokenAt(pos.row, pos.column+1);
+    if (token && token.type === "fish") return token;
+  
+    return null;
+}
+
 function create_ryba_menu()
 {
     var menu = document.createElement("div");
@@ -848,7 +861,7 @@ function create_ryba_menu()
             };
         })(rybas[k][1], extrafiles);
         menu.onmouseleave = function() {
-            menu.parentElement.removeChild(menu);
+            popupDestructor(null);
         };
 
        menu.appendChild(item);
@@ -857,18 +870,13 @@ function create_ryba_menu()
     var text = document.getElementById("source");
     (function(text, menu) {
         editor.on("mousemove", function(e) {
-            const pos = e.getDocumentPosition();
-            const token = e.editor.getSession().getTokenAt(pos.row, pos.column);
-
-            const isFish = token && token.type === "fish";
-            editor.container.classList.toggle("cursor-default", !!isFish);
+            let fish = getFishfulToken(e);
+            editor.container.classList.toggle("cursor-default", !!fish);
         });
         editor.on("click", function(e) {
-            const pos = e.getDocumentPosition();
-            const token = e.editor.getSession().getTokenAt(pos.row, pos.column);
-
-            const isFish = token && token.type === "fish";
-            if (isFish) {
+            const fish = getFishfulToken(e);
+            if (fish) {
+                e.preventDefault();
                 editor.container.style.cursor = "pointer";
                 let parnt = document.getElementById("textinput");
                 if (parnt) {
