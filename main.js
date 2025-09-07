@@ -417,8 +417,9 @@ function load_play(moda) {
     assemblerWorker.postMessage({'command': 'getwav', 'mode': moda});
 }
 
-function run_vector06js(bytes, filename) {
+let close_emulator_cb = null;
 
+function run_vector06js(bytes, filename) {
     let emulator_pane = document.getElementById("emulator");
     let container = document.getElementById("emulator-container");
     let iframe = document.createElement("iframe");
@@ -427,13 +428,19 @@ function run_vector06js(bytes, filename) {
     iframe.id = "emulator-iframe";
     container.appendChild(iframe);
     emulator_pane.className += " visible";
-    emulator_pane.onclick = function() {
+
+    close_emulator_cb = () => {
         container.removeChild(iframe);
         emulator_pane.className = 
             emulator_pane.className.replace(/ visible/g, "");
         var run = document.getElementById("run");
         run.className = run.className.replace(/ disabled/g, "");
         blinkCount = 16;
+        close_emulator_cb = null;
+    };
+
+    emulator_pane.onclick = function() {
+        close_emulator_cb && close_emulator_cb();
     };
 
     let listener = (e) => {
@@ -549,6 +556,13 @@ function autosave()
     }
 }
 
+function runEmulator()
+{
+    var run = document.getElementById("run");
+    load_hex2bin('bin,r');
+    run.className += " disabled";
+}
+
 function loaded() {
     if (navigator.appName === 'Microsoft Internet Explorer' || 
             navigator.appVersion.indexOf('MSIE') != -1) {
@@ -595,11 +609,24 @@ function loaded() {
     var run = document.getElementById("run");
     if (run) {
         run.onclick = function() {
-            //load_vector06js();
-            load_hex2bin('bin,r');
-            run.className += " disabled";
+            runEmulator();
         };
     }
+
+    window.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
+            let run_button  = document.getElementById("run");
+            if (run_button) {
+                if (close_emulator_cb) {
+                    close_emulator_cb();
+                }
+                else {
+                    runEmulator();
+                }
+            }
+        }
+    });
+
 
     stop_audio();
 

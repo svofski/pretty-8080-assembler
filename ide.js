@@ -32,9 +32,19 @@ function setKeyboardHandler()
 {
     Vim = null;
     editor.setKeyboardHandler(options.keyboard);
+    let run_button = document.getElementById("run");
+    if (run_button) {
+        run_button.title = "Launch Vector-06c emulator (Ctrl-Alt-B)";
+    }
+
     if (options.keyboard === "ace/keyboard/vim") {
         Vim = ace.require("ace/keyboard/vim").CodeMirror.Vim;
+        Vim.defineEx("run", "", runEmulator);
         applyVimModelines();
+
+        if (run_button) {
+            run_button.title = "Launch Vector-06c emulator (Ctrl-Alt-B, :run)";
+        }
     }
 }
 
