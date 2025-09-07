@@ -479,13 +479,16 @@ function IdeStart() {
         });
 
         item.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            const filename = document.getElementById("tabContextMenu").dataset.filename;
             switch (item.dataset.action) {
+                case "random-color":
+                    changeColor(filename);
+                    break;
                 case "toggle-vim":
-                    e.preventDefault();
                     toggleVimKeybindings(item);
                     break;
                 case "theme-select":
-                    e.preventDefault();
                     selectTheme(item);
                     break;
             }
