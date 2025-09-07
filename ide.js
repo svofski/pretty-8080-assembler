@@ -268,18 +268,19 @@ function renderTabs() {
 
     index = 0;
     for (let f in project.files) {
-        //let color = "#" + (index % 4) + (index % 6) + (index % 5);
-        //let dist = 7 - index;
-        //let color = "#" + dist + dist + dist;
         let color = [...project.colors[f]];
         let dist = Math.abs(index - active_index);
         let factor = Math.pow(1 - dist / (nfiles + 1), 4.5);
-        //if (f === project.current) {
-            color[1] *= 3;      // saturate
-            color[2] *= 2.5;    // lighter
-        //}
+
+        color[1] *= 3;      // saturate
+        color[2] *= 2.5;    // lighter
+
+        let base_s = color[1];
+        let base_l = color[2];
+
         color[1] *= factor;
         color[2] *= factor;
+
 
         const tab = document.createElement("div");
         tab.className = "tab" + (f === project.current ? " active" : "");
@@ -295,6 +296,12 @@ function renderTabs() {
 
         let style = "--tab-z:" + (99-index) + ";";
         style += "--tab-bg:" + col2hsl(color) + ";";
+        if (index == active_index) {
+            style += "--tab-bg-full:" + col2hsl([255, 255, 255]);
+        }
+        else {
+            style += "--tab-bg-full:" + col2hsl([color[0], base_s, base_l]);
+        }
         tab.style = style;
 
         // insert shadow
@@ -309,7 +316,9 @@ function renderTabs() {
     plus.textContent = "+";
     plus.onclick = addNewFile;
     let style = "--tab-z:" + (99-index) + ";";
-    style += "--tab-bg:#333";
+    style += "--tab-bg:#333;";
+    style += "--tab-bg-full:#000;";
+    style += "margin-left: 10px;";  
     plus.style = style;
     bar.appendChild(plus);
 

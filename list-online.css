@@ -469,29 +469,44 @@ span#wav-dl:hover {
 .tab {
   position: relative;
   display: inline-block;
-  padding: 6px 20px 6px 24px;
+  padding: 6px 14px 6px 14px;
   margin-right: -2px; /* overlap borders */
   background: var(--tab-bg);
   color: white;
   border: 0px;
-  border-top: 1px solid black;
+  border-top: 1px solid rgba(0, 0, 0, 0.5);
   font-family: sans-serif;
   line-height: 1.2;
   z-index: var(--tab-z);
+  transition: background-color 0.3s ease;
+}
+
+.tab:hover {
+    background: color-mix(in srgb, var(--tab-bg) 80%, var(--tab-bg-full));
+}
+.tab:hover::before {
+    background: color-mix(in srgb, var(--tab-bg) 80%, var(--tab-bg-full));
+}
+.tab:hover::after {
+    background: color-mix(in srgb, var(--tab-bg) 80%, var(--tab-bg-full));
 }
 
 /* slant left */
 .tab::before {
   content: "";
   position: absolute;
-  top: -0px;
+  top: -1px;
   left: -10px;
-  width: 10px;
+  width: 18px;
   height: 100%;
   background: var(--tab-bg);
   border: 0px;
+  border-radius: 5px 0px 0px 0px;
+  border-left: 1px solid rgba(0, 0, 0, 0.5);
+  border-top: 1px solid rgba(0, 0, 0, 0.5);
+  transform: skewX(-20deg);
   z-index: var(--tab-z-1);
-  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  transition: background-color 0.3s ease;
 }
 
 /* slant right */
@@ -500,12 +515,15 @@ span#wav-dl:hover {
   position: absolute;
   top: -0px;
   right: -10px;
-  width: 10px;
+  width: 18px;
   height: 100%;
   background: var(--tab-bg);
   border: 0px;
+  border-right: 1px dotted black;
+  border-radius: 0px 5px 0px 0px;
   z-index: var(--tab-z);
-  clip-path: polygon(0 0, 0 100%, 100% 100%);
+  transform: skewX(20deg);
+  transition: background-color 0.3s ease;
 }
 
 /* slant right */
