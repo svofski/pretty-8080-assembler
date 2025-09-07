@@ -456,6 +456,11 @@ function run_vector06js(bytes, filename) {
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
+        iframe.contentWindow.addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
+                close_emulator_cb && close_emulator_cb();
+            }
+        });
     };
 }
 
