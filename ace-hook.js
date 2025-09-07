@@ -1,7 +1,5 @@
 var Range = ace.require('ace/range').Range;
 
-//editor.setKeyboardHandler('ace/keyboard/vim');
-
 var Tooltip = ace.require("ace/tooltip").Tooltip;
 var oop = ace.require("ace/lib/oop");
 var Event = ace.require("ace/lib/event");

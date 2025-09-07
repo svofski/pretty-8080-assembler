@@ -1,3 +1,5 @@
+//import { CodeMirror } from "ace/keyboard/vim";
+
 let project = {
     files: {},
     colors: {},
@@ -9,6 +11,8 @@ let options = {
     keyboard: null,
     theme: "twilight"
 };
+
+let Vim = null;
 
 function attachOnChange(session, file)
 {
@@ -24,6 +28,15 @@ function saveState() {
     localStorage.setItem("prettyasmproject", JSON.stringify(project));
 }
 
+function setKeyboardHandler()
+{
+    Vim = null;
+    editor.setKeyboardHandler(options.keyboard);
+    if (options.keyboard === "ace/keyboard/vim") {
+        Vim = ace.require("ace/keyboard/vim").CodeMirror.Vim;
+    }
+}
+
 function loadOptions()
 {
     let opts = localStorage.getItem("prettyasmoptions");
@@ -32,7 +45,26 @@ function loadOptions()
         options.theme = "twilight";
     }
     editor.setTheme("ace/theme/" + options.theme);
-    editor.setKeyboardHandler(options.keyboard);
+    setKeyboardHandler();
+}
+
+function applyVimModelines(text)
+{
+    if (Vim && editor && editor.state && editor.state.cm) {
+        // Vim.handleEx(editor.state.cm, ...)
+        const modeline = /^;\s*vim:\s*(.*)$/i;
+        for (let line of text.split('\n')) {
+            let match = modeline.exec(line);
+            if (modeline.test(line)) {
+                console.log("modeline: ", match[1]);
+                const happenings = match[1].split("|");
+                for (let ex of happenings) {
+                    console.log("modeline cmd: ", ex);
+                    Vim.handleEx(editor.state.cm, ex);
+                }
+            }
+        }
+    }
 }
 
 function loadState() {
@@ -53,6 +85,7 @@ function loadState() {
         }
         sessions[f] = createAceSession(project.files[f]);
         attachOnChange(sessions[f], f);
+        applyVimModelines(project.files[f]);
     }
     switchFile(project.current || Object.keys(project.files)[0]);
 }
@@ -500,6 +533,6 @@ function setKeyboard(keymap)
 {
     options.keyboard = keymap;
     saveState();  
-    editor.setKeyboardHandler(options.keyboard);
+    setKeyboardHandler();
 }
 
