@@ -458,7 +458,7 @@ function run_vector06js(bytes, filename) {
     iframe.onload = function() {
         iframe.contentWindow.focus();
         iframe.contentDocument.addEventListener("keydown", (e) => {
-            if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
+            if (testHotKey(e, "launch-emulator")) {
                 close_emulator_cb && close_emulator_cb();
             }
         });
@@ -584,6 +584,55 @@ let UserOS =
         return "Unknown";
     })();
 
+function testHotKey(e, test)
+{
+    const chr = String.fromCharCode(e.keyCode);
+    switch (test) {
+        case "launch-emulator":
+            if (UserOS == "Windows" || UserOS == "Linux") {
+                return e.ctrlKey && e.altKey && chr === "B";
+            }
+            else if (UserOS == "macOS") {
+                return e.metaKey && e.altKey && (chr === "B" || chr === "C"); // because safari
+            }
+            break;
+        case "switch-tab":
+            let mod = false;
+            if (UserOS === "Windows" && e.altKey && !e.ctrlKey) {
+                mod = true;
+            }
+            if (UserOS === "macOS" && e.altKey && !e.metaKey) {
+                mod = true;
+            }
+            if (UserOS === "Linux" && e.ctrlKey && !e.altKey) {
+                mod = true;
+            }
+            if (mod) {
+                let buf_num = "123456789".indexOf(chr);
+                return buf_num >= 0 && buf_num <= 9;
+            }
+            break;
+    }
+
+    return false;
+}
+
+function tooltipForHotKey(test)
+{
+    switch (test) {
+        case "launch-emulator":
+            if (UserOS === "Windows" || UserOS === "Linux") return Vim == null ? "Ctrl+Alt+B" : "Ctrl+Alt+B, :run";
+            else if (UserOS === "macOS") return Vim == null ? "⌘⌥B" : "⌘⌥B, :run";
+            break;
+        case "switch-tab":
+            if (UserOS === "Windows") return "Alt+";
+            else if (UserOS === "Linux") return "Ctrl+";
+            else if (UserOS === "macOS") return "⌥+";
+            break;
+    }
+    return "";
+}
+
 function loaded() {
     if (navigator.appName === 'Microsoft Internet Explorer' || 
             navigator.appVersion.indexOf('MSIE') != -1) {
@@ -639,7 +688,7 @@ function loaded() {
         const chr = String.fromCharCode(e.keyCode);
         console.log("document.keyDown", e, " chr=", chr);
         // ctrl+alt+b to launch emulator (also :run)
-        if (e.ctrlKey && e.altKey && chr === "B") {
+        if (testHotKey(e, "launch-emulator")) {
             let run_button  = document.getElementById("run");
             if (run_button) {
                 if (close_emulator_cb) {
@@ -651,10 +700,10 @@ function loaded() {
             }
         }
         // alt+1..9 to switch buffers
-        if (((UserOS === "Windows" || UserOS === "macOs") && e.altKey && !e.ctrlKey) ||
-            (UserOS === "Linux" && e.ctrlKey && !e.altKey)) {
+        if (testHotKey(e, "switch-tab")) {
             let buf_num = "123456789".indexOf(chr);
             switchFileNum(buf_num);
+            e.preventDefault();
         }
     }, {capture: true});
 
