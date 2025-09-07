@@ -837,7 +837,11 @@ function create_ryba_menu()
             if (isFish) {
                 editor.container.style.cursor = "pointer";
                 let parnt = document.getElementById("textinput");
-                parnt && parnt.appendChild(menu);
+                if (parnt) {
+                    parnt.appendChild(menu);
+                    attachPopupDestructor();
+                }
+
 
                 menu.style.left = (e.clientX - 25) + "px";
                 menu.style.top = (e.clientY - 25) + "px";

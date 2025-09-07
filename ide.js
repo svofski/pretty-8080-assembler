@@ -476,6 +476,12 @@ function popupDestructor(e)
 {
     document.getElementById("tabContextMenu").style.display = "none";
     document.getElementById("shawarmaMenu").style.display = "none";
+    let ryba_menu = document.getElementById("ryba-popup");
+    if (ryba_menu) {
+        if (ryba_menu.parentElement) {
+            ryba_menu.parentElement.removeChild(ryba_menu);
+        }
+    }
     document.removeEventListener("click", popupDestructor);
 }
 
@@ -484,6 +490,9 @@ function attachPopupDestructor()
     setTimeout(() => document.addEventListener("click", popupDestructor), 100);
     window.addEventListener("blur", popupDestructor);
 }
+
+let longPressTimer;
+const longPressDuration = 500;
 
 function IdeStart() {
     loadState();
@@ -515,7 +524,7 @@ function IdeStart() {
             document.getElementById("tabContextMenu").style.display = "none";
         });
 
-        item.addEventListener("contextmenu", (e) => {
+        let showContextMenu = (e) => {
             e.preventDefault();
             const filename = document.getElementById("tabContextMenu").dataset.filename;
             switch (item.dataset.action) {
@@ -529,6 +538,24 @@ function IdeStart() {
                     selectTheme(item);
                     break;
             }
+        };
+
+        item.addEventListener("contextmenu", (e) => {
+            showContextMenu(e);
+        });
+
+        item.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            const touch = touches[0];
+            longPressTimer = setTimeout(() => {
+                showContextMenu(e);
+            });
+        });
+        item.addEventListener("touchmove", (e) => {
+            clearTimeout(longPressTimer);
+        });
+        item.addEventListener("touchend", (e) => {
+            clearTimeout(longPressTimer);
         });
     });
 }

@@ -381,6 +381,8 @@ span#wav-dl:hover {
     max-width:30em;
     overflow:hidden;
     position:fixed;
+    z-index: 200;
+    border-radius: .5rem;
 }
 
 .ryba-item:hover {
