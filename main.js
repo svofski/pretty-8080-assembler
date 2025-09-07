@@ -437,6 +437,7 @@ function run_vector06js(bytes, filename) {
         run.className = run.className.replace(/ disabled/g, "");
         blinkCount = 16;
         close_emulator_cb = null;
+        editor.focus();
     };
 
     emulator_pane.onclick = function() {
@@ -444,7 +445,7 @@ function run_vector06js(bytes, filename) {
     };
 
     let listener = (e) => {
-        if (e.data.type === "ready") {
+        if (e.data.type === "ready" && iframe && iframe.contentWindow) {
             const file = new File([bytes], filename, { type: "application/octet-stream" });
             iframe.contentWindow.postMessage({cmd: "loadfile", file}, "https://caglrc.cc");
 
@@ -456,7 +457,7 @@ function run_vector06js(bytes, filename) {
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
-        iframe.contentWindow.addEventListener("keydown", (e) => {
+        iframe.contentDocument.addEventListener("keydown", (e) => {
             if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
                 close_emulator_cb && close_emulator_cb();
             }
@@ -618,7 +619,8 @@ function loaded() {
         };
     }
 
-    window.addEventListener("keydown", (e) => {
+    document.addEventListener("keydown", (e) => {
+        console.log("document.keyDown", e);
         if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
             let run_button  = document.getElementById("run");
             if (run_button) {
@@ -630,7 +632,7 @@ function loaded() {
                 }
             }
         }
-    });
+    }, {capture: true});
 
 
     stop_audio();
