@@ -104,7 +104,7 @@ function createThemeMenuItems()
     const menu = document.getElementById("shawarmaMenu");
     for (let theme of themelist) {
         let item = document.createElement("div");
-        item.className = "menu-item unchecked theme";
+        item.className = "menu-item unchecked-nobox theme";
         item.id = "menu-theme-" + theme;
         item.dataset.action = "theme-select";
         item.innerText = theme;
@@ -116,15 +116,15 @@ function updateThemeMenuItems()
 {
     // themes
     document.querySelectorAll(".menu-item.theme").forEach(item => {
-        item.classList.remove("checked");
-        item.classList.remove("unchecked");
+        item.classList.remove("checked-nobox");
+        item.classList.remove("unchecked-nobox");
 
         let item_theme = themeNameFromId(item.id);
         if (item_theme === options.theme) {
-            item.classList.add("checked");
+            item.classList.add("checked-nobox");
         }
         else {
-            item.classList.add("unchecked");
+            item.classList.add("unchecked-nobox");
         }
     });
 }
@@ -138,6 +138,9 @@ function themeNameFromId(id)
 function showShawarmaMenu(x, y)
 {
     const menu = document.getElementById("shawarmaMenu");
+    if (menu.style.display === "block") {
+        return;
+    }
     menu.style.left = x + "px";
     menu.style.top = y + "px";
     menu.style.display = "block";

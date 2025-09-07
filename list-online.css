@@ -403,6 +403,15 @@ span#wav-dl:hover {
 .context-menu .menu-item:hover { background:#444; }
 .spacer { flex:1; }
 
+.context-menu .menu-item::before {
+    content: ''; /* Base content */
+    display: inline-block;
+    width: 1em; /* Consistent width */
+    text-align: center; /* Center content */
+    //vertical-align: middle; /* Align with text */
+    line-height: 1.5em; /* Match your line height */
+}
+
 .context-menu .menu-item.checked::before {
     content: "☑";
     margin-right:5px;
@@ -410,6 +419,24 @@ span#wav-dl:hover {
 .context-menu .menu-item.unchecked::before {
     content: "☐";
     margin-right:5px;
+}
+
+.context-menu .menu-item.checked-nobox::before {
+    content: "✓";
+    height: 1px;
+    margin-right:5px;
+}
+.context-menu .menu-item.unchecked-nobox::before {
+    content: '\00A0'; /* Nonbreaking space */
+    margin-right:5px;
+    height: 1px;
+}
+
+.menu-item.separator {
+    height: 1px;
+    background-color: black;
+    padding: 0px;
+    margin: 5px;
 }
 
 #tabbar {
@@ -427,6 +454,11 @@ span#wav-dl:hover {
 .shawarma-menu {
     display: inline-block;
     padding: 6px 20px 6px 0px;
+    transition: transform 0.2s ease;
+    transform-origin: 30% 55%;
+}
+.shawarma-menu:hover {
+    transform: scale(1.2);
 }
  
 .tab {
