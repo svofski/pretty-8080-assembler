@@ -569,6 +569,21 @@ function runEmulator()
     run.className += " disabled";
 }
 
+let UserOS = 
+    (() => {
+        const platform = navigator.userAgentData?.platform || navigator.platform || "unknown";
+
+        if (/Win/i.test(platform)) return "Windows";
+        if (/Mac/i.test(platform)) return "macOS";
+        if (/Linux/i.test(platform)) return "Linux";
+
+        // fallback heuristics
+        if (/Android/i.test(navigator.userAgent)) return "Android";
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) return "iOS";
+
+        return "Unknown";
+    })();
+
 function loaded() {
     if (navigator.appName === 'Microsoft Internet Explorer' || 
             navigator.appVersion.indexOf('MSIE') != -1) {
@@ -621,9 +636,10 @@ function loaded() {
 
     // global shortcuts handler
     document.addEventListener("keydown", (e) => {
-        console.log("document.keyDown", e);
+        const chr = String.fromCharCode(e.keyCode);
+        console.log("document.keyDown", e, " chr=", chr);
         // ctrl+alt+b to launch emulator (also :run)
-        if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
+        if (e.ctrlKey && e.altKey && chr === "B") {
             let run_button  = document.getElementById("run");
             if (run_button) {
                 if (close_emulator_cb) {
@@ -635,8 +651,9 @@ function loaded() {
             }
         }
         // alt+1..9 to switch buffers
-        if (e.altKey && !e.ctrlKey) {
-            let buf_num = "123456789".indexOf(e.key);
+        if (((UserOS === "Windows" || UserOS === "macOs") && e.altKey && !e.ctrlKey) ||
+            (UserOS === "Linux" && e.ctrlKey && !e.altKey)) {
+            let buf_num = "123456789".indexOf(chr);
             switchFileNum(buf_num);
         }
     }, {capture: true});
