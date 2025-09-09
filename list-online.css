@@ -282,24 +282,18 @@ span.t2:hover { background:#ffff7d; }
 }
 
 #emulator-box {
-    width: 100vw;
-    height: 75vw;
-    max-height: 77vh;
+    display: flex;
+    flex-direction: column;
     max-width: 100vh;
-    /* border: 1px dotted #111; */
     margin: auto;
     overflow: hidden;
     position: relative;
     box-shadow: 0px 0px 19px 9px rgba(0,0,0,0.75);
-    border-radius: 5px;
+    border-radius: 10px;
 }
 
 #emulator-container {
-    position: absolute;
-    top: 1.35em;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    height: 75vh;
 }
 
 #emulator-iframe {
@@ -309,19 +303,21 @@ span.t2:hover { background:#ffff7d; }
 }
 
 #emulator-controls {
-    background: #222b;
+    background: #223c;
     border-bottom: 1px dotted black;
-    height: 1.33em;
-    border-radius: 0.3rem 0.3rem 0px 0px;
-    padding: 0px 5px;
+    height: 18px;
+    padding: 0px 0px;
+    display: flex;
+    align-items: center; // vertical
 }
 
 #ruslat {
-    display: inline;
+    display: flex;
     font-weight: 900;
     color: #622;
     margin-left: 1ex;
     margin-right: 0.5ex;
+    flex-shrink: 0;
 }
 
 #ruslat.on {
@@ -331,19 +327,23 @@ span.t2:hover { background:#ffff7d; }
 
 #emu-help {
     font-size: 8px;
-    color: #777;
+    color: #887;
+    display: flex;
+    margin-left: 1em;
 }
 
 #emulator-controls #close {
-    color: orange;
-    display: block;
-    float: right;
+    color: #999;
     padding-right: 1ex;
     padding-left: 1ex;
+    padding-top: 4px;
+    flex-shrink: 0;
+    height: 100%;
+    align-items: center;
 }
 #emulator-controls #close:hover {
-    background-color: #942;
-    color: red;
+    background-color: #a42;
+    color: white;
 }
 
 span#wav-dl {
