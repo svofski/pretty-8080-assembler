@@ -435,11 +435,10 @@ function run_vector06js(bytes, filename) {
         container.removeChild(iframe);
         emulator_pane.className = 
             emulator_pane.className.replace(/ visible/g, "");
-        var run = document.getElementById("run");
-        run.className = run.className.replace(/ disabled/g, "");
         blinkCount = 16;
         close_emulator_cb = null;
         editor.focus();
+        closedEmulator();
     };
 
     emulator_pane.onclick = function() {
@@ -451,7 +450,10 @@ function run_vector06js(bytes, filename) {
             const file = new File([bytes], filename, { type: "application/octet-stream" });
             iframe.contentWindow.postMessage({cmd: "loadfile", file}, "https://caglrc.cc");
 
-            window.removeEventListener("message", listener);
+            //window.removeEventListener("message", listener);
+        }
+        if (e.data.type === "tape_stopped") {
+            enableBobinage(false);
         }
     };
 
@@ -569,6 +571,35 @@ function runEmulator()
     var run = document.getElementById("run");
     load_hex2bin('bin,r');
     run.className += " disabled";
+}
+
+function runEmulatorWav()
+{
+    load_play("emu");
+    let run = document.getElementById("run");
+    run.classList.add("disabled");
+
+    enableBobinage(true);
+}
+
+function enableBobinage(enable)
+{
+    document.querySelectorAll(".reel").forEach(item => {
+        if (enable) {
+            item.classList.add("bobinage");
+        }
+        else {
+            item.classList.remove("bobinage");
+        }
+    });
+}
+
+function closedEmulator()
+{
+    let run = document.getElementById("run");
+    run.className = run.className.replace(/ disabled/g, "");
+
+    enableBobinage(false);
 }
 
 let UserOS = 
@@ -722,7 +753,7 @@ function loaded() {
     var wavemu = document.getElementById("wav-emu");
     if (wavemu) {
         wavemu.onclick = function() {
-            load_play("emu");
+            runEmulatorWav();
         }
     }
 

@@ -291,6 +291,7 @@ span.t2:hover { background:#ffff7d; }
     overflow: hidden;
     position: relative;
     box-shadow: 0px 0px 19px 9px rgba(0,0,0,0.75);
+    border-radius: 5px;
 }
 
 #emulator-container {
@@ -305,12 +306,11 @@ span.t2:hover { background:#ffff7d; }
     width: 100%;
     height: 100%;
     border: 0px;
-    border-radius: 0.3rem;
 }
 
 #emulator-controls {
-    background: #222;
-    border-bottom: 1px dotted orange;
+    background: #222b;
+    border-bottom: 1px dotted black;
     height: 1.33em;
     border-radius: 0.3rem 0.3rem 0px 0px;
     padding: 0px 5px;
@@ -327,6 +327,11 @@ span.t2:hover { background:#ffff7d; }
 #ruslat.on {
     color: #f30;
     text-shadow: 0px 0px 6px rgba(255, 100, 25, 1);
+}
+
+#emu-help {
+    font-size: 8px;
+    color: #777;
 }
 
 #emulator-controls #close {
@@ -576,4 +581,38 @@ span#wav-dl:hover {
 .ace_editor.cursor-default .ace_text-input {
       cursor: default !important;
   }
+
+.bobinage-icon {
+    display: inline-block;
+    white-space: nowrap;
+}
+.bobinage-mid {
+    margin-left: -0.25em;
+    margin-right: -0.25em;
+}
+
+.reel {
+    display: inline-block;
+    //font-size: 100px;
+    width: 1.2em;      /* add padding to even out bounding box */
+    height: 1.2em;
+    line-height: 1.2em;
+    text-align: center;
+    animation-play-state: paused;
+    transform-origin: 50% 50%; 
+}
+
+.reel.bobinage {
+    animation: bobinage 2s linear infinite;
+}
+
+@keyframes bobinage {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@keyframes bobinage {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
 
