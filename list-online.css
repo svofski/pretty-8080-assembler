@@ -365,6 +365,17 @@ span#wav-dl:hover {
     color: white;
 }
 
+#wav-emu {
+    font-size: smaller;
+    color: #833;
+    cursor: pointer;
+    letter-spacing: 0px;
+}
+
+#wav-emu:hover {
+    color: white;
+}
+
 #sounds {
     cursor:default;
 }

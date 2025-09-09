@@ -387,7 +387,7 @@ function load_play(moda) {
                     function (e) {
                         var dlmode = e.data['download'];
                         var stream;
-                        if (dlmode === "wav" || dlmode === "play") {
+                        if (dlmode === "wav" || dlmode === "play" || dlmode === "emu") {
                             asmcache.binFileName = e.data['binFileName'];
                             asmcache.mem = e.data['mem'];
                             asmcache.org = e.data['org'];
@@ -409,6 +409,8 @@ function load_play(moda) {
                         } else if (dlmode === "play") {
                             /* start audio player */
                             play_audio(stream);
+                        } else if (dlmode === "emu") {
+                            run_vector06js(stream, "program.wav");
                         }
                     },
                     false)
@@ -714,6 +716,13 @@ function loaded() {
     if (wavdl) {
         wavdl.onclick = function() {
             load_play('wav');
+        }
+    }
+
+    var wavemu = document.getElementById("wav-emu");
+    if (wavemu) {
+        wavemu.onclick = function() {
+            load_play("emu");
         }
     }
 
