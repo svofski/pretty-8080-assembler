@@ -516,7 +516,7 @@ function cpp_js(settings) {
                         // code line, apply macro substitutions and copy to output.
                     case 0:
                         if (!ifs_failed && elem.trim().length) {
-                            out.push(elem);
+                            out.push(self.subs(elem, error, warn));
                         }
                         else {
                             out.push("");
