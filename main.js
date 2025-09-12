@@ -153,6 +153,9 @@ function getReferencingLines(lineno) {
 }
 
 var last_src = null;
+let stats_timer = null;
+let error_lines = [];
+let current_error = -1;
 
 // assembler main entry point
 function assemble() {
@@ -174,9 +177,13 @@ function assemble() {
                         //var gut = e.data['gutter'] || [];
                         //editor.session.gutter_contents = gut;
 
+                        let num_errors = 0;
+                        error_lines = [];
+
                         const by_file = e.data['by_file'] || [];
                         for (let file in by_file) {
                             let s = sessions[file];
+                            let annotations = [];
                             if (s) {
                                 s.gutter_contents = by_file[file];
 
@@ -187,12 +194,25 @@ function assemble() {
                                 s.mymarkers = [];
 
                                 for (let i in s.gutter_contents) {
-                                    if (s.gutter_contents[i].error) {
+                                    let err = s.gutter_contents[i].error;
+                                    if (err === true) {
+                                        err = "Unresolved reference or bad numeric constant";
+                                    }
+                                    if (err) {
+                                        ++num_errors;
+                                        error_lines.push([file, i]);
                                         s.mymarkers.push(
                                             s.addMarker(new Range(i,0,i,1),
                                                 "error_marker", "fullLine"));
+                                            annotations.push({
+                                                row: i,
+                                                column: 40,
+                                                text: err,
+                                                type: "error"
+                                            });
                                     }
                                 }
+                                s.setAnnotations(annotations);
                             }
                         }
 
@@ -204,6 +224,23 @@ function assemble() {
                         updateReferences(xref, xref_by_file, labels, org);
                         updateSizes();
                         autotranslate = false;
+
+                        // debounce stats update
+                        if (stats_timer) {
+                            clearTimeout(stats_timer);
+                        }
+                        stats_timer = setTimeout(function() {
+                            let stats = document.getElementById("stats");
+                            stats.innerText = `${num_errors} errors`;
+                            if (num_errors > 0) {
+                                stats.classList.add("error");
+                                stats.title = "Click to jump to the next error";
+                            }
+                            else {
+                                stats.classList.remove("error");
+                                stats.title = "";
+                            }
+                        }, 1000);
                     });
         }
     } else if (assembler) {
@@ -211,6 +248,17 @@ function assemble() {
         updateSizes();
         //last_src = src;
         autotranslate = false;
+    }
+}
+
+function gotoError()
+{
+    if (error_lines.length > 0) {
+        current_error = (current_error + 1) % error_lines.length;
+        
+        let [file, line] = error_lines[current_error];
+        switchFile(file);
+        editor.scrollToLine(line, /*center*/true, /*animate*/true);
     }
 }
 
@@ -719,7 +767,7 @@ function loaded() {
     // global shortcuts handler
     document.addEventListener("keydown", (e) => {
         const chr = String.fromCharCode(e.keyCode);
-        console.log("document.keyDown", e, " chr=", chr);
+        //console.log("document.keyDown", e, " chr=", chr);
         // ctrl+alt+b to launch emulator (also :run)
         if (testHotKey(e, "launch-emulator")) {
             let run_button  = document.getElementById("run");

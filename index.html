@@ -20,6 +20,7 @@ Rev.L: Worker + Base64
 <script src="ace-local/keybinding-vim.min.js" type="text/javascript" charset="utf-8"></script>
 <script src="ace-hook.js" type="text/javascript" charset="utf-8"></script>
 <script src="ide.js" type="text/javascript" charset="utf-8"></script>
+<script src="cpp.js/cpp.js" type="text/javascript" charset="utf-8"></script>
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
 <link href="ace-extras.css" rel="stylesheet" type="text/css" media="screen"/>
 <!-- styleSheets[1] -->
@@ -62,16 +63,19 @@ onmouseout="magicToolbar(2); return false;"
 </div>
 
 <div id="header" onmouseover="magicToolbar(0); return false;" onmouseout="magicToolbar(2); return false;">
-  <div id="tabbar">
+  <div id="tabbar" class="tabbar">
       <div class="toolbar-btn">test.asm</div>
   </div>
   <span class="spacer"></span>
-  <div id="header-right">
-      <span id="header-link">
-  <a id="header-text" href="https://github.com/svofski/pretty-8080-assembler" target=_>
+      <div id="right-tabbar" class="tabbar">
+      <div class="tab" id="tab-resources" title="resources" style="--tab-bg:#456;--tab-bg-full:#654;--tab-z:200">
+          <span class="resources-icon">🗄</span> </div>
+      </div>
+      <div id="header-link"><a id="header-text" href="https://github.com/svofski/pretty-8080-assembler" target=_>
     Прекрасный ассемблер КР580ВМ80А</a>
-      </span>
-  </div>
+          <div id="stats" class="" onclick="gotoError(); return false;" 
+                                   title="">0 errors</div>
+      </div>
 
 </div>
 

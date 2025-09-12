@@ -57,6 +57,7 @@
 importScripts('encodings.js');
 importScripts('util.js');
 importScripts('tape.js');
+importScripts('cpp.js/cpp.js');
 
 function Assembler() {
     this.debug = false;
@@ -75,6 +76,8 @@ function Assembler() {
     this.references = [];
     this.errors = [];
     this.gutterContent = [];
+
+    this.cpp_errors = {};
 }
 
 Assembler.prototype.getBinFileName = function()
@@ -1000,7 +1003,7 @@ Assembler.prototype.gutter = function(text, lengths, addresses)
             }
         }
 
-        let err = this.errors[i] || unresolved !== false;
+        let err = this.errors[i] || unresolved !== false || this.cpp_errors[i];
 
         let gutobj = {
             addr : addresses[i],
@@ -1411,12 +1414,23 @@ Assembler.prototype.evalInvoke = function(expr) {
 
 var asm = new Assembler();
 
+let cpp;
+
 function preprocessFile(project, file, nest)
 {
     let result = [];
     const text = project.files[file];
 
-    let input = text.split('\n');
+    let preprocessed;
+    try {
+      preprocessed = cpp.run(text);
+    } 
+    catch (e) {
+        console.log("preprocessor error: ", e);
+        preprocessed = text;
+    }
+
+    let input = preprocessed.split('\n');
     for (let i = 0; i < input.length; ++i) {
         const line = input[i].trimStart();
         if (line.startsWith(".include")) {
@@ -1446,7 +1460,26 @@ function preprocessFile(project, file, nest)
 function assembleProject(project)
 {
     let main = Object.keys(project.files)[0];
+
+    const cpp_js_settings = {
+        signal_char : '#',
+        warn_func : (s, line) => {
+            console.log("cpp warning: ", s); 
+            asm.cpp_errors[line] = s;
+        },
+        error_func : (s, line) => { 
+            console.log("cpp error: ", s);
+            asm.cpp_errors[line] = s;
+        },
+        include_func : null,
+        comment_stripper : (s) => { return s; }
+    };
+    cpp = new cpp_js(cpp_js_settings);
+    asm.cpp_errors = {};
     let preprocessed = preprocessFile(project, main, 0);
+    for (let i in asm.cpp_errors) {
+        console.log(i);
+    }
     asm.assemble(preprocessed);
 }
 

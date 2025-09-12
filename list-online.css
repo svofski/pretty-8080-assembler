@@ -20,10 +20,8 @@ body {font-size:small; background-color: #333; font-family: Monaco, Lucida Conso
 .d0 { padding-right:0.5em; background-color: #e0ffff; display:inline;}
 
 #header {
-    display: flex;
     font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
-    font-size:150%;
-    font-weight:bold;
+    display: flex;
     background-color: #522;
     color:#ccc;
     padding:5px 5px 5px 5px;
@@ -41,17 +39,66 @@ body {font-size:small; background-color: #333; font-family: Monaco, Lucida Conso
     color: #ccc;
 }
 #header-link {
-    position: absolute;
+    font-size:150%;
+    font-weight:bold;
     bottom: 5px;
     right: 0;
-    width: 20em;
+    width: max-content;
     text-align: right;
     margin-right: 1em;
+    margin-left: 3em;
+    margin-top: -2px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
 }
 #header-right {
     padding-right: 1em;
     position: relative;
 }
+
+#stats {
+    margin-top: 4px;
+    font-size: small;
+    font-weight: normal;
+    width: 100%;
+    text-align: left;
+    padding: 0px 5px;
+    padding-left: 5px
+    margin-bottom: -4px;
+    color: #777;
+    transition: background-color 0.3s ease;
+    position: relative;
+    z-index: 0;
+}
+
+#stats.error {
+    color: #bb5;
+}
+
+#stats.error:hover {
+    color: white;
+}
+
+/* background layer */
+#stats.error::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0px;
+    right: 0;
+    background: #f226;
+    z-index: -1; /* stay behind text */
+    transition: left 0.3s ease, background-color 0.3s ease;
+}
+
+/* expand background leftwards on hover */
+#stats.error:hover::before {
+    left: -5px; /* how much further you want it to grow */
+    background: #f007;
+}
+
 
 #toolbar {
     float:right;
@@ -460,8 +507,8 @@ span#wav-dl:hover {
     margin: 5px;
 }
 
-#tabbar {
-    display:flex; 
+.tabbar {
+    display:inline-flex; 
     background:transparent;
     padding:0px; 
     padding-left: 1em;
@@ -567,6 +614,11 @@ span#wav-dl:hover {
     z-index: 100;
 }
 
+.resources-icon {
+    transform: scaleX(2.5);
+    display: inline-block;
+}
+
 #buttons-below {
     display: flex;
 }
@@ -616,3 +668,6 @@ span#wav-dl:hover {
     to   { transform: rotate(360deg); }
 }
 
+#right-tabbar {
+    display: none;
+}

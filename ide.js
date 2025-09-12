@@ -321,10 +321,16 @@ function renderTabs() {
     plus.style = style;
     bar.appendChild(plus);
 
+
     // insert shadow
     const shadow = document.createElement("div");
     shadow.className = "tab-shadow";
     plus.appendChild(shadow);
+
+    // space
+    const spacer = document.createElement("div");
+    spacer.className = "spacer";
+    bar.appendChild(spacer);
 }
 
 function addNewFile(e)
@@ -336,7 +342,6 @@ function randomColor() {
   const hue = Math.floor(Math.random() * 360);
   const sat = 5 + Math.random() * 10;   // 25–35%
   const light = 15 + Math.random() * 10; // 65–75%
-  //return `hsl(${hue}, ${sat}%, ${light}%)`;
   return [hue, sat, light];
 }
 
