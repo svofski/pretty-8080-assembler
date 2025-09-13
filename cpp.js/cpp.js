@@ -39,7 +39,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* This version is modified by Viacheslav Slavinsky, 2025
  *
  * The purpose of this modification is to maintain the line numbers
- * with the original file. 
+ * with the original file. It's tailor fit for the purpose but probably
+ * will not work in a general case without further modifications.
+ * For example, #include does not work at all.
  */
 
 function cpp_js(settings) {
@@ -612,8 +614,9 @@ function cpp_js(settings) {
             let simple_lines = text.split('\n');
             for (let i in simple_lines) {
                 const simple_line = simple_lines[i];
-                if (simple_line.startsWith("#")) {
-                    blocks = simple_line.split(block_re);
+                const trimmed = simple_line.trimStart();
+                if (trimmed.startsWith("#")) {
+                    blocks = trimmed.split(block_re);
                     process_block(1);
                     process_block(2);
                     out.push("");
