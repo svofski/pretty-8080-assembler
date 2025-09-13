@@ -890,6 +890,8 @@ var languages =
 // 🐟
 var rybas = 
 {
+    "welcome": ["Главрыба", "test.asm", "test-res.inc"],
+    
     "rk": ["Радио-86РК", "hello-rk.asm"],
 
     "microsha": ["Микроша", "hello-microsha.asm"],
@@ -924,9 +926,9 @@ function load_ryba(url,extrafiles)
 {
     console.log("Trying to load ", url);
     if (window.loadryba_state && window.loadryba_state === "try-cors") {
-             window.loadryba_state = "tried-and-failed";
+        window.loadryba_state = "tried-and-failed";
     } else {
-         window.loadryba_state = "try-cors";
+        window.loadryba_state = "try-cors";
     }
 
     let urls = [url];
@@ -987,7 +989,12 @@ function load_ryba(url,extrafiles)
 
 function defaultProject(ask=true)
 {
-    newProject(ask, "test.asm", default_ryba);
+    //newProject(ask, "test.asm", default_ryba);
+    newProject(ask, "test.asm", "");
+    //load_ryba("?welcome");
+    let glavryba = rybas["welcome"]
+    let extrafiles = glavryba.slice(2);
+    load_ryba(glavryba[1], extrafiles);
     editor.clearSelection();
     assemble();
 }
