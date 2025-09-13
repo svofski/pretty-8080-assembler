@@ -1374,8 +1374,8 @@ Assembler.prototype.resolveExpressions = function()
 // scapegoat functionis for V8 because try/catch
 Assembler.prototype.evalPrepareExpr = function(input, addr) {
     try {
-        input = input.replace(/\$([0-9a-fA-F]+)/, '0x$1');
-        input = input.replace(/(?:^|[^'])([\$\.])/, ' '+addr+' ');
+        input = input.replace(/\$([0-9a-fA-F]+)/g, '0x$1');
+        input = input.replace(/(?:^|[^'])([\$\.])/g, ' '+addr+' ');
         input = input.replace(/([\d\w]+)\s(shr|shl|and|or|xor)\s([\d\w]+)/gi,'($1 $2 $3)');
         input = input.replace(/\b(shl|shr|xor|or|and|[+\-*\/()])\b/gi,
                 function(m) {
