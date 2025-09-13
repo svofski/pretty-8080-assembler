@@ -411,7 +411,7 @@ Assembler.prototype.getExpr = function(arr) {
 
 Assembler.prototype.useExpression = function(s, addr, length, linenumber)
 {
-    var result = new Expression(addr, length, s, linenumber);
+    var result = new Expression(addr, length, s, linenumber, this.line_addr);
     this.expressions.push(result);
     return result;
 };
@@ -738,7 +738,7 @@ Assembler.prototype.parseInstruction = function(parts, addr, linenumber) {
             if (labelTag === undefined) {
                 return -1;
             }
-            var ex = new Expression(-1, 2, parts.slice(1), linenumber);
+            var ex = new Expression(-1, 2, parts.slice(1), linenumber, this.line_addr);
             this.labelResolution(labelTag, ex.text, addr, linenumber, true);
             result = 0;
             break;
@@ -1184,11 +1184,13 @@ Assembler.prototype.error = function(line, text) {
     this.errors[line] = text;
 };
 
-function Expression(addr, length, s, linenumber)
+function Expression(addr, length, s, linenumber, line_addr)
 {
     this.addr = addr;
     this.length = length;
     this.linenumber = linenumber;
+    this.line_addr = line_addr;
+    if (line_addr === undefined) throw new Error("line_addr undefined");
     this.update(s);
 }
 
@@ -1209,6 +1211,7 @@ Assembler.prototype.assemble = function(inputlines, listobj) {
     var addresses = Array();
 
     var addr = 0;
+    this.line_addr = 0;
     this.labels = [];
     this.mem.length = 0;
     this.org = undefined;
@@ -1227,6 +1230,7 @@ Assembler.prototype.assemble = function(inputlines, listobj) {
         var sublines = this.splitParts(encodedLine);
 
         for (var sul = 0; sul < sublines.length; ++sul) {
+            this.line_addr = addr;
             var size = this.parseInstruction(sublines[sul], addr, line);
             if (size <= -100000) {
                 addr = -size-100000;
@@ -1353,8 +1357,7 @@ Assembler.prototype.resolveExpressions = function()
     this.processLabelResolutions();
     for (var i = 0; i < this.expressions.length; ++i) {
         var eobj = this.expressions[i];
-        var ev = this.evaluateExpression2(eobj.text, eobj.addr-1,
-            eobj.linenumber);
+        var ev = this.evaluateExpression2(eobj.text, eobj.line_addr, eobj.linenumber);
         if (ev !== undefined) {
             if (eobj.length === 1) {
                 if (ev >= -128 && ev < 256) {
@@ -1375,7 +1378,7 @@ Assembler.prototype.resolveExpressions = function()
 Assembler.prototype.evalPrepareExpr = function(input, addr) {
     try {
         input = input.replace(/\$([0-9a-fA-F]+)/g, '0x$1');
-        input = input.replace(/(?:^|[^'])([\$\.])/g, ' '+addr+' ');
+        input = input.replace(/(?<=^|[^'])[\$\.]/g, ' '+addr+' ');
         input = input.replace(/([\d\w]+)\s(shr|shl|and|or|xor)\s([\d\w]+)/gi,'($1 $2 $3)');
         input = input.replace(/\b(shl|shr|xor|or|and|[+\-*\/()])\b/gi,
                 function(m) {
