@@ -16,6 +16,8 @@
         ; using Export ZIP feature in the toolbar below. Use Import ZIP to 
         ; load them back.
 
+        .include defines.inc  ; contains nice ALIGN(N) define
+
 #define WITH_DELAY
 #define USE_DB64 ; see resource.inc (Alt+2)
 #define BDOS(fn) mvi c, fn \ call bdos
@@ -44,6 +46,9 @@ delay:
         jnz .-2
 #endif
         ret
+
+        ALIGN(256)
+        .db 'Aligned to 256 byte boundary'
 
 ; use this to customise vim mode (you may need to reload the page, press F5)
 ; vim: imap jj <Esc>

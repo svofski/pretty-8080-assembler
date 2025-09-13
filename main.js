@@ -890,7 +890,7 @@ var languages =
 // 🐟
 var rybas = 
 {
-    "welcome": ["Главрыба", "test.asm", "test-res.inc"],
+    "welcome": ["Главрыба", "test.asm", "test-res.inc", "defines.inc"],
     
     "rk": ["Радио-86РК", "hello-rk.asm"],
 
