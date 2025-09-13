@@ -1,4 +1,4 @@
-        ; 🐟  (try me)
+        ; 🐟  check out other examples by clicking on the fish
         ; 8080 assembler code
         .project test.com
         .tape v06c-rom
@@ -7,12 +7,14 @@
         ;   microsha-bin    Микроша
         ;   v06c-rom        Вектор-06ц ROM
         ;
-        ; Use Alt-1/2... to quickly switch buffers
-        ; Press Ctrl+Alt+B to launch Emulator
+        ; Use Alt-1/2... to quickly switch buffers (Linux: Ctrl, Mac: Opt)
+        ; Press Ctrl+Alt+B or Ctrl+Alt+C to launch Emulator (Mac: Cmd+Opt)
         ; 
-        ; Check out the shawarma menu for themes and vim mode
-        ; Use right-click to quickly browse through the editor themes
+        ; Check out the shawarma menu. Right-click to quickly browse the editor themes.
         ;
+        ; The project is persisted in localStorage. You can export projects to disk
+        ; using Export ZIP feature in the toolbar below. Use Import ZIP to 
+        ; load them back.
 
 #define WITH_DELAY
 #define USE_DB64 ; see resource.inc (Alt+2)
