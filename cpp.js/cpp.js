@@ -175,8 +175,8 @@ function cpp_js(settings) {
 
     // make sure that execution never continues when an error occurs.
     var user_err = settings.error_func;
-    settings.error_func = function(e) {
-        user_err(e);
+    settings.error_func = function(e, line) {
+        user_err(e, line);
         throw e;
     }
 
@@ -372,13 +372,9 @@ function cpp_js(settings) {
         run : function(text, name) {
             name = name || '<unnamed>';
 
-            if (!text) {
-                error('input empty or null');
-            }
-
             text = settings.comment_stripper(text);
             let blocks;
-            let out = [];
+            let out = []; // TODO: this is not really needed, only the last line is important
 
             var ifs_nested = 0, ifs_failed = 0, if_done = false, line = 1, command;
             var if_stack = [];
@@ -604,16 +600,13 @@ function cpp_js(settings) {
                                 return false;
                             }
                         }
-
-                        //outi++; //@svo
                         break;
                 }
                 return true;
             };
 
-            let simple_lines = text.split('\n');
-            for (let i in simple_lines) {
-                const simple_line = simple_lines[i];
+            // create process_line() that will be called on every source line
+            let process_line = function(simple_line) {
                 const trimmed = simple_line.trimStart();
                 if (trimmed.startsWith("#")) {
                     blocks = trimmed.split(block_re);
@@ -625,13 +618,18 @@ function cpp_js(settings) {
                     blocks = [simple_line, "", ""];
                     process_block(0);
                 }
-            }
+                return out[out.length - 1];
+            };
 
-            if(if_stack.length > 0) {
-                error("unexpected EOF, expected endif");
-            }
+            // create finish() that finishes the processing at the end
+            let finish = function() {
+                if(if_stack.length > 0) {
+                    error("unexpected EOF, expected endif");
+                }
+            };
 
-            return this._result(out, state);
+            // the actual processing will call process_line() on each line, then finish()
+            return [process_line, finish];
         },
 
         // ----------------------

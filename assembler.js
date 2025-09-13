@@ -1415,22 +1415,15 @@ Assembler.prototype.evalInvoke = function(expr) {
 var asm = new Assembler();
 
 let cpp;
+let cpp_oneline;  // created by cpp.run()
+let cpp_finish;   // created by cpp.run()
 
 function preprocessFile(project, file, nest)
 {
     let result = [];
     const text = project.files[file];
 
-    let preprocessed;
-    try {
-      preprocessed = cpp.run(text);
-    } 
-    catch (e) {
-        console.log("preprocessor error: ", e);
-        preprocessed = text;
-    }
-
-    let input = preprocessed.split('\n');
+    let input = text.split('\n');
     for (let i = 0; i < input.length; ++i) {
         const line = input[i].trimStart();
         if (line.startsWith(".include")) {
@@ -1450,7 +1443,15 @@ function preprocessFile(project, file, nest)
             }
         }
         else {
-            result.push({nest: nest, text: line, file: file, line_num: i});
+            let processed = line;
+            try {
+                if (cpp_oneline) processed = cpp_oneline(line);
+            } 
+            catch (e) {
+                console.log(e);
+                cpp_oneline = null;
+            }
+            result.push({nest: nest, text: processed, file: file, line_num: i});
         }
     }
 
@@ -1475,10 +1476,20 @@ function assembleProject(project)
         comment_stripper : (s) => { return s; }
     };
     cpp = new cpp_js(cpp_js_settings);
+    [cpp_oneline, cpp_finish] = cpp.run(""); // only creates the functors
     asm.cpp_errors = {};
     let preprocessed = preprocessFile(project, main, 0);
+    try {
+        cpp_finish();
+    }
+    catch (e) {
+        console.log(e);
+    }
     for (let i in asm.cpp_errors) {
-        console.log(i);
+        console.log(i, "cpp_error in line ", i, ": ", asm.cpp_errors[i]);
+        if (i >= preprocessed.length) {
+            asm.cpp_errors[preprocessed.length - 1] += asm.cpp_errors[i];
+        }
     }
     asm.assemble(preprocessed);
 }
