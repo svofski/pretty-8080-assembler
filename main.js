@@ -496,8 +496,7 @@ function tapeformat_to_emu80_platform(tf)
 
         case "micro80-bin":
         case "mikro80-bin":
-            //return "mikro80";
-            break;
+            return "mikro80";
         case "okean-bin":
         case "okeah-bin":
             //return "okean240";
