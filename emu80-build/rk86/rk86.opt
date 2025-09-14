@@ -1,0 +1,5 @@
+crtRenderer.visibleArea = yes
+window.smoothing = sharp
+window.aspectCorrection = no
+
+#diskA.fileName = "rk86/rkdos29.rdi

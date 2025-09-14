@@ -1,0 +1,3 @@
+#crtRenderer.visibleArea = yes
+#window.smoothing = nearest
+window.aspectCorrection = no

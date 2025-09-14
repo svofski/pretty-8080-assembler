@@ -1,6 +1,6 @@
     ; 🐟 для Апогея БК-01
     .project hellogee.rk
-    .tape rk-bin ; формат ленты 
+    .tape apogee-bin ; формат ленты 
     .org 0
 prompt  equ 0F875h
 puts    equ 0F818h

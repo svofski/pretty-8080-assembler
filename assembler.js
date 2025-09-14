@@ -1531,6 +1531,7 @@ self.addEventListener('message', function(e) {
         self.postMessage({'mem': JSON.parse(JSON.stringify(asm.mem)),
             'org': asm.org,
             'filename': asm.getBinFileName(),
+            'tapeFormat':asm.tapeFormat,
             'download':'bin',
             'extra': extra
         });

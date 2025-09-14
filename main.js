@@ -353,6 +353,7 @@ function hex2binMessageListener(e) {
     var mem = e.data['mem'];
     if (!mem) return;
     var filename = e.data['filename'];
+    var tapeformat = e.data['tapeFormat'];
     var data = new Uint8Array(mem.length);
     var start = e.data['org'];
     var end = mem.length;
@@ -363,7 +364,7 @@ function hex2binMessageListener(e) {
     switch (e.data['download']) {
         case 'bin':
             if (e.data.extra === 'r') {
-                run_vector06js(data.slice(start, end), filename);
+                run_emulator(data.slice(start, end), filename, tapeformat, start);
             }
             else {
                 __download(data.slice(start, end), filename,
@@ -374,7 +375,7 @@ function hex2binMessageListener(e) {
             __download(e.data['hex'], filename, "text/plain");
             break;
         case 'tap':
-            var stream = new TapeFormat(e.data['tapeFormat'], true).
+            var stream = new TapeFormat(tapeformat, true).
                 format(data.slice(start, end), start, filename);
             __download(stream.data, filename, "application/octet-stream");
             break;
@@ -458,7 +459,7 @@ function load_play(moda) {
                             /* start audio player */
                             play_audio(stream);
                         } else if (dlmode === "emu") {
-                            run_vector06js(stream, "program.wav");
+                            run_emulator(stream, "program.wav", "v06c-rom");
                         }
                     },
                     false)
@@ -468,6 +469,108 @@ function load_play(moda) {
 }
 
 let close_emulator_cb = null;
+
+function tapeformat_to_emu80_platform(tf)
+{
+    switch (tf) {
+        case "rk-bin":
+            return "rk86";
+        case "v06c-rom":
+            return "vector";
+        case "microsha-bin":
+            return "mikrosha";
+        case "apogee-bin":
+        case "apogey-bin":
+        case "apogej-bin":
+            return "apogey";
+        case "partner-bin":
+            return "partner";
+        case "micro80-bin":
+        case "mikro80-bin":
+            return "mikro80";
+        case "ÓÐÅÃÉÁÌÉÓÔß-rks": // КОИ-8Ъ
+        case "spetsialist-rks":
+        case "specialist-rks":
+        case "spec-rks":
+            return "spec";
+    }
+
+    return null;
+}
+
+function run_emulator(bytes, filename, tapeformat, start_addr)
+{
+    if (tapeformat.startsWith("v06c")) {
+        //return run_emu80(bytes, filename, "vector");
+        return run_vector06js(bytes, filename);
+    }
+    else {
+        let stream = new TapeFormat(tapeformat, true).format(bytes, start_addr, filename);
+
+        const platform = tapeformat_to_emu80_platform(tapeformat);
+        if (platform) {
+            return run_emu80(stream.data, filename + ".cas", platform);
+        }
+    }
+
+    console.log("run_emulator: can't decide what to run");
+}
+
+function run_emu80(bytes, filename, platform)
+{
+    let emulator_pane = document.getElementById("emulator");
+    let container = document.getElementById("emulator-container");
+    let iframe = document.createElement("iframe");
+    let src_url = `${location.protocol}//${location.hostname}:${location.port}/emu80-build/emuframe.html?platform=${platform}`;
+
+    iframe.src = src_url;
+    iframe.id = "emulator-iframe";
+    container.appendChild(iframe);
+    emulator_pane.className += " visible";
+
+    emu80OnNewFrame(iframe);
+
+    close_emulator_cb = () => {
+        container.removeChild(iframe);
+        emulator_pane.className = 
+            emulator_pane.className.replace(/ visible/g, "");
+        blinkCount = 16;
+        close_emulator_cb = null;
+        editor.focus();
+        closedEmulator();
+    };
+
+    emulator_pane.onclick = function() {
+        close_emulator_cb && close_emulator_cb();
+    };
+
+    let listener = (e) => {
+        if (e.data.type === "ready" && iframe && iframe.contentWindow) {
+            const emu_version = iframe.contentDocument.title;
+            const ver_div = document.getElementById("emu-version");
+            if (ver_div) {
+                ver_div.innerText = emu_version;
+            }
+            const file = new File([bytes], filename, { type: "application/octet-stream" });
+            emu80run(file);
+            //window.removeEventListener("message", listener);
+        }
+        if (e.data.type === "tape_stopped") {
+            enableBobinage(false);
+        }
+    };
+
+    window.addEventListener("message", listener);
+
+    iframe.onload = function() {
+        iframe.contentWindow.focus();
+        iframe.contentDocument.addEventListener("keydown", (e) => {
+            if (testHotKey(e, "launch-emulator")) {
+                close_emulator_cb && close_emulator_cb();
+            }
+        });
+    };
+}
 
 function run_vector06js(bytes, filename) {
     let emulator_pane = document.getElementById("emulator");
@@ -495,6 +598,12 @@ function run_vector06js(bytes, filename) {
 
     let listener = (e) => {
         if (e.data.type === "ready" && iframe && iframe.contentWindow) {
+            const emu_version = iframe.contentDocument.title;
+            const ver_div = document.getElementById("emu-version");
+            if (ver_div) {
+                ver_div.innerText = emu_version;
+            }
+
             const file = new File([bytes], filename, { type: "application/octet-stream" });
             iframe.contentWindow.postMessage({cmd: "loadfile", file}, "https://caglrc.cc");
 
@@ -515,41 +624,6 @@ function run_vector06js(bytes, filename) {
             }
         });
     };
-}
-
-// old version
-function load_vector06js() {
-    if (!binary_listener_added) {
-        binary_listener_added = true;
-        getmemCallback = function() {
-            var emulator_pane = document.getElementById("emulator");
-            var container = document.getElementById("emulator-container");
-            var iframe = document.createElement("iframe");
-            let src_url = location.protocol + "//" + location.hostname + "/vector06js?i+";
-            iframe.src = src_url;
-            iframe.id = "emulator-iframe";
-            container.appendChild(iframe);
-            emulator_pane.className += " visible";
-            emulator_pane.onclick = function() {
-                container.removeChild(iframe);
-                emulator_pane.className = 
-                    emulator_pane.className.replace(/ visible/g, "");
-                var run = document.getElementById("run");
-                run.className = run.className.replace(/ disabled/g, "");
-                blinkCount = 16;
-            };
-
-            iframe.onload = function() {
-                iframe.contentWindow.focus();
-                if (emulator_sideload) {
-                    emulator_sideload({'name':asmcache.binFileName, 
-                        'mem':asmcache.mem});
-                }
-            };
-        };
-        assemblerWorker.addEventListener('message', binaryMessageListener, false);
-    }
-    assemblerWorker.postMessage({'command': 'getmem'});
 }
 
 var blksbr;

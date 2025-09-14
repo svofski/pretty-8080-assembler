@@ -356,6 +356,7 @@ span.t2:hover { background:#ffff7d; }
     padding: 0px 0px;
     display: flex;
     align-items: center; // vertical
+    overflow: hidden;
 }
 
 #ruslat {
@@ -377,6 +378,13 @@ span.t2:hover { background:#ffff7d; }
     color: #887;
     display: flex;
     margin-left: 1em;
+}
+
+#emu-version {
+    font-size: 8px;
+    color: #887;
+    margin-left: 1em;
+    margin-right: 1em;
 }
 
 #emulator-controls #close {

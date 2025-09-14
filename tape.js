@@ -9,6 +9,13 @@ var TapeFormat = function(fmt, forfile) {
         case 'rk-bin':
         case 'rk86-bin':
         case '86rk-bin':
+        case 'apogee-bin':
+        case 'apogee-bin':
+        case 'apogey-bin':
+        case 'apogay-bin':
+        case 'apogej-bin':
+        case 'micro80-bin':
+        case 'mikro80-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
             this.speed = 12;
