@@ -1508,6 +1508,7 @@ self.addEventListener('message', function(e) {
                     'errors':asm.errors,
                     //'textlabels':asm.textlabels,
                     //'references':asm.references,
+                    'tapeFormat':asm.tapeFormat,
                     'org':asm.org,
                     'xref':asm.xref,
                     'xref_by_file':asm.tossed_xrefs,

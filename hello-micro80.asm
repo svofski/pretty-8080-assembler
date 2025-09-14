@@ -1,5 +1,5 @@
     ; 🐟 для Микро-80
-    .tape rk-bin ; формат ленты
+    .tape micro80-bin ; формат ленты
     .project hellom80.rk 
     .org 0
 prompt  equ 0F82Dh

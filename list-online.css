@@ -436,6 +436,11 @@ span#wav-dl:hover {
     color: white;
 }
 
+#wav-emu.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
 #sounds {
     cursor:default;
 }

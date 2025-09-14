@@ -241,6 +241,9 @@ function assemble() {
                                 stats.title = "";
                             }
                         }, 1000);
+
+                        // update gui buttons
+                        updateButtons(e.data);
                     });
         }
     } else if (assembler) {
@@ -485,18 +488,30 @@ function tapeformat_to_emu80_platform(tf)
             return "apogey";
         case "partner-bin":
             return "partner";
-        case "micro80-bin":
-        case "mikro80-bin":
-            return "mikro80";
         case "ÓÐÅÃÉÁÌÉÓÔß-rks": // КОИ-8Ъ
         case "spetsialist-rks":
         case "specialist-rks":
         case "spec-rks":
             return "spec";
+
+        case "micro80-bin":
+        case "mikro80-bin":
+            //return "mikro80";
+            break;
+        case "okean-bin":
+        case "okeah-bin":
+            //return "okean240";
+            break;
     }
 
     return null;
 }
+
+function tapeFormatSupported(tf)
+{
+    return tapeformat_to_emu80_platform(tf) ? true : false;
+}
+
 
 function run_emulator(bytes, filename, tapeformat, start_addr)
 {
@@ -516,16 +531,36 @@ function run_emulator(bytes, filename, tapeformat, start_addr)
     console.log("run_emulator: can't decide what to run");
 }
 
+function set_emulator_version(str)
+{
+    const ver_div = document.getElementById("emu-version");
+    if (ver_div) {
+        ver_div.innerText = str;
+    }
+}
+
+function set_emulator_help(str)
+{
+    const help_div = document.getElementById("emu-help");
+    if (help_div) {
+        help_div.innerText = str;
+    }
+}
+
 function run_emu80(bytes, filename, platform)
 {
     let emulator_pane = document.getElementById("emulator");
     let container = document.getElementById("emulator-container");
     let iframe = document.createElement("iframe");
-    let src_url = `${location.protocol}//${location.hostname}:${location.port}/emu80-build/emuframe.html?platform=${platform}`;
+    let src_url = `${location.href}/emu80-build/emuframe.html?platform=${platform}`;
 
     iframe.src = src_url;
     iframe.id = "emulator-iframe";
     container.appendChild(iframe);
+
+    set_emulator_version("Loading...");
+    set_emulator_help("");
+
     emulator_pane.className += " visible";
 
     emu80OnNewFrame(iframe);
@@ -547,10 +582,12 @@ function run_emu80(bytes, filename, platform)
     let listener = (e) => {
         if (e.data.type === "ready" && iframe && iframe.contentWindow) {
             const emu_version = iframe.contentDocument.title;
-            const ver_div = document.getElementById("emu-version");
-            if (ver_div) {
-                ver_div.innerText = emu_version;
+            set_emulator_version(emu_version);
+            let meta = iframe.contentDocument.querySelector('meta[name="helptext"]');
+            if (meta) {
+                set_emulator_help(meta.content);
             }
+
             const file = new File([bytes], filename, { type: "application/octet-stream" });
             emu80run(file);
             //window.removeEventListener("message", listener);
@@ -580,6 +617,10 @@ function run_vector06js(bytes, filename) {
     iframe.src = src_url;
     iframe.id = "emulator-iframe";
     container.appendChild(iframe);
+
+    set_emulator_help("");
+    set_emulator_version("Loading...");
+
     emulator_pane.className += " visible";
 
     close_emulator_cb = () => {
@@ -599,9 +640,11 @@ function run_vector06js(bytes, filename) {
     let listener = (e) => {
         if (e.data.type === "ready" && iframe && iframe.contentWindow) {
             const emu_version = iframe.contentDocument.title;
-            const ver_div = document.getElementById("emu-version");
-            if (ver_div) {
-                ver_div.innerText = emu_version;
+            set_emulator_version(emu_version);
+
+            let meta = iframe.contentDocument.querySelector('meta[name="helptext"]');
+            if (meta) {
+                set_emulator_help(meta.content);
             }
 
             const file = new File([bytes], filename, { type: "application/octet-stream" });
@@ -685,6 +728,27 @@ function autosave()
         sessionStorage.setItem("first_visible_row", editor.getFirstVisibleRow());
     } catch(err) {
         console.log("autosave failed", err);
+    }
+}
+
+// update buttons based on assembler results
+function updateButtons(asmresult)
+{
+    let run = document.getElementById("run");
+    let wav_emu = document.getElementById("wav-emu");
+    if (tapeFormatSupported(asmresult.tapeFormat)) {
+        run && run.classList.remove("disabled");
+    }
+    else {
+        run.classList.add("disabled");
+    }
+
+    let platform = tapeformat_to_emu80_platform(asmresult.tapeFormat);
+    if (platform === "vector") {
+        wav_emu && wav_emu.classList.remove("disabled");
+    }
+    else {
+        wav_emu.classList.add("disabled");
     }
 }
 
