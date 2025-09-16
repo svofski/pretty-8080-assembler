@@ -81,11 +81,11 @@ ace.define("ace/mode/basic",["require","exports","module","ace/lib/oop","ace/mod
     var oop = require("../lib/oop");
     var TextMode = require("./text").Mode;
     var BasicHighlightRules = require("./basic_highlight_rules").BasicHighlightRules;
-    var FoldMode = require("./folding/coffee").FoldMode;
+    //var FoldMode = require("./folding/coffee").FoldMode;
 
     var Mode = function() {
         this.HighlightRules = BasicHighlightRules;
-        this.foldingRules = new FoldMode();
+        //this.foldingRules = new FoldMode();
         this.$behaviour = this.$defaultBehaviour;
     };
     oop.inherits(Mode, TextMode);

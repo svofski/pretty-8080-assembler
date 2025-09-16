@@ -56,6 +56,7 @@
 
 var assembler;
 var assemblerWorker = new Worker('assembler.js');
+var basicWorker = new Worker('asc2bas.js');
 
 // -- global DOM elements
 
@@ -157,6 +158,27 @@ let stats_timer = null;
 let error_lines = [];
 let current_error = -1;
 
+function getMode()
+{
+    for (let f in project.files) {
+        const filename = f.toLowerCase();
+        if (filename.endsWith(".bas") || filename.endsWith(".asc")) {
+            return "bas";
+        }
+        break;
+    }
+    return "asm";
+}
+
+function getWorker()
+{
+    let worker = assemblerWorker;
+    if (getMode() == "bas") {
+        worker = basicWorker;
+    }
+    return worker;
+}
+
 // assembler main entry point
 function assemble() {
     //var src = editor.session.getLines(0, editor.session.getLength()).join("\n");
@@ -165,13 +187,15 @@ function assemble() {
     //    return;
     //} 
 
-    if (assemblerWorker) {
+    
+    let worker = getWorker();
+    if (worker) {
         //last_src = src;
 
-        assemblerWorker.postMessage({'command': 'assemble', 'project': project});
+        worker.postMessage({'command': 'assemble', 'project': project});
         if (!listing_listener_added) {
             listing_listener_added = true;
-            assemblerWorker.addEventListener('message',
+            worker.addEventListener('message',
                     function(e) {
                         if (e.data['kind'] !== 'assemble') return;
                         //var gut = e.data['gutter'] || [];
@@ -378,9 +402,13 @@ function hex2binMessageListener(e) {
             __download(e.data['hex'], filename, "text/plain");
             break;
         case 'tap':
-            var stream = new TapeFormat(tapeformat, true).
-                format(data.slice(start, end), start, filename);
-            __download(stream.data, filename, "application/octet-stream");
+            var stream = new TapeFormat(tapeformat, true).format(data.slice(start, end), start, filename);
+            if (e.data.extra === 'r') {
+                run_emulator(stream.data, filename, tapeformat, start);
+            }
+            else {
+                __download(stream.data, filename, "application/octet-stream");
+            }
             break;
     }
 }
@@ -389,10 +417,10 @@ function hex2binMessageListener(e) {
 function load_hex2bin(format) {
     if (!hex2bin_listener_added) {
         hex2bin_listener_added = true;
-        assemblerWorker.addEventListener('message', hex2binMessageListener, 
+        getWorker().addEventListener('message', hex2binMessageListener, 
                 false);
     }
-    assemblerWorker.postMessage({'command': 'get' + format});
+    getWorker().postMessage({'command': 'get' + format});
 }
 
 function play_audio(stream) {
@@ -435,7 +463,7 @@ function load_play(moda) {
     if (!play_listener_added) {
         play_listener_added = true;
         (function(asmcache) {
-            assemblerWorker.addEventListener('message',
+            getWorker().addEventListener('message',
                     function (e) {
                         var dlmode = e.data['download'];
                         var stream;
@@ -468,7 +496,7 @@ function load_play(moda) {
                     false)
         })(asmcache);
     }
-    assemblerWorker.postMessage({'command': 'getwav', 'mode': moda});
+    getWorker().postMessage({'command': 'getwav', 'mode': moda});
 }
 
 let close_emulator_cb = null;
@@ -479,6 +507,8 @@ function tapeformat_to_emu80_platform(tf)
         case "rk-bin":
             return "rk86";
         case "v06c-rom":
+            return "vector";
+        case "v06c-cload":
             return "vector";
         case "microsha-bin":
             return "mikrosha";
@@ -754,7 +784,12 @@ function updateButtons(asmresult)
 function runEmulator()
 {
     var run = document.getElementById("run");
-    load_hex2bin('bin,r');
+    if (getMode == "asm") {
+        load_hex2bin('bin,r');
+    }
+    else {
+        load_hex2bin('tap,r');
+    }
     run.className += " disabled";
 }
 

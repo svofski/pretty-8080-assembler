@@ -48,6 +48,10 @@ var TapeFormat = function(fmt, forfile) {
             this.format = TapeFormat.prototype.v06c_cas;
             this.speed = 8;
             break;
+        case 'v06c-cload':
+            this.format = TapeFormat.prototype.v06c_cload;
+            this.speed = 8;
+            break;
         case 'krista-rom':
             this.format = TapeFormat.prototype.krista;
             this.speed = 8;
@@ -307,6 +311,61 @@ TapeFormat.prototype.v06c_cas = function(mem, org, name) {
     data[dofs++] = cs & 0xff;
 
     this.data = data.slice(0, dofs);
+
+    return this;
+};
+
+// tokenized basic for cload
+TapeFormat.prototype.v06c_cload = function(mem, org, name) {
+    var cas = [];
+
+    for (let i = 0; i < 4; ++i) {
+        cas.push(0xd3);
+    }
+
+    const namechars = name.toUpperCase().split('');
+    for (let c of namechars) {
+        cas.push(c.charCodeAt(0));
+    }
+    cas.push(0);
+    cas.push(0);
+    cas.push(0);
+
+    for (var i = 0; i < 256; ++i) {
+        cas.push(0x55);
+    }
+
+    cas.push(0xe6);
+    cas.push(0xd3);
+    cas.push(0xd3);
+    cas.push(0xd3);
+    cas.push(0x00);
+
+    var cs = 0;
+    var zeroseq = 3;
+    for (var i = 0; i < mem.length; ++i) {
+        const b = mem[i] & 0xff;
+        cs += b;
+        cas.push(b);
+        if (b == 0) {
+            --zeroseq;
+            if (zeroseq === 0) {
+                break;
+            }
+        }
+        else {
+            zeroseq = 3;
+        }
+    }
+
+    for (let i = zeroseq; i > 0; --i) {
+        cas.push(0);
+    }
+    cs &= 0xffff;
+    cas.push(cs & 0xff);
+    cas.push(cs >> 8);
+
+    this.data = new Uint8Array(cas);
 
     return this;
 };
