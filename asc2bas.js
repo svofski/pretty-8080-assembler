@@ -179,6 +179,7 @@ function getLinenumber(s) {
     let linenum = 0;
     let text = 0;
     let c = 0;
+    if (!s || s.length == 0 || !isNum(s[0])) return [-1, 0];
     for ([text, c] of s.split('').entries()) {
         if (isNum(c)) {
             linenum = linenum * 10 + parseInt(c);
@@ -263,6 +264,7 @@ function tokenize2(s, addr) {
     let words = [];
     let complete = [];
     let [linenum, i] = getLinenumber(s);
+    if (linenum < 0 || i == 0) return [[], addr]; // ignore empty lines, lines without numbers
     let seqStart = i;
     pickKeywords(s[i], i, Mode.INITIAL, words, complete);
     let mode = Mode.TOKENIZE;
@@ -318,55 +320,28 @@ function tokenize2(s, addr) {
     return [tokens, addr];
 }
 
-function _enbas(inputlines) {
-    let result = [];
-    let addr = 0x4301;
-
-    for (let enc of ENCODINGS) {
-        try {
-            console.log(`Trying encoding ${enc}...`);
-            for (let line = 0; line < inputlines.length; ++line) {
-                let text = inputlines[line].text;
-                console.log("Input=[" + text + "]");
-                let tokens;
-                [tokens, addr] = tokenize2(text.trim(), addr);
-                result = result.concat(tokens);
-            }
-            break;
-        } catch (error) {
-            console.log('Failed...');
-        }
-    }
-
-    result.push(0);
-    result.push(0);
-
-    // add padding for perfect file match
-    const padding = new Array(256 - (result.length % 256)).fill(0);
-    return new Uint8Array(result.concat(padding));
-}
-
 class Bas {
     constructor()
     {
         this.tokens = [];
-        this.gutterContent = [{}, {}];
         this.errors = [];
         this.org = 0x4300;
         this.xref = [];
         this.tossed_xrefs = {'':{}};
         this.labels = [];
+        this.gutter_by_file = {};
     }
 
     enbas(fulltext)
     {
-        this.gutterContent = [{}, {}];
+        this.gutter_by_file = {};
         this.errors = [];
         this.org = 0x4300;
         this.xref = [];
         this.tossed_xrefs = {'':{}};
         this.labels = [];
-        this.tokens = _enbas(fulltext);
+
+        this.tokens = this._enbas(fulltext);
 
         if (fulltext && fulltext.length > 0) {
             this.binFileName = fulltext[0].file;
@@ -374,6 +349,49 @@ class Bas {
         else {
             this.binFileName = "unnamed.bas";
         }
+    }
+
+    _enbas(inputlines) {
+        let result = [];
+        let addr = 0x4301;
+
+        for (let enc of ENCODINGS) {
+            try {
+                console.log(`Trying encoding ${enc}...`);
+                for (let line = 0; line < inputlines.length; ++line) {
+                    let text = inputlines[line].text;
+                    //console.log("Input=[" + text + "]");
+                    let tokens;
+                    let gutobj = {
+                        addr: addr,
+                        hex: [],
+                        error: null,
+                        file: inputlines[line].file
+                    };
+                    [tokens, addr] = tokenize2(text.trim(), addr);
+                    result = result.concat(tokens);
+                    //if (tokens.length == 0) {
+                    //    gutobj.error = "error";
+                    //}
+
+                    gutobj.hex = tokens;
+                    if (!this.gutter_by_file[inputlines[line].file]) {
+                        this.gutter_by_file[inputlines[line].file] = [];
+                    }
+                    this.gutter_by_file[inputlines[line].file].push(gutobj);
+                }
+                break;
+            } catch (error) {
+                console.log('Failed...');
+            }
+        }
+
+        result.push(0);
+        result.push(0);
+
+        // add padding for perfect file match
+        const padding = new Array(256 - (result.length % 256)).fill(0);
+        return new Uint8Array(result.concat(padding));
     }
 
     getBinFileName()
@@ -385,6 +403,91 @@ class Bas {
     {
         return Util.replaceExt(this.binFileName, ".cas");
     }
+
+    // text: nest: integer, text: string
+    gutter(text, lengths, addresses) 
+    {
+        let addr = 0;
+        let nest = 0;
+
+        let gutstack = [];
+        gutstack.push([]);
+
+        let by_file = {};
+        let mainfile;
+
+        for(let i = 0, end_i = text.length; i < end_i; i += 1) {
+            let unresolved = false;
+            let width = 0;
+            let hexes = [];
+            for (let b = 0; b < lengths[i]; ++b) {
+                let bytte = this.mem[addresses[i]+b];
+                if (bytte === undefined || bytte < 0) {
+                    unresolved = true;
+                    hexes[b] = -1;
+                } 
+                else {
+                    hexes[b] = bytte;
+                }
+            }
+
+            let err = this.errors[i] || unresolved !== false || this.cpp_errors[i];
+
+            let gutobj = {
+                addr : addresses[i],
+                hex : hexes,
+                error: err,
+                file: text[i].file
+            };
+
+            if (!mainfile && text[i].nest == 0 && text[i].file) {
+                mainfile = text[i].file;
+            }
+
+            if (text[i].nest == nest) {
+                gutstack.at(-1).push(gutobj);   // just a normal line
+            }
+            else if (text[i].nest > nest) {     // next nest, can be several levels deep at once
+                while (text[i].nest > nest) {
+                    gutstack.push([]);          // next level gutter
+                    nest += 1;
+                }
+                gutstack.at(-1).push(gutobj);   // push current line at its nest level
+            }
+            else {
+                // go up: collect inner hexes
+                let innerhex = []; 
+                let inneraddr;
+                let innererr = false;
+                while (text[i].nest < nest) {
+                    let inner = gutstack.pop(); // current nest
+                    if (inner.length > 0) {
+                        if (!by_file[inner[0].file]) {
+                            by_file[inner[0].file] = inner;   // save inner gutter
+                        }
+                    }
+
+                    let [h, err] = unwrap_inner_gutter(inner);
+                    innerhex.push(...h);
+                    if (err && !innererr) {
+                        innererr = err;
+                    }
+                    inneraddr = inner.length > 0 ? inner[0].addr : 0;
+                    nest -= 1;
+                }
+                gutstack.at(-1).push({addr: inneraddr, hex: innerhex, error: innererr});
+                gutstack.at(-1).push(gutobj);
+            }
+        }
+
+        if (gutstack[0].length > 0) {
+            by_file[mainfile] = gutstack[0];
+        }
+
+        return [gutstack[0], by_file];
+    }
+
+
 };
 
 let bas = new Bas();
@@ -474,8 +577,8 @@ self.addEventListener('message', function(e) {
         tokenizeProject(e.data['project']);
         self.postMessage(
             {
-                'gutter':bas.gutterContent[0],
-                'by_file':bas.gutterContent[1],
+                'gutter':{},
+                'by_file':bas.gutter_by_file,
                 'errors':bas.errors,
                 'tapeFormat':'v06c-cload',
                 'org':bas.org,
