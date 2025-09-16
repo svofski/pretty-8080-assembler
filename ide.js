@@ -94,7 +94,7 @@ function loadState() {
         if (!project.colors[f]) {
             project.colors[f] = randomColor();
         }
-        sessions[f] = createAceSession(project.files[f]);
+        sessions[f] = createAceSession(project.files[f], f);
         attachOnChange(sessions[f], f);
     }
     switchFile(project.current || Object.keys(project.files)[0]);
@@ -359,7 +359,7 @@ function newFile(text) {
     }
     project.files[name] = text || "";
     project.colors[name] = randomColor();
-    sessions[name] = createAceSession(project.files[name]);
+    sessions[name] = createAceSession(project.files[name], name);
     attachOnChange(sessions[name], name);
     switchFile(name);
     saveState();
@@ -390,7 +390,6 @@ function renameFile(oldName, newName) {
     sessions[newName] = session;
     delete sessions[oldName];
 
-
     project.files[newName] = sessions[newName].getValue();
     project.colors[newName] = project.colors[oldName] || randomColor();
     delete project.files[oldName];
@@ -398,6 +397,7 @@ function renameFile(oldName, newName) {
     if (project.current === oldName) {
         project.current = newName;
     }
+    updateAceSession(session, newName);
     renderTabs();
     saveState();
 }

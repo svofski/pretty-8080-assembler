@@ -266,7 +266,17 @@ function GutnikBox(editor) {
 }).call(GutnikBox.prototype);
 
 
-function createAceSession(text)
+function updateAceSession(session, name)
+{
+    if (name.toLowerCase().endsWith(".bas")) {
+        session.setMode("ace/mode/basic");
+    }
+    else {
+        session.setMode("ace/mode/assembly_8080");
+    }
+}
+
+function createAceSession(text, name)
 {
     let session = ace.createEditSession(text, "ace/mode/assembly_8080");
     session.setOptions({
@@ -287,6 +297,8 @@ function createAceSession(text)
             return "*";//String.fromCharCode(row + 65);
         }
     };
+
+    updateAceSession(session, name);
 
     return session;
 }

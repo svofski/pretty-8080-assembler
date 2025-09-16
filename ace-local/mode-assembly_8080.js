@@ -178,29 +178,31 @@ oop.inherits(FoldMode, BaseFoldMode);
 ace.define("ace/mode/assembly_8080",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/assembly_8080_highlight_rules","ace/mode/folding/coffee"], function(require, exports, module) {
 "use strict";
 
-var oop = require("../lib/oop");
-var TextMode = require("./text").Mode;
-var AssemblyX86HighlightRules = require("./assembly_8080_highlight_rules").AssemblyX86HighlightRules;
-var FoldMode = require("./folding/coffee").FoldMode;
+    var oop = require("../lib/oop");
+    var TextMode = require("./text").Mode;
+    var AssemblyX86HighlightRules = require("./assembly_8080_highlight_rules").AssemblyX86HighlightRules;
+    var FoldMode = require("./folding/coffee").FoldMode;
 
-var Mode = function() {
-    this.HighlightRules = AssemblyX86HighlightRules;
-    this.foldingRules = new FoldMode();
-    this.$behaviour = this.$defaultBehaviour;
-};
-oop.inherits(Mode, TextMode);
+    var Mode = function() {
+        this.HighlightRules = AssemblyX86HighlightRules;
+        this.foldingRules = new FoldMode();
+        this.$behaviour = this.$defaultBehaviour;
+    };
+    oop.inherits(Mode, TextMode);
+
+    (function() {
+        this.lineCommentStart = [";"];
+        this.$id = "ace/mode/assembly_8080";
+    }).call(Mode.prototype);
+
+    exports.Mode = Mode;
+});
 
 (function() {
-    this.lineCommentStart = [";"];
-    this.$id = "ace/mode/assembly_8080";
-}).call(Mode.prototype);
-
-exports.Mode = Mode;
-});                (function() {
-                    ace.require(["ace/mode/assembly_8080"], function(m) {
-                        if (typeof module == "object" && typeof exports == "object" && module) {
-                            module.exports = m;
-                        }
-                    });
-                })();
+    ace.require(["ace/mode/assembly_8080"], function(m) {
+        if (typeof module == "object" && typeof exports == "object" && module) {
+            module.exports = m;
+        }
+    });
+})();
             
