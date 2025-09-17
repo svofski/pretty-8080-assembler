@@ -5,20 +5,35 @@ ace.define("ace/mode/basic",["require","exports","module","ace/lib/oop","ace/mod
     var TextMode = require("./text").Mode;
 
     function myTokenizer(line) {
+        let frags = [];
         let tokens = [];
-        let regex = /(\s+|[A-Za-z][A-Za-z0-9$%!#]*|\d+|.)/g;
-        let match;
-        while ((match = regex.exec(line))) {
-            let text = match[0];
+        if (globalThis.asc2bas_tokenize2) {
+            globalThis.asc2bas_tokenize2(line, 0, frags);
 
-            if (/^\s+$/.test(text)) {
-                tokens.push({ type: "text", value: text });   // keep spaces
-            } else if (/^\d+$/.test(text)) {
-                tokens.push({ type: "constant.numeric", value: text });
-            } else if (/^[A-Za-z]/.test(text)) {
-                tokens.push({ type: "identifier", value: text });
-            } else {
-                tokens.push({ type: "punctuation", value: text });
+            for (let tok of frags) {
+                if (tok.type == "text") {
+                    //let regex = /(\s+|[A-Za-z][A-Za-z0-9$%!#]*|\d+|.)/g;
+                    let regex = /(\s+|"(?:[^"\\]|\\.)*(?:"|$)|[A-Za-z][A-Za-z0-9$%!#]*|\d+|.)/g;
+                    let match;
+                    while ((match = regex.exec(tok.value))) {
+                        let text = match[0];
+                        if (/^\s+$/.test(text)) {
+                            tokens.push({ type: "text", value: text });
+                        } 
+                        else if (/^"(?:[^"\\]|\\.)*(?:"|$)/.test(text)) {
+                            tokens.push({ type: "string", value: text });
+                        } else if (/^\d+$/.test(text)) {
+                            tokens.push({ type: "constant.numeric", value: text });
+                        } else if (/^[A-Za-z]/.test(text)) {
+                            tokens.push({ type: "variable", value: text });
+                        } else {
+                            tokens.push({ type: "punctuation", value: text });
+                        }
+                    }
+                }
+                else {
+                    tokens.push(tok); // push keywords from basic tokenizer
+                }
             }
         }
         return tokens;

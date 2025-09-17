@@ -56,7 +56,7 @@
 
 var assembler;
 var assemblerWorker = new Worker('assembler.js');
-var basicWorker = new Worker('asc2bas.js');
+var basicWorker = new Worker('basicworker.js');
 
 // -- global DOM elements
 
