@@ -312,7 +312,8 @@ function tokenize2(s, addr, frags) {
                     }
                     i = b[2] + b[0].length;
                     seqStart = i;
-                    if (b[0] === 'DATA' || b[0] === 'REM') {
+                    //if (b[0] === 'DATA' || b[0] === 'REM') {
+                    if (b[0] === 'REM') {
                         last_token = b[0];
                         mode = Mode.VERBATIM;
                         break; // mode switch, cancel following tokens
