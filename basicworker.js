@@ -19,6 +19,7 @@ class Bas {
         this.tossed_xrefs = {'':{}};
         this.labels = [];
         this.gutter_by_file = {};
+        this.sourceFileName = "unnamed.bas";
     }
 
     enbas(fulltext)
@@ -32,11 +33,12 @@ class Bas {
 
         this.tokens = this._enbas(fulltext);
 
+        this.sourceFileName = "unnamed.bas";
         if (fulltext && fulltext.length > 0) {
-            this.binFileName = fulltext[0].file;
+            this.sourceFileName = fulltext[0].file;
         }
         else {
-            this.binFileName = "unnamed.bas";
+            this.sourceFileName = "unnamed.bas";
         }
     }
 
@@ -46,7 +48,7 @@ class Bas {
 
         for (let enc of ENCODINGS) {
             try {
-                console.log(`Trying encoding ${enc}...`);
+                //console.log(`Trying encoding ${enc}...`);
                 for (let line = 0; line < inputlines.length; ++line) {
                     let text = inputlines[line].text;
                     //console.log("Input=[" + text + "]");
@@ -85,12 +87,12 @@ class Bas {
 
     getBinFileName()
     {
-        return this.binFileName;
+        return Util.replaceExt(this.sourceFileName, ".bas");;
     }
 
     getTapFileName()
     {
-        return Util.replaceExt(this.binFileName, ".cas");
+        return Util.replaceExt(this.sourceFileName, ".cas");
     }
 
     // text: nest: integer, text: string

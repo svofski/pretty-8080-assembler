@@ -163,7 +163,7 @@ function pickKeywords(initial, i, mode, words, complete) {
             return;
         }
 
-        const kws = Tokens.by_initial[initial].slice();
+        const kws = Tokens.by_initial[initial];
         kws.forEach(w => {
             if (w.length === 1) {
                 complete.push([w, 0, i]);
