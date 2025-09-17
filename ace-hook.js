@@ -268,7 +268,7 @@ function GutnikBox(editor) {
 
 function updateAceSession(session, name)
 {
-    if (name.toLowerCase().endsWith(".bas")) {
+    if (name.toLowerCase().endsWith(".bas") || name.toLowerCase().endsWith(".asc")) {
         session.setMode("ace/mode/basic");
     }
     else {
