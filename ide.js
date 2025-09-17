@@ -466,7 +466,7 @@ function importProject(files) {
                 if (!project.colors[f]) {
                     project.colors[f] = randomColor();
                 }
-                sessions[f] = createAceSession(project.files[f]);
+                sessions[f] = createAceSession(project.files[f], f);
                 attachOnChange(sessions[f], f);
             }
             switchFile(project.current || Object.keys(project.files)[0]);

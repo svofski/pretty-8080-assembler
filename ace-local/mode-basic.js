@@ -9,6 +9,9 @@ ace.define("ace/mode/basic",["require","exports","module","ace/lib/oop","ace/mod
         let tokens = [];
         if (globalThis.asc2bas_tokenize2) {
             globalThis.asc2bas_tokenize2(line, 0, frags);
+            if (frags.length == 0) {
+                return [{type: "text", value: line}];
+            }
 
             for (let tok of frags) {
                 if (tok.type == "text") {
