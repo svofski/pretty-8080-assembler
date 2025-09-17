@@ -1,92 +1,41 @@
-ace.define("ace/mode/basic_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module) {
-"use strict";
-
-var oop = require("../lib/oop");
-var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
-
-var BasicHighlightRules = function () {
-
-    var keywordMapper = this.createKeywordMapper({
-        "keyword.control": "FOR|TO|NEXT|GOSUB|RETURN|IF|THEN|ELSE|GOTO|ON|WHILE|WEND|TRON|TROFF",
-        "entity.name": "Auto|Call|Chain|Clear|Close|Common|Cont|Data|MERGE|ALL|Delete|DIM|EDIT|END|ERASE|ERROR|FIELD|"
-        + "GET|INPUT|KILL|LET|LIST|LLIST|LOAD|LSET|RSET|MERGE|NEW|NULL|OPEN|OUT|POKE|PRINT|PUT|RANDOMIZE|READ|"
-        + "RENUM|RESTORE|RESUME|RUN|SAVE|STOP|SWAP|WAIT|WIDTH",
-        "keyword.operator": "Mod|And|Not|Or|Xor|Eqv|Imp",
-        "support.function": "ABS|ASC|ATN|CDBL|CINT|COS|CSNG|CVI|CVS|CVD|EOF|EXP|FIX|FRE|INP|INSTR|INT|LEN|LOC|LOG|LPOS|"
-        + "PEEK|POS|RND|SGN|SIN|SPC|SQR|TAB|TAN|USR|VAL|VARPTR"
-    }, "identifier", true);
-
-    this.$rules = {
-        "start": [
-            {
-                token: "string",
-                regex: /"(?:\\.|[^"\\])*"/
-            },
-            {
-                token: "support.function",
-                regex: /(HEX|CHR|INPUT|LEFT|MID|MKI|MKS|MKD|OCT|RIGHT|SPACE|STR|STRING)\$/
-            }, {
-                token: "entity.name",
-                regex: /(?:DEF\s(?:SEG|USR|FN[a-zA-Z]+)|LINE\sINPUT|L?PRINT#?(?:\sUSING)?|MID\$|ON\sERROR\sGOTO|OPTION\sBASE|WRITE#?|DATE\$|INKEY\$|TIME\$)/
-            }, {
-                token: "variable",
-                regex: /[a-zA-Z][a-zA-Z0-9_]{0,38}[$%!#]?(?=\s*=)/
-            }, {
-                token: "keyword.operator",
-                regex: /\\|=|\^|\*|\/|\+|\-|<|>|-/
-            }, {
-                token: "paren.lparen",
-                regex: /[([]/
-            }, {
-                token: "paren.rparen",
-                regex: /[\)\]]/
-            }, {
-                token: "constant.numeric",
-                regex: /[+-]?\d+(\.\d+)?([ED][+-]?\d+)?(?:[!#])?/
-            }, {
-                token: "constant.numeric", //hexal, octal
-                regex: /&[HO]?[0-9A-F]+/
-            }, {
-                token: "comment",
-                regex: /REM\s+.*$/
-            }, {
-                regex: "\\w+",
-                token: keywordMapper
-            },{
-                token: "punctiation",
-                regex: /[,;]/
-
-            }
-        ]
-
-    };
-    this.normalizeRules();
-};
-
-BasicHighlightRules.metaData = { fileTypes: [ 'bas', 'asc' ],
-      name: 'BASIC',
-      scopeName: 'source.basic' };
-
-
-oop.inherits(BasicHighlightRules, TextHighlightRules);
-
-exports.BasicHighlightRules = BasicHighlightRules;
-
-
-});
-
 ace.define("ace/mode/basic",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/basic_highlight_rules","ace/mode/folding/coffee"], function(require, exports, module) {
 "use strict";
 
     var oop = require("../lib/oop");
     var TextMode = require("./text").Mode;
-    var BasicHighlightRules = require("./basic_highlight_rules").BasicHighlightRules;
-    //var FoldMode = require("./folding/coffee").FoldMode;
+
+    function myTokenizer(line) {
+        let tokens = [];
+        let regex = /(\s+|[A-Za-z][A-Za-z0-9$%!#]*|\d+|.)/g;
+        let match;
+        while ((match = regex.exec(line))) {
+            let text = match[0];
+
+            if (/^\s+$/.test(text)) {
+                tokens.push({ type: "text", value: text });   // keep spaces
+            } else if (/^\d+$/.test(text)) {
+                tokens.push({ type: "constant.numeric", value: text });
+            } else if (/^[A-Za-z]/.test(text)) {
+                tokens.push({ type: "identifier", value: text });
+            } else {
+                tokens.push({ type: "punctuation", value: text });
+            }
+        }
+        return tokens;
+    }
 
     var Mode = function() {
-        this.HighlightRules = BasicHighlightRules;
-        //this.foldingRules = new FoldMode();
-        this.$behaviour = this.$defaultBehaviour;
+        this.$tokenizer = {
+            getLineTokens: function(line, state) {
+                // call your own tokenizer here
+                const toks = myTokenizer(line); 
+                // must return objects { type: "token.type", value: "actualText" }
+                return {
+                    tokens: toks,
+                    state: state
+                };
+            }
+        };
     };
     oop.inherits(Mode, TextMode);
 

@@ -478,7 +478,9 @@ function importProject(files) {
 
 function newProject(ask, filename, text) {
     if (ask) {
-        if (!confirm('Start a new project? This will clear current tabs.')) return;
+        if (!confirm('Start a new project? This will clear current tabs.')) {
+            return false;
+        }
     }
 
     project = {
@@ -490,6 +492,8 @@ function newProject(ask, filename, text) {
     if (!filename) filename = "test.asm";
     renameFile("untitled.asm", filename);
     switchFile(filename);
+
+    return true;
 }
 
 // context menu

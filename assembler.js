@@ -1464,6 +1464,7 @@ function preprocessFile(project, file, nest)
 function assembleProject(project)
 {
     let main = Object.keys(project.files)[0];
+    if (!main) return;
 
     const cpp_js_settings = {
         signal_char : '#',

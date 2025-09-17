@@ -83,9 +83,8 @@ function updateReferences(xref, xref_by_file, labels, org) {
     asmcache.org = org || 256;
 }
 
-var listing_listener_added = false;
-var binary_listener_added = false;
-var hex2bin_listener_added = false;
+var listing_listener_added = {};
+var hex2bin_listener_added = {};
 var play_listener_added = false;
 
 var player = undefined;
@@ -193,8 +192,8 @@ function assemble() {
         //last_src = src;
 
         worker.postMessage({'command': 'assemble', 'project': project});
-        if (!listing_listener_added) {
-            listing_listener_added = true;
+        if (!listing_listener_added[getMode()]) {
+            listing_listener_added[getMode()] = true;
             worker.addEventListener('message',
                     function(e) {
                         if (e.data['kind'] !== 'assemble') return;
@@ -415,8 +414,8 @@ function hex2binMessageListener(e) {
 
 /* Downloadable blob */
 function load_hex2bin(format) {
-    if (!hex2bin_listener_added) {
-        hex2bin_listener_added = true;
+    if (!hex2bin_listener_added[getMode()]) {
+        hex2bin_listener_added[getMode()] = true;
         getWorker().addEventListener('message', hex2binMessageListener, 
                 false);
     }
@@ -784,7 +783,7 @@ function updateButtons(asmresult)
 function runEmulator()
 {
     var run = document.getElementById("run");
-    if (getMode == "asm") {
+    if (getMode() === "asm") {
         load_hex2bin('bin,r');
     }
     else {
@@ -1162,12 +1161,12 @@ function load_ryba(url,extrafiles)
 function defaultProject(ask=true)
 {
     //newProject(ask, "test.asm", default_ryba);
-    newProject(ask, "test.asm", "");
-    //load_ryba("?welcome");
-    let glavryba = rybas["welcome"]
-    let extrafiles = glavryba.slice(2);
-    load_ryba(glavryba[1], extrafiles);
-    editor.clearSelection();
+    if (newProject(ask, "test.asm", "")) {
+        let glavryba = rybas["welcome"]
+        let extrafiles = glavryba.slice(2);
+        load_ryba(glavryba[1], extrafiles);
+        editor.clearSelection();
+    }
     assemble();
 }
 
