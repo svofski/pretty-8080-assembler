@@ -15,8 +15,9 @@ class State {
 class Mode {
     static INITIAL = 0x00;
     static TOKENIZE = 0x01;
-    static QUOTE = 0x20;
-    static VERBATIM = 0x40;
+    static DATA = 0x10;       // copy until ':'
+    static QUOTE = 0x20;      // copy until '"'
+    static VERBATIM = 0x40;   // copy until eol
 }
 
 class Tokens {
@@ -158,7 +159,7 @@ function isNum(c) {
 // If the mode is VERBATIM or QUOTE, return nothing
 function pickKeywords(initial, i, mode, words, complete) {
     try {
-        if ((mode & (Mode.VERBATIM | Mode.QUOTE)) !== 0) {
+        if ((mode & (Mode.VERBATIM | Mode.QUOTE | Mode.DATA)) !== 0) {
             return;
         }
 
@@ -284,6 +285,9 @@ function tokenize2(s, addr, frags) {
         if (breakchar === Tokens.QUOTE) {
             mode ^= Mode.QUOTE;
         }
+        if (breakchar === ':' && (mode & Mode.DATA)) {
+            mode ^= Mode.DATA;
+        }
 
         // add keywords that start at the current position to tracking
         pickKeywords(s[i], i, mode, words, complete);
@@ -316,6 +320,10 @@ function tokenize2(s, addr, frags) {
                     if (b[0] === 'REM') {
                         last_token = b[0];
                         mode = Mode.VERBATIM;
+                        break; // mode switch, cancel following tokens
+                    }
+                    if (b[0] === 'DATA') {
+                        mode |= Mode.DATA;
                         break; // mode switch, cancel following tokens
                     }
                 }
