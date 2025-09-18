@@ -1,5 +1,9 @@
 html { }
-body {font-size:small; background-color: #333; font-family: Monaco, Lucida Console, monospace;}
+body {
+font-size:small; background-color: #333; font-family: Monaco, Lucida Console, monospace;
+margin-left: 0px;
+margin-right: 0px;
+}
 .hordiv { width:80%; text-align: left; border-bottom:2px solid black;}
 .code { font-family: Monaco, Lucida Console, monospace; }
 .cmt { font-style: italic; color: blue;}
@@ -26,7 +30,7 @@ body {font-size:small; background-color: #333; font-family: Monaco, Lucida Conso
     color:#ccc;
     padding:5px 5px 5px 5px;
     margin-left: -8px;
-    margin-right: -8px;
+    margin-right: 0px;
     margin-top: -8px;
     border-bottom: 1px dotted #000;
     user-select:none;
@@ -167,30 +171,16 @@ body {font-size:small; background-color: #333; font-family: Monaco, Lucida Conso
 #textinput { 
     overflow:hidden;
     white-space:nowrap;
-    display: block;
+    display: flex;
     width: 100%;
     position:relative;
 }
+#ta {
+    width: 100%;
+}
 
-//#source {
-//    font-family:Monaco, Lucida Console, monospace; font-size:100%;
-//    margin:0px 0px 0px 0px;
-//    padding:0px 0px 0px 5px;
-//    width:100%;
-//    border: 1px solid black;
-//    border-top: 1px dotted darkgray;
-//}
 #source { 
-    //display: table-cell;
-    //float:left;
-    //width:39%;
-    //direction:ltr;
-    //height:100%;
-    //display: table-cell;
-    //height:80vh;
     margin:0;
-    //position: absolute;
-    //top: 0; bottom: 0; left: 0; right: 0;
 }
 
 #list {
@@ -323,6 +313,24 @@ span.t2:hover { background:#ffff7d; }
     display: block;
 }
 
+#emulator.docked {
+    position: initial;
+}
+
+#emulator.docked #emulator-box {
+    box-shadow: 0px 0px;
+}
+
+#emulator.docked::before {
+    //display: none;
+    width: 100%;
+    height: 100%;
+    left: initial;
+    right: initial;
+    background-image: url('debugger-bowser.png');
+    filter: opacity(5%) grayscale(80%);
+}
+
 #emulator-vert {
     position: relative;
     top: 2%;
@@ -337,6 +345,10 @@ span.t2:hover { background:#ffff7d; }
     position: relative;
     box-shadow: 0px 0px 19px 9px rgba(0,0,0,0.75);
     border-radius: 10px;
+}
+
+#emulator.docked #emulator-box {
+    border-radius: initial;
 }
 
 #emulator-container {
@@ -385,6 +397,26 @@ span.t2:hover { background:#ffff7d; }
     color: #887;
     margin-left: 1em;
     margin-right: 1em;
+}
+
+#emulator-controls #dock-emu-btn {
+    color: #999;
+    padding-right: 1ex;
+    padding-left: 1ex;
+    padding-top: 0px;
+    flex-shrink: 0;
+    height: 100%;
+    align-items: center;
+}
+#emulator-controls #dock-emu-btn:hover {
+    background-color: #fff2;
+    color: white;
+}
+#emulator-controls #dock-emu-btn::before {
+    content: '🡆';
+}
+#emulator.docked #emulator-controls #dock-emu-btn::before {
+    content: '▢';
 }
 
 #emulator-controls #close {

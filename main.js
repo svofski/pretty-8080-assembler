@@ -589,22 +589,37 @@ function run_emu80(bytes, filename, platform)
     set_emulator_version("Loading...");
     set_emulator_help("");
 
-    emulator_pane.className += " visible";
+    emulator_pane.classList.add("visible");
+    if (options.emulator_docked) {
+        emulator_pane.classList.add("docked");
+    }
+    else {
+        emulator_pane.classList.remove("docked");
+    }
 
     emu80OnNewFrame(iframe);
 
     close_emulator_cb = () => {
         container.removeChild(iframe);
-        emulator_pane.className = 
-            emulator_pane.className.replace(/ visible/g, "");
+        emulator_pane.classList.remove("visible");
         blinkCount = 16;
         close_emulator_cb = null;
         editor.focus();
         closedEmulator();
     };
 
-    emulator_pane.onclick = function() {
+    let close_btn = document.getElementById("close");
+    close_btn.onclick = function() {
         close_emulator_cb && close_emulator_cb();
+    };
+
+    // toggle docked emulator
+    let dock = document.getElementById("dock-emu-btn");
+    dock.onclick = function(e) {
+        e.preventDefault();
+        emulator_pane.classList.toggle("docked");
+        options.emulator_docked = emulator_pane.classList.contains("docked");
+        saveState();
     };
 
     let listener = (e) => {
@@ -1295,3 +1310,4 @@ function i18n() {
 
     create_ryba_menu();
 }
+

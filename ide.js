@@ -9,7 +9,8 @@ let sessions = {};
 
 let options = {
     keyboard: null,
-    theme: "twilight"
+    theme: "twilight",
+    emulator_docked: false
 };
 
 let Vim = null;
