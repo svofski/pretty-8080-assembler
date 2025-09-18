@@ -1236,14 +1236,11 @@ function create_ryba_menu()
     })(text, menu);
 }
 
-function i18n() {
-    var lang = navigator.language;
-    if (lang !== undefined) lang = lang.split('-')[0];
-
+function getProjectFromUrl()
+{
+    let ryba;
+    let extryba;
     var explang = document.URL.split('?')[1];
-    var messages = languages[lang];
-    var ryba;
-    var extryba;
     if (explang) {
         var params = explang.split(',');
         for (var i = 0; i < params.length; ++i) {
@@ -1258,13 +1255,22 @@ function i18n() {
             ryba = rybas[params[i]];
         }
     }
+
+    if (extryba) return ["External project", extryba];
+    if (ryba) return ryba;
+    return null;
+}
+
+function i18n() {
+    var lang = navigator.language;
+    if (lang !== undefined) lang = lang.split('-')[0];
+    var explang = document.URL.split('?')[1];
+    var messages = languages[lang];
     if (explang !== undefined) lang = explang;
     if (!messages) messages = languages["en"];
 
-    if (extryba) {
-        load_ryba(extryba);
-    }
-    else if (ryba) {
+    let ryba = getProjectFromUrl();
+    if (ryba) {
         let extrafiles = ryba.slice(2);
         load_ryba(document.URL.split('?')[0] + ryba[1], extrafiles);
     }
