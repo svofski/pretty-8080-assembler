@@ -88,6 +88,7 @@ var hex2bin_listener_added = {};
 var play_listener_added = false;
 
 var player = undefined;
+let current_emulator = null;
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -577,17 +578,47 @@ function set_emulator_help(str)
 
 function run_emu80(bytes, filename, platform)
 {
+    let program_load = (iframe, bytes, filename) =>
+    {
+        const emu_version = iframe.contentDocument.title;
+        set_emulator_version(emu_version);
+
+        let meta = iframe.contentDocument.querySelector('meta[name="helptext"]');
+        if (meta) {
+            set_emulator_help(meta.content);
+        }
+
+        const file = new File([bytes], filename, { type: "application/octet-stream" });
+        emu80run(file);
+    };
+
     let emulator_pane = document.getElementById("emulator");
     let container = document.getElementById("emulator-container");
-    let iframe = document.createElement("iframe");
-    let src_url = `${location.href}/emu80-build/emuframe.html?platform=${platform}`;
+    let iframe = document.getElementById("emulator-iframe");
+    if (iframe && current_emulator !== platform) {
+        if (close_emulator_cb) {
+            close_emulator_cb();
+        }
+        else {
+            container.removeChild(iframe);
+        }
+        iframe = null;
+    }
 
-    iframe.src = src_url;
-    iframe.id = "emulator-iframe";
-    container.appendChild(iframe);
+    if (!iframe) {
+        iframe = document.createElement("iframe");
+        let src_url = `${location.href}/emu80-build/emuframe.html?platform=${platform}`;
 
-    set_emulator_version("Loading...");
-    set_emulator_help("");
+        iframe.src = src_url;
+        iframe.id = "emulator-iframe";
+        container.appendChild(iframe);
+        current_emulator = platform;
+        set_emulator_version("Loading...");
+        set_emulator_help("");
+    }
+    else {
+        program_load(iframe, bytes, filename);
+    }
 
     emulator_pane.classList.add("visible");
     if (options.emulator_docked) {
@@ -624,15 +655,7 @@ function run_emu80(bytes, filename, platform)
 
     let listener = (e) => {
         if (e.data.type === "ready" && iframe && iframe.contentWindow) {
-            const emu_version = iframe.contentDocument.title;
-            set_emulator_version(emu_version);
-            let meta = iframe.contentDocument.querySelector('meta[name="helptext"]');
-            if (meta) {
-                set_emulator_help(meta.content);
-            }
-
-            const file = new File([bytes], filename, { type: "application/octet-stream" });
-            emu80run(file);
+            program_load(iframe, bytes, filename);
             //window.removeEventListener("message", listener);
         }
         if (e.data.type === "tape_stopped") {
@@ -653,13 +676,50 @@ function run_emu80(bytes, filename, platform)
 }
 
 function run_vector06js(bytes, filename) {
+    let program_load = (iframe, bytes, filename) =>
+    {
+        const emu_version = iframe.contentDocument.title;
+        set_emulator_version(emu_version);
+
+        let meta = iframe.contentDocument.querySelector('meta[name="helptext"]');
+        if (meta) {
+            set_emulator_help(meta.content);
+        }
+
+        const file = new File([bytes], filename, { type: "application/octet-stream" });
+        iframe.contentWindow.postMessage({cmd: "loadfile", file}, "https://caglrc.cc");
+    };
+
+
     let emulator_pane = document.getElementById("emulator");
     let container = document.getElementById("emulator-container");
-    let iframe = document.createElement("iframe");
-    let src_url = location.protocol + "//" + location.hostname + "/vector06js?i+";
-    iframe.src = src_url;
-    iframe.id = "emulator-iframe";
-    container.appendChild(iframe);
+    let iframe = document.getElementById("emulator-iframe");
+    if (iframe && current_emulator !== "vector") {
+        if (close_emulator_cb) {
+            close_emulator_cb();
+        }
+        else {
+            container.removeChild(iframe);
+        }
+        iframe = null;
+    }
+
+    if (!iframe) {
+        iframe = document.createElement("iframe");
+        let src_url = location.protocol + "//" + location.hostname + "/vector06js?i+";
+        iframe.src = src_url;
+        iframe.id = "emulator-iframe";
+        container.appendChild(iframe);
+        current_emulator = "vector";
+        set_emulator_version("Loading...");
+        set_emulator_help("");
+    }
+    else {
+        program_load(iframe, bytes, filename);
+    }
+
+    window.parent.fullscreen = () => {
+    };
 
     set_emulator_help("");
     set_emulator_version("Loading...");
@@ -697,16 +757,7 @@ function run_vector06js(bytes, filename) {
 
     let listener = (e) => {
         if (e.data.type === "ready" && iframe && iframe.contentWindow) {
-            const emu_version = iframe.contentDocument.title;
-            set_emulator_version(emu_version);
-
-            let meta = iframe.contentDocument.querySelector('meta[name="helptext"]');
-            if (meta) {
-                set_emulator_help(meta.content);
-            }
-
-            const file = new File([bytes], filename, { type: "application/octet-stream" });
-            iframe.contentWindow.postMessage({cmd: "loadfile", file}, "https://caglrc.cc");
+            program_load(iframe, bytes, filename);
 
             //window.removeEventListener("message", listener);
         }
@@ -819,7 +870,7 @@ function runEmulator()
     else {
         load_hex2bin('tap,r');
     }
-    run.className += " disabled";
+    //run.classList.add("disabled");
 }
 
 function runEmulatorWav()
@@ -975,12 +1026,19 @@ function loaded() {
         // ctrl+alt+b to launch emulator (also :run)
         if (testHotKey(e, "launch-emulator")) {
             let run_button  = document.getElementById("run");
+            let emulator = document.getElementById("emulator");
+            let docked = emulator.classList.contains("docked");
             if (run_button) {
-                if (close_emulator_cb) {
-                    close_emulator_cb();
+                if (docked) {
+                    runEmulator();
                 }
                 else {
-                    runEmulator();
+                    if (close_emulator_cb) {
+                        close_emulator_cb();
+                    }
+                    else {
+                        runEmulator();
+                    }
                 }
             }
         }
