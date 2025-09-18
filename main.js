@@ -1091,7 +1091,8 @@ var rybas =
     "circleellip": ["Вектор-06ц: эллипс", "circleClipAndEllip.asm"],
     "arkmus": ["Вектор-06ц: музон из Арканоида", "arkmus.asm"],
     "text80-color": ["Вектор-06ц: цветной текст 80 символов", "text80-color.asm"],
-    "basic": ["Бейсик Вектор-06ц", "hello.asc"]
+    "basic": ["Бейсик Вектор-06ц", "hello.asc"],
+    "basic-rybov": ["Бейсик Вектор-06ц: multipart", "rybov.asc", "rybov-data.asc"]
 };
 
 function load_ryba(url,extrafiles) 
@@ -1261,7 +1262,8 @@ function i18n() {
         load_ryba(extryba);
     }
     else if (ryba) {
-        load_ryba(document.URL.split('?')[0] + ryba[1]);
+        let extrafiles = ryba.slice(2);
+        load_ryba(document.URL.split('?')[0] + ryba[1], extrafiles);
     }
 
     var m_header = messages[0];
