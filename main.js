@@ -892,6 +892,9 @@ function loaded() {
         return false;
     }
 
+    AceHook();
+    IdeStart();
+
     i18n();
 
     if (window) {
