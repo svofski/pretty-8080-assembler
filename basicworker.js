@@ -19,6 +19,7 @@ class Bas {
         this.tossed_xrefs = {'':{}};
         this.labels = [];
         this.gutter_by_file = {};
+        this.sourceFileName = "unnamed.bas";
     }
 
     enbas(fulltext)
@@ -32,11 +33,12 @@ class Bas {
 
         this.tokens = this._enbas(fulltext);
 
+        this.sourceFileName = "unnamed.bas";
         if (fulltext && fulltext.length > 0) {
-            this.binFileName = fulltext[0].file;
+            this.sourceFileName = fulltext[0].file;
         }
         else {
-            this.binFileName = "unnamed.bas";
+            this.sourceFileName = "unnamed.bas";
         }
     }
 
@@ -46,7 +48,7 @@ class Bas {
 
         for (let enc of ENCODINGS) {
             try {
-                console.log(`Trying encoding ${enc}...`);
+                //console.log(`Trying encoding ${enc}...`);
                 for (let line = 0; line < inputlines.length; ++line) {
                     let text = inputlines[line].text;
                     //console.log("Input=[" + text + "]");
@@ -59,15 +61,18 @@ class Bas {
                     };
                     [tokens, addr] = tokenize2(text.trim(), addr);
                     result = result.concat(tokens);
-                    //if (tokens.length == 0) {
-                    //    gutobj.error = "error";
-                    //}
 
                     gutobj.hex = tokens;
-                    if (!this.gutter_by_file[inputlines[line].file]) {
-                        this.gutter_by_file[inputlines[line].file] = [];
+                    let file_gutter = this.gutter_by_file[inputlines[line].file];
+                    let file_line_num = inputlines[line].line_num;
+                    if (!file_gutter) {
+                        file_gutter = [];
+                        this.gutter_by_file[inputlines[line].file] = file_gutter;
                     }
-                    this.gutter_by_file[inputlines[line].file].push(gutobj);
+                    while (file_gutter.length <= file_line_num) 
+                        file_gutter.push({addr: addr, hex:[], error: null, file: inputlines[line].file});
+                    //file_gutter.push(gutobj);
+                    file_gutter[file_line_num] = gutobj;
                 }
                 break;
             } catch (error) {
@@ -85,98 +90,13 @@ class Bas {
 
     getBinFileName()
     {
-        return this.binFileName;
+        return Util.replaceExt(this.sourceFileName, ".bas");;
     }
 
     getTapFileName()
     {
-        return Util.replaceExt(this.binFileName, ".cas");
+        return Util.replaceExt(this.sourceFileName, ".cas");
     }
-
-    // text: nest: integer, text: string
-    gutter(text, lengths, addresses) 
-    {
-        let addr = 0;
-        let nest = 0;
-
-        let gutstack = [];
-        gutstack.push([]);
-
-        let by_file = {};
-        let mainfile;
-
-        for(let i = 0, end_i = text.length; i < end_i; i += 1) {
-            let unresolved = false;
-            let width = 0;
-            let hexes = [];
-            for (let b = 0; b < lengths[i]; ++b) {
-                let bytte = this.mem[addresses[i]+b];
-                if (bytte === undefined || bytte < 0) {
-                    unresolved = true;
-                    hexes[b] = -1;
-                } 
-                else {
-                    hexes[b] = bytte;
-                }
-            }
-
-            let err = this.errors[i] || unresolved !== false || this.cpp_errors[i];
-
-            let gutobj = {
-                addr : addresses[i],
-                hex : hexes,
-                error: err,
-                file: text[i].file
-            };
-
-            if (!mainfile && text[i].nest == 0 && text[i].file) {
-                mainfile = text[i].file;
-            }
-
-            if (text[i].nest == nest) {
-                gutstack.at(-1).push(gutobj);   // just a normal line
-            }
-            else if (text[i].nest > nest) {     // next nest, can be several levels deep at once
-                while (text[i].nest > nest) {
-                    gutstack.push([]);          // next level gutter
-                    nest += 1;
-                }
-                gutstack.at(-1).push(gutobj);   // push current line at its nest level
-            }
-            else {
-                // go up: collect inner hexes
-                let innerhex = []; 
-                let inneraddr;
-                let innererr = false;
-                while (text[i].nest < nest) {
-                    let inner = gutstack.pop(); // current nest
-                    if (inner.length > 0) {
-                        if (!by_file[inner[0].file]) {
-                            by_file[inner[0].file] = inner;   // save inner gutter
-                        }
-                    }
-
-                    let [h, err] = unwrap_inner_gutter(inner);
-                    innerhex.push(...h);
-                    if (err && !innererr) {
-                        innererr = err;
-                    }
-                    inneraddr = inner.length > 0 ? inner[0].addr : 0;
-                    nest -= 1;
-                }
-                gutstack.at(-1).push({addr: inneraddr, hex: innerhex, error: innererr});
-                gutstack.at(-1).push(gutobj);
-            }
-        }
-
-        if (gutstack[0].length > 0) {
-            by_file[mainfile] = gutstack[0];
-        }
-
-        return [gutstack[0], by_file];
-    }
-
-
 };
 
 let bas = new Bas();
