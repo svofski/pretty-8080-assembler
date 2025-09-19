@@ -721,9 +721,6 @@ function run_vector06js(bytes, filename) {
     window.parent.fullscreen = () => {
     };
 
-    set_emulator_help("");
-    set_emulator_version("Loading...");
-
     emulator_pane.classList.add("visible");
     if (options.emulator_docked) {
         emulator_pane.classList.add("docked");
