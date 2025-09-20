@@ -37,3 +37,22 @@ animation-duration: 1s;
 .gutter-pre {
     margin: 0px 1.2em;
 }
+
+/* Style for the breakpoint marker in the gutter */
+.ace_gutter-cell.ace_breakpoint {
+  //position: relative;
+}
+
+/* Create a pseudo-element for the visual marker */
+.ace_gutter-cell.ace_breakpoint::before {
+    content: " ";
+    position: absolute;
+    left: 10px;
+    width: 3.2em;
+    padding: 0px 2px;
+    border-radius: 5px 15px 5px 15px;
+    background-color: #ff3333;
+    box-shadow: 0 0 5px #ff3333;
+    opacity: 80%;
+    z-index: -5;
+}

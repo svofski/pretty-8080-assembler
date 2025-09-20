@@ -3,6 +3,9 @@ body {
 font-size:small; background-color: #333; font-family: Monaco, Lucida Console, monospace;
 margin-left: 0px;
 margin-right: 0px;
+display: flex;
+height: 98vh;
+flex-direction: column;
 }
 .hordiv { width:80%; text-align: left; border-bottom:2px solid black;}
 .code { font-family: Monaco, Lucida Console, monospace; }
@@ -174,13 +177,18 @@ margin-right: 0px;
     display: flex;
     width: 100%;
     position:relative;
+    align-items: flex-start;
+    height: 100%;
+    flex: 1;
 }
 #ta {
-    width: 100%;
+    flex: 2;
+    height: 100%;
 }
 
 #source { 
     margin:0;
+    height: 100%;
 }
 
 #list {
@@ -315,6 +323,13 @@ span.t2:hover { background:#ffff7d; }
 
 #emulator.docked {
     position: initial;
+    flex: 1;
+    width: initial;
+}
+
+#emulator.docked.visible {
+    display: flex;
+    flex-direction: column;
 }
 
 #emulator.docked #emulator-box {
@@ -329,11 +344,16 @@ span.t2:hover { background:#ffff7d; }
     right: initial;
     background-image: url('debugger-bowser.png');
     filter: opacity(5%) grayscale(80%);
+    z-index: -5;
 }
 
 #emulator-vert {
     position: relative;
     top: 2%;
+}
+
+#emulator.docked #emulator-vert {
+    display: flex;
 }
 
 #emulator-box {
@@ -352,7 +372,13 @@ span.t2:hover { background:#ffff7d; }
 }
 
 #emulator-container {
-    height: 75vh;
+    /* height: 75vh; */
+    aspect-ratio: 4/3;
+}
+
+#emulator.docked #emulator-container {
+    aspect-ratio: 4/3;
+    height: initial;
 }
 
 #emulator-iframe {
@@ -362,6 +388,16 @@ span.t2:hover { background:#ffff7d; }
 }
 
 #emulator-controls {
+    background: #223c;
+    border-bottom: 1px dotted black;
+    height: 18px;
+    padding: 0px 0px;
+    display: flex;
+    align-items: center; // vertical
+    overflow: hidden;
+}
+
+#debugger-controls {
     background: #223c;
     border-bottom: 1px dotted black;
     height: 18px;
@@ -407,6 +443,7 @@ span.t2:hover { background:#ffff7d; }
     flex-shrink: 0;
     height: 100%;
     align-items: center;
+    font-family: "Segoe UI Symbol", "Arial Unicode MS", sans-serif;
 }
 #emulator-controls #dock-emu-btn:hover {
     background-color: #fff2;
@@ -504,6 +541,12 @@ span#wav-dl:hover {
 .error_marker {
     position: absolute;
     background: rgba(255,100,100,0.5);
+    z-index: 20;
+}
+
+.debugger_position_marker {
+    position: absolute;
+    background: rgba(100,100,220,0.5);
     z-index: 20;
 }
 
@@ -715,4 +758,154 @@ span#wav-dl:hover {
 
 #right-tabbar {
     display: none;
+}
+
+/* debugger buttons etc */
+
+#dbg-pause-btn {
+    color: #999;
+    padding-right: 1ex;
+    padding-left: 1ex;
+    padding-top: 0px;
+    flex-shrink: 0;
+    height: 100%;
+    align-items: center;
+}
+#dbg-pause-btn:hover {
+    background-color: #fff2;
+    color: white;
+}
+
+
+/* signal ui elements that are not fully or incorrectly specified */
+.error-like {
+    background: #0f0;
+    color: #f0f;
+}
+
+.button-like {
+    color: #999;
+    padding-right: 1ex;
+    padding-left: 1ex;
+    padding-top: 0px;
+    flex-shrink: 0;
+    height: 100%;
+    align-items: center;
+    cursor:pointer;
+    font-family: "Segoe UI Symbol", "Arial Unicode MS", sans-serif;
+}
+
+.button-like:hover {
+    background-color: #fff2;
+    color: white;
+}
+
+.button-like.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+#debugger-sheet {
+    background: #238;
+    color: #eee;
+    width: 100%;
+    flex: 1;           /* take remaining vertical space */
+    display: flex;
+    flex-direction: column;
+    white-space: pre;
+    font-family: monospace;
+    padding: 4px 4px;
+    min-height: 0;     /* <-- allow shrinking inside flex parent */
+    overflow: auto;    /* <-- enable scrolling instead of expanding */
+}
+
+#debugger-sheet.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+#dbg-row1 {
+    display: flex;
+    overflow: hidden;
+}
+#dbg-registers {
+    border: 1px solid #888;
+    display: inline-flex;
+    flex-direction: column;
+    margin: 2px 2px;
+    padding: 4px 8px;
+}
+#dbg-psw {
+    border: 1px solid #888;
+    display: inline-flex;
+    margin: 2px 2px;
+    padding: 4px 8px;
+}
+#dbg-stack {
+    border: 1px solid #888;
+    display: inline-flex;
+    margin: 2px 2px;
+    padding: 4px 8px;
+}
+#dbg-breakpoints {
+    border: 1px solid #888;
+    display: inline-flex;
+    flex-direction: column;
+    margin: 2px 2px;
+    padding: 4px 8px;
+}
+#dbg-mem {
+  flex: 1;             /* fills bottom-pane */
+  min-height: 0;       /* allow shrink */
+  overflow: auto;      /* scroll inside */
+  white-space: pre;
+  padding: 4px 8px;
+  border: 1px solid #888;
+}
+
+.dbgwin-clickable.inline {
+    display: inline;
+}
+
+.dbgwin-clickable {
+    align-items: center;
+    cursor:pointer;
+    font-family: monospace;
+    height: min-content;
+}
+.dbgwin-clickable:hover {
+    background-color: #fff4;
+    color: white;
+}
+.dbgwin-text {
+    font-family: monospace;
+    display: inline-block;
+}
+
+/* Target the scrollbar in Chrome, Safari, Edge, etc. */
+::-webkit-scrollbar {
+  width: 4px; /* Set a custom width */
+}
+
+/* Style the track (the background of the scrollbar) */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Style the thumb (the draggable part of the scrollbar) */
+::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 10px; /* Make it rounded */
+  border: 2px solid #f1f1f1; /* Add some padding */
+}
+
+/* Change the thumb color on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Make the scrollbar look good in Firefox */
+* {
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: #888 #f1f1f1; /* thumb and track color */
 }

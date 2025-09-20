@@ -289,7 +289,7 @@ function createAceSession(text, name)
     session.gutterRenderer =  {
         getWidth: function(session, lastLineNumber, config) {
             return 20 * config.characterWidth;
-            return lastLineNumber.toString().length * config.characterWidth;
+            //return lastLineNumber.toString().length * config.characterWidth;
         },
         getText: function(session, row) {
             var gc = session.gutter_contents[row];

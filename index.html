@@ -84,7 +84,6 @@ onmouseout="magicToolbar(2); return false;"
 
 <div id="textinput">
 
-<div id="list">…</div>
 <div id="ta"> 
 <pre id="source">
         ; 🐟  (try me)
@@ -123,19 +122,56 @@ delay:
 </pre>
 </div>
 <div id="emulator">
-<div id="emulator-vert">
-<div id="emulator-box">
-  <header id="emulator-controls">
-      <div id="ruslat">&#8226;</div>
-      <div id="emu-help">СС: Shift &nbsp;&nbsp;  УС: Ctrl &nbsp;&nbsp; РУС/LAT: F6 &nbsp;&nbsp; БЛК+ВВОД: F11 &nbsp;&nbsp; БЛК+СБР: F12</div>
-      <div class="spacer">&nbsp;</div>
-      <div id="emu-version">version</div>
-      <div id="dock-emu-btn"> </div> <!--   -->
-      <div id="close">×</div>
-  </header>
-  <div id="emulator-container"></div>
+        <div id="emulator-box">
+            <header id="emulator-controls">
+                <div id="ruslat">&#8226;</div>
+                <div id="emu-help">СС: Shift &nbsp;&nbsp;  УС: Ctrl &nbsp;&nbsp; РУС/LAT: F6 &nbsp;&nbsp; БЛК+ВВОД: F11 &nbsp;&nbsp; БЛК+СБР: F12</div>
+                <div class="spacer">&nbsp;</div>
+                <div id="emu-version">version</div>
+                <div id="dock-emu-btn"> </div> <!--   -->
+                <div id="close">×</div>
+            </header>
+            <div id="emulator-container"></div>
+            <footer id="debugger-controls">
+                &nbsp;
+                <div id="dbg-pause-btn"       debug_subcmd="pause"       title="Run/stop">⏯</div>
+                <div id="dbg-step-over-btn"   debug_subcmd="step-over"   title="Step over">↷</div>
+                <div id="dbg-step-in-btn"     debug_subcmd="step-in"     title="Step in">↴</div>
+                <div id="dbg-step-out-btn"    debug_subcmd="step-out"    title="Step out">↱</div>
+            </footer>
+        </div>
+    <div id="debugger-sheet">
+        <div id="dbg-row1">
+            <div id="dbg-registers">AF=0000
+BC=0000
+DE=0000
+HL=0000
+SP=0000
+PC=0000
+</div>
+<div id="dbg-psw">  C = 0
+  Z = 0
+  P = 0
+  S = 0
+ AC = 0
+IFF = 0
+</div>
+<div id="dbg-stack">SP   : 0000
+SP+02: 0000
+SP+04: 0000
+SP+06: 0000
+SP+08: 0000
+SP+0A: 0000
+SP+0C: 0000
+SP+0E: 0000
+</div>
+<div id="dbg-breakpoints">0000
 </div>
 </div>
+<div id="dbg-mem">      .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 .A .B .C .D .E .F    0123456789ABCDEF
+0000: 00 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00    ................
+</div>
+  </div>
 </div>
 </div>
 <!--

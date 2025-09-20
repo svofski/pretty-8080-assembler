@@ -89,6 +89,8 @@ var play_listener_added = false;
 
 var player = undefined;
 let current_emulator = null;
+let program_load = null;
+let debugger_stopped = false;
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -105,25 +107,6 @@ function generateDataURI() {
     var encoded = _arrayBufferToBase64(assembler.mem);
     var contentType = "application/octet-stream";
     return "data:" + contentType + ";base64," + encoded;
-}
-
-function getListHeight() {
-    var listElement = document.getElementById('list');
-    return inTheOpera ? 
-        listElement.style.pixelHeight : listElement.offsetHeight;
-
-}
-
-function gotoLabel(label) {
-    var sought = asmcache.textlabels.indexOf(label.toLowerCase());
-    var element = document.getElementById("label" + sought);
-    if (element !== undefined) {
-        startHighlighting(sought, element);
-        element = element.parentNode;
-        var destination = element.offsetTop - getListHeight()/2;
-        xscrollTo(destination, true);
-    }
-    return false;
 }
 
 function getReferencedLabel(lineno) {
@@ -246,7 +229,6 @@ function assemble() {
                         const xref_by_file = e.data['xref_by_file'];
                         const org = e.data['org'];
                         updateReferences(xref, xref_by_file, labels, org);
-                        updateSizes();
                         autotranslate = false;
 
                         // debounce stats update
@@ -272,7 +254,6 @@ function assemble() {
         }
     } else if (assembler) {
         assembler.assemble(src);
-        updateSizes();
         //last_src = src;
         autotranslate = false;
     }
@@ -578,7 +559,7 @@ function set_emulator_help(str)
 
 function run_emu80(bytes, filename, platform)
 {
-    let program_load = (iframe, bytes, filename) =>
+    program_load = (iframe, bytes, filename) =>
     {
         const emu_version = iframe.contentDocument.title;
         set_emulator_version(emu_version);
@@ -653,18 +634,6 @@ function run_emu80(bytes, filename, platform)
         saveState();
     };
 
-    let listener = (e) => {
-        if (e.data.type === "ready" && iframe && iframe.contentWindow) {
-            program_load(iframe, bytes, filename);
-            //window.removeEventListener("message", listener);
-        }
-        if (e.data.type === "tape_stopped") {
-            enableBobinage(false);
-        }
-    };
-
-    window.addEventListener("message", listener);
-
     iframe.onload = function() {
         iframe.contentWindow.focus();
         iframe.contentDocument.addEventListener("keydown", (e) => {
@@ -676,7 +645,7 @@ function run_emu80(bytes, filename, platform)
 }
 
 function run_vector06js(bytes, filename) {
-    let program_load = (iframe, bytes, filename) =>
+    program_load = (iframe) => //, bytes, filename) =>
     {
         const emu_version = iframe.contentDocument.title;
         set_emulator_version(emu_version);
@@ -687,7 +656,8 @@ function run_vector06js(bytes, filename) {
         }
 
         const file = new File([bytes], filename, { type: "application/octet-stream" });
-        iframe.contentWindow.postMessage({cmd: "loadfile", file}, "https://caglrc.cc");
+        debugger_set_breakpoints(iframe.contentWindow);
+        iframe.contentWindow.postMessage({cmd: "loadfile", file}, location.href);
     };
 
 
@@ -706,7 +676,7 @@ function run_vector06js(bytes, filename) {
 
     if (!iframe) {
         iframe = document.createElement("iframe");
-        let src_url = location.protocol + "//" + location.hostname + "/vector06js?i+";
+        let src_url = `${location.href}/vector06js?i+`;
         iframe.src = src_url;
         iframe.id = "emulator-iframe";
         container.appendChild(iframe);
@@ -715,7 +685,7 @@ function run_vector06js(bytes, filename) {
         set_emulator_help("");
     }
     else {
-        program_load(iframe, bytes, filename);
+        program_load(iframe);
     }
 
     window.parent.fullscreen = () => {
@@ -751,19 +721,6 @@ function run_vector06js(bytes, filename) {
         options.emulator_docked = emulator_pane.classList.contains("docked");
         saveState();
     };
-
-    let listener = (e) => {
-        if (e.data.type === "ready" && iframe && iframe.contentWindow) {
-            program_load(iframe, bytes, filename);
-
-            //window.removeEventListener("message", listener);
-        }
-        if (e.data.type === "tape_stopped") {
-            enableBobinage(false);
-        }
-    };
-
-    window.addEventListener("message", listener);
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
@@ -963,6 +920,20 @@ function tooltipForHotKey(test)
     return "";
 }
 
+function windowMessageListener(e)
+{
+    let iframe = $("#emulator-iframe");
+    if (e.data.type === "ready" && iframe && iframe.contentWindow) {
+        program_load(iframe);
+    }
+    else if (e.data.type === "tape_stopped") {
+        enableBobinage(false);
+    }
+    else if (e.data.type === "debugger") {
+        debuggerResponse(e.data);
+    }
+}
+
 function loaded() {
     if (navigator.appName === 'Microsoft Internet Explorer' || 
             navigator.appVersion.indexOf('MSIE') != -1) {
@@ -976,15 +947,12 @@ function loaded() {
     i18n();
 
     if (window) {
-        window.onresize = updateSizes;
         window.onbeforeunload = function() {
             autosave();
         }
     }
 
     autoload();
-
-    updateSizes();
 
     //editor.session.on('change', keypress);
 
@@ -1064,20 +1032,10 @@ function loaded() {
         }
     }
 
+    window.addEventListener("message", windowMessageListener);
+    attach_debugger_controls();
+
     cock(100);
-}
-
-function updateSizes() {
-    var header_height = document.getElementById('header').clientHeight;
-    var bottom_height = document.getElementById('buttons-below').clientHeight;
-    var height = window.innerHeight - header_height - bottom_height - 10;
-
-    var ti = document.getElementById('source');
-    ti.style.height = height + "px";
-    var to = document.getElementById('list');
-    to.style.height = height + "px";
-
-    editor.resize(true);
 }
 
 // toolbar
@@ -1375,9 +1333,313 @@ function i18n() {
         if (baton) baton.style.clear = 'right';
         document.getElementById('buttbr').style.cssFloat = 'right';
         document.getElementById('ta').style.cssFloat = 'right';
-        document.getElementById('list').style.cssFloat = 'left';
     }
 
     create_ryba_menu();
 }
 
+
+function update_debugger_controls()
+{
+    document.querySelectorAll('[id^="dbg-"][id$="-btn"]')
+        .forEach(item => {
+            if (debugger_stopped) {
+                item.classList.remove("disabled");
+            }
+            else {
+                if (item.id != "dbg-pause-btn") {
+                    item.classList.add("disabled");
+                }
+            }
+        });
+    if (debugger_stopped) {
+        $("#debugger-sheet").classList.remove("disabled");
+    }
+    else {
+        $("#debugger-sheet").classList.add("disabled");
+    }
+}
+
+function attach_debugger_controls()
+{
+    document.querySelectorAll('[id^="dbg-"][id$="-btn"]')
+        .forEach(item => {
+            item.classList.add("button-like");
+            let subcmd = item.attributes.debug_subcmd && item.attributes.debug_subcmd.value;
+            if (subcmd) {
+                item.onclick = (e) => {
+                    let iframe = $("#emulator-iframe");
+                    iframe.contentWindow.postMessage({cmd: "debugger", subcmd: subcmd}, location.href);
+
+                    editor.session.removeMarker(debugger_position_marker);
+                    debugger_stopped = false;
+                    update_debugger_controls();
+                };
+            }
+            else {
+                item.classList.add("error-like");
+            }
+        });
+    update_debugger_controls();
+
+    // gutter clicks
+    editor.on("guttermousedown", function(e) {
+        let domEvent = e.domEvent;
+        let target = domEvent.target;
+        if (target && target.className.indexOf("ace_gutter-cell") === -1)
+            return;
+        e.stop();   // like preventDefault but for ace
+        var row = e.getDocumentPosition().row;
+        var session = editor.getSession();
+        var breakpoints = session.getBreakpoints();
+
+        if (session.gutter_contents[row].hex.length == 0) 
+            return;
+
+        if (breakpoints[row]) {
+            session.clearBreakpoint(row);
+            debugger_clear_breakpoint(session, row);
+        }
+        else {
+            session.setBreakpoint(row);
+            debugger_set_breakpoint(session, row);
+        }
+    });
+}
+
+function find_addr_line(addr)
+{
+    for (let file of Object.keys(sessions)) {
+        let s = sessions[file];
+        let gc = s.gutter_contents;
+        if (gc.length === 0) continue;
+        let low = 0;
+        let high = gc.length - 1;
+
+        if (addr < gc[low].addr || addr > gc[high].addr) continue;
+
+        while (low < high) {
+            let mid = Math.floor((low + high) / 2);
+            const val = gc[mid].addr;
+            if (val < addr) {
+                low = mid + 1;
+            }
+            else {
+                high = mid;
+            }
+        }
+
+
+        while (gc[low].hex.length == 0 && low < gc.length) {
+            ++low;
+        }
+        return [file, low];
+    }
+
+    return [null, -1];
+}
+
+let debugger_position_marker = null;
+
+function show_debugger_line(addr)
+{
+    let [file, line] = find_addr_line(addr);
+    if (file && line >= 0) {
+        switchFile(file);
+        editor.scrollToLine(line, /* centered */true, true);
+        editor.session.removeMarker(debugger_position_marker);
+        debugger_position_marker = editor.session.addMarker(new Range(line,0,line,1), "debugger_position_marker", "fullLine");
+    }
+}
+
+function show_editor_for_addr(addr)
+{
+    let [file, line] = find_addr_line(addr);
+    if (file && line >= 0) {
+        switchFile(file);
+        editor.scrollToLine(line, /* centered */true, true);
+    }
+}
+
+function dump_line(addr, bytes)
+{
+    addr = addr & 0xfff0;
+    let txt = Util.hex16(addr) + ": ";
+    let chars = '';
+    for (let n = 0; n < 16; ++n) {
+        txt += Util.hex8(bytes[addr + n]);
+        txt += n == 7 ? '-' : ' ';
+        chars += Util.char8(bytes[addr+n]);
+    }
+
+    return txt + "   " + chars;
+
+}
+
+function refresh_debugger_window(s)
+{
+    // regs
+    let reg_af = (s.regs[7] << 8) | (s.psw);
+    let reg_bc = (s.regs[0] << 8) | (s.regs[1]);
+    let reg_de = (s.regs[2] << 8) | (s.regs[3]);
+    let reg_hl = (s.regs[4] << 8) | (s.regs[5]);
+
+    let mkreg = (name,val) => {
+        return `<div class="dbgwin-text">${name}=<div class="dbgwin-clickable inline" dbg-reg="${name}" dbg-attr="register" contenteditable="true">${Util.hex16(val)}</div></div>`;
+    };
+
+    $("#dbg-registers").innerHTML = 
+        mkreg("AF", reg_af) +
+        mkreg("BC", reg_bc) +
+        mkreg("DE", reg_de) +
+        mkreg("HL", reg_hl) +
+        mkreg("SP", s.sp) +
+        mkreg("PC", s.pc);
+
+
+    // psw flags
+    let psw_c = (s.psw & 0x01) ? 1 : 0;
+    let psw_p = (s.psw & 0x04) ? 1 : 0;
+    let psw_z = (s.psw & 0x40) ? 1 : 0;
+    let psw_s = (s.psw & 0x80) ? 1 : 0;
+    let psw_ac = (s.psw & 0x10) ? 1 : 0;
+    let psw_text = `  C = ${psw_c}\n  Z = ${psw_z}\n  P = ${psw_p}\n  S = ${psw_s}\n AC = ${psw_ac}\nIFF = ${s.iff ? 1 : 0}`;
+    $("#dbg-psw").innerText = psw_text;
+
+    // stack
+    let stack_text = "";
+    for (let n = 0; n < 16; n += 2) {
+        let sp2 = s.sp + n;
+        let val = s.mem[sp2] | (s.mem[sp2 + 1] << 8);
+        stack_text += `SP+${Util.hex8(n)}: ${Util.hex16(val)}\n`;
+    }
+    $("#dbg-stack").innerText = stack_text;
+
+    // breakpoints
+    let bpt_text = "";
+    for (let a in s.breakpoints) {
+        bpt_text += `<div class="dbgwin-clickable" dbg-attr="breakpoint">${Util.hex16(a)}</div>`;
+    }
+    if (bpt_text.length == 0) {
+        bpt_text = "<div>&nbsp;&nbsp;&nbsp;&nbsp;</div>";
+    }
+    $("#dbg-breakpoints").innerHTML = bpt_text;
+
+    // mem
+    let dbg_mem = $("#dbg-mem");
+    let addr = dbg_mem.attributes.addr || 0; 
+    
+    let text = "      .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 .A .B .C .D .E .F    0123456789ABCDEF\n";
+    for (let line = 0; line < 65536/16; ++line) {
+        text += dump_line(addr + line * 16, s.mem) + "\n";
+    }
+    dbg_mem.innerText = text;
+
+
+    // handlers for clickable items
+    //
+
+    document.querySelectorAll('[dbg-attr="breakpoint"]').forEach(item => {
+        item.onclick = (e) => {
+            let addr = parseInt('0x' + e.srcElement.innerText);
+            if (!isNaN(addr) && addr >= 0 && addr <= 0xffff) {
+                show_editor_for_addr(addr);
+            }
+        };
+    });
+
+    document.querySelectorAll('[dbg-attr="register"]').forEach(item => {
+        item.addEventListener('blur', () => {
+            console.log("New value for: ", item.attributes["dbg-reg"], item.innerText);
+            debugger_set_register(item.attributes["dbg-reg"].value.toLowerCase(), "0x" + item.innerText);
+        });
+
+        item.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.srcElement.blur()
+            }
+            else if (e.key === 'Esc') {
+                e.preventDefault();
+                e.srcElement.blur();
+            }
+        });
+        //item.onclick = (e) => {
+        //    console.log("clicked on breakpoint: ", e, item);
+        //    let addr = parseInt('0x' + e.srcElement.innerText);
+        //    if (!isNaN(addr) && addr >= 0 && addr <= 0xffff) {
+        //        show_editor_for_addr(addr);
+        //    }
+        //};
+    });
+
+
+}
+
+function debuggerResponse(data)
+{
+    let cpu_state;
+    switch (data.what) {
+        case "stopped":
+            debugger_stopped = true;
+            cpu_state = data.cpu_state;
+            console.log("debugger stopped pc=", Util.hex16(cpu_state.pc), cpu_state);
+            show_debugger_line(cpu_state.pc);
+            update_debugger_controls();
+            refresh_debugger_window(cpu_state);
+            break;
+    }
+}
+
+function debugger_set_breakpoints(target)
+{
+    let addrs = [];
+    // collect all breakpoints
+    for (let file of Object.keys(sessions)) {
+        let s = sessions[file];
+        let breakpoints = s.getBreakpoints();
+        console.log("debugger_set_breakpoints: ", file, breakpoints);
+        for (let line in breakpoints) {
+            let addr = s.gutter_contents[line].addr;
+            addrs.push(addr);
+        }
+    } 
+    target.postMessage({cmd: "debugger", subcmd: "del-breakpoints", addrs: []}, location.href);
+    target.postMessage({cmd: "debugger", subcmd: "set-breakpoints", addrs: addrs}, location.href);
+}
+
+function debugger_set_register(regname, valuetext)
+{
+    let iframe = $("#emulator-iframe");
+    let target = iframe ? iframe.contentWindow : null;
+    if (!target) return false;
+
+    let value = parseInt(valuetext);
+    if (!isNaN(value) && value >= 0 && value <= 0xffff) {
+        target.postMessage({cmd: "debugger", subcmd: "set-register", regname: regname, value: value});
+        return true;
+    }
+    return false;
+}
+
+function debugger_set_breakpoint(session, line)
+{
+    let iframe = $("#emulator-iframe");
+    let target = iframe ? iframe.contentWindow : null;
+    if (!target || !session || !session.gutter_contents || session.gutter_contents.length < line) return false;
+
+    let addr = session.gutter_contents[line].addr;
+    target.postMessage({cmd: "debugger", subcmd: "set-breakpoints", addrs: [addr]});
+    return true;
+}
+
+function debugger_clear_breakpoint(session, line)
+{
+    let iframe = $("#emulator-iframe");
+    let target = iframe ? iframe.contentWindow : null;
+    if (!target || !session || !session.gutter_contents || session.gutter_contents.length < line) return false;
+
+    let addr = session.gutter_contents[line].addr;
+    target.postMessage({cmd: "debugger", subcmd: "del-breakpoints", addrs: [addr]});
+    return true;
+}
