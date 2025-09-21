@@ -819,7 +819,8 @@ span#wav-dl:hover {
 }
 
 #debugger-sheet {
-    background: #238;
+    --bg: #238;
+    background-color: var(--bg);
     color: #eee;
     width: 100%;
     flex: 1;           /* take remaining vertical space */
@@ -827,7 +828,7 @@ span#wav-dl:hover {
     flex-direction: column;
     white-space: pre;
     font-family: monospace;
-    padding: 4px 4px;
+    //padding: 4px 4px;
     min-height: 0;     /* <-- allow shrinking inside flex parent */
     overflow: auto;    /* <-- enable scrolling instead of expanding */
 }
@@ -841,10 +842,25 @@ span#wav-dl:hover {
     display: none;
 }
 
+#debugger-controls.hidden {
+    display: none;
+}
+
 #dbg-row1 {
     display: flex;
     overflow: hidden;
 }
+
+#dbg-code {
+    border: 1px solid #888;
+    display: inline-flex;
+    flex-direction: column;
+    margin: 2px 2px;
+    padding: 4px 8px;
+    min-width: 18em;
+    flex: 0;
+}
+
 #dbg-registers {
     border: 1px solid #888;
     display: inline-flex;
@@ -875,14 +891,37 @@ span#wav-dl:hover {
     margin: 2px 2px;
     padding: 4px 8px;
 }
+#dbg-mem-header {
+  white-space: pre;
+  padding: 4px 8px;
+  border-left: 1px solid #888;
+  border-right: 1px solid #888;
+  border-top: 1px solid #888;
+}
 #dbg-mem {
   flex: 1;             /* fills bottom-pane */
   min-height: 0;       /* allow shrink */
   overflow: auto;      /* scroll inside */
   white-space: pre;
   padding: 4px 8px;
-  border: 1px solid #888;
+  border-left: 1px solid #888;
+  border-right: 1px solid #888;
+  border-bottom: 1px solid #888;
+  cursor: pointer;
+  position:relative;
 }
+
+#overlay {
+  position: absolute;
+  font-family: monospace;
+  padding: 0;
+  margin: 0;
+  background-color: color-mix(in srgb, var(--bg) 80%, white);
+  color: white;
+  border: 0px;
+  outline: 0px;
+}
+
 
 .inline {
     display: inline;
@@ -901,6 +940,10 @@ span#wav-dl:hover {
 .dbgwin-text {
     font-family: monospace;
     display: inline-block;
+}
+.dbg-dasm-current {
+    background-color: #eee;
+    color: black;
 }
 
 /* Target the scrollbar in Chrome, Safari, Edge, etc. */

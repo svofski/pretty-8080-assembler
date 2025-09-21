@@ -525,12 +525,11 @@ function tapeFormatSupported(tf)
 
 function run_emulator(bytes, filename, tapeformat, start_addr)
 {
-    if (debugger_stopped) {
+    if (debugger_visible() && debugger_stopped) {
         debugger_animate_stop_button();
     }
 
     if (tapeformat.startsWith("v06c")) {
-        //return run_emu80(bytes, filename, "vector");
         return run_vector06js(bytes, filename);
     }
     else {
@@ -563,7 +562,7 @@ function set_emulator_help(str)
 
 function run_emu80(bytes, filename, platform)
 {
-    program_load = (iframe, bytes, filename) =>
+    program_load = (iframe, filename) =>
     {
         const emu_version = iframe.contentDocument.title;
         set_emulator_version(emu_version);
@@ -602,7 +601,7 @@ function run_emu80(bytes, filename, platform)
         set_emulator_help("");
     }
     else {
-        program_load(iframe, bytes, filename);
+        program_load(iframe, filename);
     }
 
     emulator_pane.classList.add("visible");
@@ -1502,6 +1501,216 @@ function dump_line(addr, bytes)
 
 }
 
+function format_hexes(data, len, padding=12)
+{
+    let hexes = "";
+    for (let i = 0; i < len; ++i) {
+        hexes += Util.hex8(data[i]) + " ";
+    }
+    return hexes.padEnd(padding, " ");
+}
+
+function dass_at(s, pc, data)
+{
+    for (let i = 0; i < 3; ++i) {
+        data[i] = s.mem[(pc + i) & 0xffff];
+    }
+    let dass = I8080_disasm(data);
+
+    let hexes = format_hexes(data, dass.length);
+
+    let cur = s.pc === pc ? "dbg-dasm-current" : "";
+    let text = `<div class="dbgwin-text ${cur}">${Util.hex16(pc)}: ${hexes}${dass.text}</div>`;
+
+    pc += dass.length;
+
+    return [text, pc];
+}
+
+function disassemble(s)
+{
+    let data = new Uint8Array(3);
+    let text = [];
+
+    let pc = s.pc;
+    let das = "";
+    text = [];
+    for (let line = 0; line < 10; ++line) {
+        [das, pc] = dass_at(s, pc, data);
+        text.push(das);
+    }
+
+    pc = (s.pc - 12) & 0xffff;
+    let pretext = [];
+    let prepc = [];
+    while (pc < s.pc) {
+        prepc.push(pc);
+        [das, pc] = dass_at(s, pc, data);
+        pretext.push(das);
+    }
+
+    if (pc > s.pc) {
+        pretext.pop();
+        prepc.pop();
+        pc = prepc[prepc.length - 1];
+
+        let hexes = format_hexes(data, s.pc - pc - 1);
+        let db = "DB " + hexes;
+        pretext.push(`<div class="dbgwin-text">${Util.hex16(pc)}: ${hexes}${db}</div>`);
+    }
+    
+
+    return pretext.slice(pretext.length - 4).join('') + text.join('');
+}
+
+function getCharMetrics(el) {
+  const span = document.createElement("span");
+  span.textContent = "M";
+  el.appendChild(span);
+  const rect = span.getBoundingClientRect();
+  el.removeChild(span);
+  return {w: rect.width, h: rect.height};
+}
+
+function debugger_scroll_mem_to(addr)
+{
+    let mem = $("#dbg-mem");
+    const metrics = getCharMetrics(mem);
+
+    const row = Math.max(0, Math.floor(addr / 16) - 2);
+    mem.scrollTo(0, metrics.h * row);
+
+}
+
+function create_inplace_overlay(left, top, width, metrics)
+{
+    let overlay = document.createElement("input");
+    overlay.id = "overlay";
+    overlay.style.left = left + "px";
+    overlay.style.top  = top  + "px";
+    overlay.style.width = metrics.w * width + "px";
+    overlay.style.height = metrics.h + "px";
+    return overlay;
+}
+
+function get_computed_padding(el)
+{
+    const computedStyle = window.getComputedStyle(el);
+    // container padding for exact offsets
+    const padding = {
+        top: parseInt(computedStyle.getPropertyValue('padding-top'), 10),
+        right: parseInt(computedStyle.getPropertyValue('padding-right'), 10),
+        bottom: parseInt(computedStyle.getPropertyValue('padding-bottom'), 10),
+        left: parseInt(computedStyle.getPropertyValue('padding-left'), 10),
+    };
+    return padding;
+}
+
+// a global inplace editor for dbg-mem view
+let dbg_mem_inplace = null;
+function attach_dbg_mem_inplace(dbg_mem, dumplines)
+{
+    const MODE_ADDR = 0;
+    const MODE_BYTE = 1;
+    const metrics = getCharMetrics(dbg_mem);
+
+    dbg_mem.removeEventListener("mousedown", dbg_mem_inplace);
+
+    let open_inplace = function(mode, addr) {
+        const row = Math.floor(addr / 16);
+        const padding = get_computed_padding(dbg_mem);
+        const left = padding.left + (mode == MODE_ADDR ? 0 : (6 + (addr % 16) * 3) * metrics.w);
+        const top  = padding.top + row * metrics.h;
+
+        let overlay = create_inplace_overlay(left, top, mode == MODE_ADDR ? 5 : 3, metrics);
+        dbg_mem.appendChild(overlay);
+
+        if (mode == MODE_ADDR) {
+            let addr_text = dumplines[row].slice(0,4);
+            overlay.value = addr_text;
+        }
+        else {
+            let pos = 6 + (addr % 16) * 3;
+            overlay.value = dumplines[row].slice(pos, pos+2);
+        }
+
+        let previousValue = overlay.value, originalValue = overlay.value;
+        setTimeout(function() {
+            overlay.focus();
+            overlay.addEventListener('blur', () => {
+                dbg_mem.removeChild(overlay);
+            });
+            overlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    overlay.blur();
+
+                    if (mode == MODE_ADDR) {
+                        // Enter and Tab confirms the input
+                        let addr = Util.parseHexStrict(overlay.value);
+                        if (!isNaN(addr) && addr >= 0 && addr <= 0xffff) {
+                            debugger_scroll_mem_to(addr);
+                        }
+                    }
+                    else {
+                        let val = Util.parseHexStrict(overlay.value);
+                        if (!isNaN(val) && val >= 0 && val <= 0xff) {
+                            debugger_write_byte(addr, val);
+                        }
+                        setTimeout(() => { open_inplace(mode, (addr + 1) & 0xffff); }, 50);
+                    }
+                }
+                else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    overlay.value = originalValue;
+                    overlay.blur();
+                }
+            });
+            overlay.addEventListener('input', (e) => {
+                const trimlen = mode == MODE_ADDR ? 4 : 2;
+                const maxval = mode == MODE_ADDR ? 0xffff : 0xff;
+                if (overlay.value.length > trimlen) {
+                    overlay.value = overlay.value.slice(overlay.value.length - trimlen, overlay.value.length);
+                }
+
+                let n = Util.parseHexStrict(overlay.value);
+                if (isNaN(n) || n < 0 || n > maxval) {
+                    overlay.value = previousValue;
+                }
+
+                previousValue = overlay.value;
+            });
+        }, 50);
+    };
+
+    // mad inplace editor in dbg-mem
+    dbg_mem_inplace = function(e) {
+        console.log(e);
+        const rect = dbg_mem.getBoundingClientRect();
+        const x = e.clientX - rect.left + dbg_mem.scrollLeft;
+        const y = e.clientY - rect.top  + dbg_mem.scrollTop;
+
+        const col = Math.floor(x / metrics.w);
+        const row = Math.floor(y / metrics.h);
+
+        console.log("dbg_mem_inplace click row", row, "col", col);
+
+        let mode = MODE_ADDR, mem_addr; 
+        let addr = row * 16;
+        if (col > 54) {
+            return;
+        }
+        if (col > 6) {
+            mode = MODE_BYTE;
+            addr += Math.floor((col - 7) / 3);
+        }
+
+        open_inplace(mode, addr);
+    };
+
+    dbg_mem.addEventListener("mousedown", dbg_mem_inplace);
+}
+
 function refresh_debugger_window(s)
 {
     // regs
@@ -1546,7 +1755,6 @@ function refresh_debugger_window(s)
     for (let n = 0; n < 16; n += 2) {
         let sp2 = s.sp + n;
         let val = s.mem[sp2] | (s.mem[sp2 + 1] << 8);
-        //stack_text += `SP+${Util.hex8(n)}: ${Util.hex16(val)}\n`;
         stack_text += `<div class="dbgwin-text">SP+${Util.hex8(n)}: <div class="dbgwin-clickable inline" dbg-attr="breakpoint">${Util.hex16(val)}</div></div>`;
     }
     $("#dbg-stack").innerHTML = stack_text;
@@ -1562,20 +1770,23 @@ function refresh_debugger_window(s)
     $("#dbg-breakpoints").innerHTML = bpt_text;
 
     // mem
+    $("#dbg-mem-header").innerText = "      .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 .A .B .C .D .E .F    0123456789ABCDEF";
     let dbg_mem = $("#dbg-mem");
     let addr = dbg_mem.attributes.addr || 0; 
     
-    let text = "      .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 .A .B .C .D .E .F    0123456789ABCDEF\n";
+    let dumplines = [];
+    let text = "";
     for (let line = 0; line < 65536/16; ++line) {
-        text += dump_line(addr + line * 16, s.mem) + "\n";
+        dumplines.push(dump_line(addr + line * 16, s.mem));
     }
+    text = dumplines.join("\n");
     dbg_mem.innerText = text;
 
+    attach_dbg_mem_inplace(dbg_mem, dumplines);
 
     // 
     // handlers for clickable items
     //
-    
 
     // clicks on breakpoints in the debugger sheet
     document.querySelectorAll('[dbg-attr="breakpoint"]').forEach(item => {
@@ -1599,7 +1810,7 @@ function refresh_debugger_window(s)
         });
         item.addEventListener('blur', () => {
             console.log("New value for: ", item.attributes["dbg-reg"], item.innerText);
-            debugger_set_register(item.attributes["dbg-reg"].value.toLowerCase(), "0x" + item.innerText);
+            debugger_set_register(item.attributes["dbg-reg"].value.toLowerCase(), Util.parseHexStrict(item.innerText));
         });
 
         item.addEventListener('keydown', function(e) {
@@ -1617,23 +1828,23 @@ function refresh_debugger_window(s)
         item.addEventListener('input', function(e) {
             if (item.innerText.length > 4) {
                 item.innerText = item.innerText.slice(item.innerText.length - 4, item.innerText.length);
-
-                let n = Util.parseHexStrict(item.innerText);
-                if (isNaN(n) || n < 0 || n > 0xffff) {
-                    item.innerText = previousText;
-                }
-
-                // move caret to the end
-                const range = document.createRange();
-                range.selectNodeContents(item);
-                range.collapse(false);
-                const sel = window.getSelection();
-                console.log(sel);
-                sel.removeAllRanges();
-                sel.addRange(range);
-
-                previousText = item.innerText;
             }
+
+            let n = Util.parseHexStrict(item.innerText);
+            if (isNaN(n) || n < 0 || n > 0xffff) {
+                item.innerText = previousText;
+            }
+
+            // move caret to the end
+            const range = document.createRange();
+            range.selectNodeContents(item);
+            range.collapse(false);
+            const sel = window.getSelection();
+            console.log(sel);
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            previousText = item.innerText;
         });
     });
 
@@ -1656,7 +1867,7 @@ function refresh_debugger_window(s)
             let psw = (s.psw & ~mask) | ((on ? mask : 0));
             let reg_af = (s.regs[7] << 8) | psw;
 
-            debugger_set_register("af", "0x" + reg_af.toString(16));
+            debugger_set_register("af", reg_af);
         });
 
         item.addEventListener('keydown', function(e) {
@@ -1693,6 +1904,8 @@ function refresh_debugger_window(s)
         });
     });
 
+    $("#dbg-code").innerHTML = disassemble(s);
+
 }
 
 function debuggerResponse(data)
@@ -1727,15 +1940,27 @@ function debugger_set_breakpoints(target)
     target.postMessage({cmd: "debugger", subcmd: "set-breakpoints", addrs: addrs}, location.href);
 }
 
-function debugger_set_register(regname, valuetext)
+function debugger_set_register(regname, value)
 {
     let iframe = $("#emulator-iframe");
     let target = iframe ? iframe.contentWindow : null;
     if (!target) return false;
 
-    let value = parseInt(valuetext);
     if (!isNaN(value) && value >= 0 && value <= 0xffff) {
         target.postMessage({cmd: "debugger", subcmd: "set-register", regname: regname, value: value});
+        return true;
+    }
+    return false;
+}
+
+function debugger_write_byte(addr, value)
+{
+    let iframe = $("#emulator-iframe");
+    let target = iframe ? iframe.contentWindow : null;
+    if (!target) return false;
+
+    if (!isNaN(value) && value >= 0 && value <= 0xff) {
+        target.postMessage({cmd: "debugger", subcmd: "write-byte", addr: addr, value: value});
         return true;
     }
     return false;
@@ -1767,9 +1992,11 @@ function debugger_show(show)
 {
     if (show) {
         $("#debugger-sheet").classList.remove("hidden")
+        $("#debugger-controls").classList.remove("hidden")
     }
     else {
         $("#debugger-sheet").classList.add("hidden");
+        $("#debugger-controls").classList.add("hidden")
     }
     update_debugger_controls();
 }
