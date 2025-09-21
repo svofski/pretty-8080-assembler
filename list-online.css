@@ -325,11 +325,11 @@ span.t2:hover { background:#ffff7d; }
     position: initial;
     flex: 1;
     width: initial;
+    flex-direction: column;
 }
 
 #emulator.docked.visible {
     display: flex;
-    flex-direction: column;
 }
 
 #emulator.docked #emulator-box {
@@ -360,6 +360,7 @@ span.t2:hover { background:#ffff7d; }
     display: flex;
     flex-direction: column;
     max-width: 100vh;
+    width: 100%;
     margin: auto;
     overflow: hidden;
     position: relative;
@@ -369,6 +370,7 @@ span.t2:hover { background:#ffff7d; }
 
 #emulator.docked #emulator-box {
     border-radius: initial;
+    margin: 0px 0px;
 }
 
 #emulator-container {
@@ -795,6 +797,17 @@ span#wav-dl:hover {
     font-family: "Segoe UI Symbol", "Arial Unicode MS", sans-serif;
 }
 
+.button-like.attract {
+    animation: button-pulse 0.5s ease-in-out;
+    animation-iteration-count: 3;
+}
+@keyframes button-pulse {
+    0% { background-color: initial; }
+    50% { background-color: #ff0; }
+    100% { background-color: initial; }
+}
+
+
 .button-like:hover {
     background-color: #fff2;
     color: white;
@@ -824,6 +837,10 @@ span#wav-dl:hover {
     opacity: 0.5;
 }
 
+#debugger-sheet.hidden {
+    display: none;
+}
+
 #dbg-row1 {
     display: flex;
     overflow: hidden;
@@ -840,12 +857,16 @@ span#wav-dl:hover {
     display: inline-flex;
     margin: 2px 2px;
     padding: 4px 8px;
+    display: inline-flex;
+    flex-direction: column;
 }
 #dbg-stack {
     border: 1px solid #888;
     display: inline-flex;
     margin: 2px 2px;
     padding: 4px 8px;
+    display: inline-flex;
+    flex-direction: column;
 }
 #dbg-breakpoints {
     border: 1px solid #888;
@@ -863,7 +884,7 @@ span#wav-dl:hover {
   border: 1px solid #888;
 }
 
-.dbgwin-clickable.inline {
+.inline {
     display: inline;
 }
 

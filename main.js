@@ -525,6 +525,10 @@ function tapeFormatSupported(tf)
 
 function run_emulator(bytes, filename, tapeformat, start_addr)
 {
+    if (debugger_stopped) {
+        debugger_animate_stop_button();
+    }
+
     if (tapeformat.startsWith("v06c")) {
         //return run_emu80(bytes, filename, "vector");
         return run_vector06js(bytes, filename);
@@ -641,7 +645,9 @@ function run_emu80(bytes, filename, platform)
                 close_emulator_cb && close_emulator_cb();
             }
         });
+        debugger_show(false);
     };
+    update_debugger_controls(); // need to call it if frame was already loaded
 }
 
 function run_vector06js(bytes, filename) {
@@ -729,7 +735,9 @@ function run_vector06js(bytes, filename) {
                 close_emulator_cb && close_emulator_cb();
             }
         });
+        debugger_show(true);
     };
+    update_debugger_controls(); // need to call it if frame was already loaded
 }
 
 var blksbr;
@@ -1341,14 +1349,23 @@ function i18n() {
 
 function update_debugger_controls()
 {
+    let visible = debugger_visible();
     document.querySelectorAll('[id^="dbg-"][id$="-btn"]')
         .forEach(item => {
+            if (!visible) {
+                item.classList.add("disabled");
+                return;
+            }
+
             if (debugger_stopped) {
                 item.classList.remove("disabled");
             }
             else {
                 if (item.id != "dbg-pause-btn") {
                     item.classList.add("disabled");
+                }
+                else {
+                    item.classList.remove("disabled");
                 }
             }
         });
@@ -1358,6 +1375,15 @@ function update_debugger_controls()
     else {
         $("#debugger-sheet").classList.add("disabled");
     }
+}
+
+function debugger_animate_stop_button()
+{
+    let btn = $("#dbg-pause-btn");
+    btn.classList.add("attract");
+    setTimeout(function() {
+        btn.classList.remove("attract");
+    }, 1500);
 }
 
 function attach_debugger_controls()
@@ -1430,7 +1456,7 @@ function find_addr_line(addr)
         }
 
 
-        while (gc[low].hex.length == 0 && low < gc.length) {
+        while (low < gc.length && gc[low].hex.length == 0) {
             ++low;
         }
         return [file, low];
@@ -1496,24 +1522,34 @@ function refresh_debugger_window(s)
         mkreg("SP", s.sp) +
         mkreg("PC", s.pc);
 
-
     // psw flags
-    let psw_c = (s.psw & 0x01) ? 1 : 0;
-    let psw_p = (s.psw & 0x04) ? 1 : 0;
-    let psw_z = (s.psw & 0x40) ? 1 : 0;
-    let psw_s = (s.psw & 0x80) ? 1 : 0;
-    let psw_ac = (s.psw & 0x10) ? 1 : 0;
-    let psw_text = `  C = ${psw_c}\n  Z = ${psw_z}\n  P = ${psw_p}\n  S = ${psw_s}\n AC = ${psw_ac}\nIFF = ${s.iff ? 1 : 0}`;
-    $("#dbg-psw").innerText = psw_text;
+    let mkbit = (name,mask) => {
+        let val = (s.psw & mask) ? 1 : 0;
+        if (name === "IFF")
+            val = s.iff ? 1 : 0;
+        name = name.padStart(3, " ");
+        return `<div class="dbgwin-text">${name}=<div class="dbgwin-clickable inline" dbg-mask="${mask}" dbg-attr="psw" dbg-bit="${name}" contenteditable="true">${val}</div></div>`;
+    };
+
+    let psw_text = 
+        mkbit("C", 0x01) +
+        mkbit("P", 0x04) +
+        mkbit("Z", 0x40) +
+        mkbit("S", 0x80) +
+        mkbit("AC", 0x10) +
+        mkbit("IFF", 0x00);
+
+    $("#dbg-psw").innerHTML = psw_text;
 
     // stack
     let stack_text = "";
     for (let n = 0; n < 16; n += 2) {
         let sp2 = s.sp + n;
         let val = s.mem[sp2] | (s.mem[sp2 + 1] << 8);
-        stack_text += `SP+${Util.hex8(n)}: ${Util.hex16(val)}\n`;
+        //stack_text += `SP+${Util.hex8(n)}: ${Util.hex16(val)}\n`;
+        stack_text += `<div class="dbgwin-text">SP+${Util.hex8(n)}: <div class="dbgwin-clickable inline" dbg-attr="breakpoint">${Util.hex16(val)}</div></div>`;
     }
-    $("#dbg-stack").innerText = stack_text;
+    $("#dbg-stack").innerHTML = stack_text;
 
     // breakpoints
     let bpt_text = "";
@@ -1536,9 +1572,12 @@ function refresh_debugger_window(s)
     dbg_mem.innerText = text;
 
 
+    // 
     // handlers for clickable items
     //
+    
 
+    // clicks on breakpoints in the debugger sheet
     document.querySelectorAll('[dbg-attr="breakpoint"]').forEach(item => {
         item.onclick = (e) => {
             let addr = parseInt('0x' + e.srcElement.innerText);
@@ -1548,7 +1587,16 @@ function refresh_debugger_window(s)
         };
     });
 
+
+    // register inplace editor
     document.querySelectorAll('[dbg-attr="register"]').forEach(item => {
+        let originalText;
+        let previousText;
+        item.addEventListener('focus', () => {
+            previousText = originalText = item.innerText;
+            //console.log("New value for: ", item.attributes["dbg-reg"], item.innerText);
+            //debugger_set_register(item.attributes["dbg-reg"].value.toLowerCase(), "0x" + item.innerText);
+        });
         item.addEventListener('blur', () => {
             console.log("New value for: ", item.attributes["dbg-reg"], item.innerText);
             debugger_set_register(item.attributes["dbg-reg"].value.toLowerCase(), "0x" + item.innerText);
@@ -1559,20 +1607,91 @@ function refresh_debugger_window(s)
                 e.preventDefault();
                 e.srcElement.blur()
             }
-            else if (e.key === 'Esc') {
+            else if (e.key === 'Escape') {
                 e.preventDefault();
+                e.srcElement.innerText = originalText;
                 e.srcElement.blur();
             }
         });
-        //item.onclick = (e) => {
-        //    console.log("clicked on breakpoint: ", e, item);
-        //    let addr = parseInt('0x' + e.srcElement.innerText);
-        //    if (!isNaN(addr) && addr >= 0 && addr <= 0xffff) {
-        //        show_editor_for_addr(addr);
-        //    }
-        //};
+
+        item.addEventListener('input', function(e) {
+            if (item.innerText.length > 4) {
+                item.innerText = item.innerText.slice(item.innerText.length - 4, item.innerText.length);
+
+                let n = Util.parseHexStrict(item.innerText);
+                if (isNaN(n) || n < 0 || n > 0xffff) {
+                    item.innerText = previousText;
+                }
+
+                // move caret to the end
+                const range = document.createRange();
+                range.selectNodeContents(item);
+                range.collapse(false);
+                const sel = window.getSelection();
+                console.log(sel);
+                sel.removeAllRanges();
+                sel.addRange(range);
+
+                previousText = item.innerText;
+            }
+        });
     });
 
+    document.querySelectorAll('[dbg-attr="psw"]').forEach(item => {
+        let originalText;
+        let previousText;
+        item.addEventListener('focus', () => {
+            previousText = originalText = item.innerText;
+        });
+        item.addEventListener('blur', () => {
+            let name = item.attributes["dbg-bit"].value;
+            let mask = parseInt(item.attributes["dbg-mask"].value);
+            let on = item.innerText === "1";
+
+            if (name === "IFF") {
+                debugger_set_register("iff", on ? 1 : 0);
+                return;
+            }
+
+            let psw = (s.psw & ~mask) | ((on ? mask : 0));
+            let reg_af = (s.regs[7] << 8) | psw;
+
+            debugger_set_register("af", "0x" + reg_af.toString(16));
+        });
+
+        item.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.srcElement.blur()
+            }
+            else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.srcElement.innerText = originalText;
+                e.srcElement.blur();
+            }
+        });
+
+        item.addEventListener('input', function(e) {
+            if (item.innerText.length > 1) {
+                item.innerText = item.innerText.slice(item.innerText.length - 1, item.innerText.length);
+
+                if (item.innerText.length && "01".indexOf(item.innerText[0]) < 0) {
+                    item.innerText = previousText;
+                }
+
+                // move caret to the end
+                const range = document.createRange();
+                range.selectNodeContents(item);
+                range.collapse(false);
+                const sel = window.getSelection();
+                console.log(sel);
+                sel.removeAllRanges();
+                sel.addRange(range);
+
+                previousText = item.innerText;
+            }
+        });
+    });
 
 }
 
@@ -1642,4 +1761,20 @@ function debugger_clear_breakpoint(session, line)
     let addr = session.gutter_contents[line].addr;
     target.postMessage({cmd: "debugger", subcmd: "del-breakpoints", addrs: [addr]});
     return true;
+}
+
+function debugger_show(show)
+{
+    if (show) {
+        $("#debugger-sheet").classList.remove("hidden")
+    }
+    else {
+        $("#debugger-sheet").classList.add("hidden");
+    }
+    update_debugger_controls();
+}
+
+function debugger_visible()
+{
+    return !$("#debugger-sheet").classList.contains("hidden");
 }

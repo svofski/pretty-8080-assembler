@@ -484,6 +484,7 @@ function newProject(ask, filename, text) {
         }
     }
 
+    sessions = {};
     project = {
         files: {},
         colors: {},

@@ -32,6 +32,14 @@ Util.replaceExt = function(path, newext) {
     return path.split('.').slice(0, -1).join('.') + newext;
 }
 
+Util.parseHexStrict = function(str)
+{
+    if (/^(0x)?[0123456789abcdef]+$/i.test(str)) {
+        return parseInt(str, 16);
+    }
+    return NaN;
+}
+
 Util.formatGutterBrief = function(addr, bytes)
 {
     var width = 0;

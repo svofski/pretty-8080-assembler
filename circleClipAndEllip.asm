@@ -5,6 +5,7 @@
                 ; Пример клиппинга и рисования эллипсов
 
                 .project circle_clip_and_ellip.rom
+                .tape v06c-rom
 
 ARcorr	        .equ 400h
 
