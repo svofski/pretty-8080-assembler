@@ -106,3 +106,14 @@ String.prototype.trimStart = String.prototype.trimStart ? String.prototype.trimS
         return this.slice(indexOfWord, this.length);
     }
 };
+
+
+Util.getCharMetrics = function(el)
+{
+  const span = document.createElement("span");
+  span.textContent = "M";
+  el.appendChild(span);
+  const rect = span.getBoundingClientRect();
+  el.removeChild(span);
+  return {w: rect.width, h: rect.height};
+};

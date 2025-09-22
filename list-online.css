@@ -831,6 +831,8 @@ span#wav-dl:hover {
     //padding: 4px 4px;
     min-height: 0;     /* <-- allow shrinking inside flex parent */
     overflow: auto;    /* <-- enable scrolling instead of expanding */
+
+    --dump-padding-h: 8px;
 }
 
 #debugger-sheet.disabled {
@@ -893,7 +895,7 @@ span#wav-dl:hover {
 }
 #dbg-mem-header {
   white-space: pre;
-  padding: 4px 8px;
+  padding: 4px var(--dump-padding-h);
   border-left: 1px solid #888;
   border-right: 1px solid #888;
   border-top: 1px solid #888;
@@ -903,12 +905,35 @@ span#wav-dl:hover {
   min-height: 0;       /* allow shrink */
   overflow: auto;      /* scroll inside */
   white-space: pre;
-  padding: 4px 8px;
+  padding: 4px var(--dump-padding-h);
   border-left: 1px solid #888;
   border-right: 1px solid #888;
   border-bottom: 1px solid #888;
   cursor: pointer;
   position:relative;
+}
+
+.scroller-container {
+  height: 500px; /* Viewport height */
+  overflow-y: auto;
+  position: relative;
+  color: #eee;
+}
+
+.scroller-phantom {
+  /* This element fakes the height of the entire list */
+  /*  background-color: blue; */
+}
+
+
+.scroller-items {
+  font-family: monospace;
+  cursor: pointer;
+
+  position: absolute; /* Take the items out of the document flow */
+  top: 0;
+  left: var(--dump-padding-h);
+  right: 0; /* Let it fill the container's width */
 }
 
 #overlay {

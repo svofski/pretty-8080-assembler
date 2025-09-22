@@ -91,6 +91,7 @@ var player = undefined;
 let current_emulator = null;
 let program_load = null;
 let debugger_stopped = false;
+let dump_scroller = null;
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -1385,6 +1386,33 @@ function debugger_animate_stop_button()
     }, 1500);
 }
 
+class DumpDataSource
+{
+    constructor(row_class)
+    {
+        this.row_class = row_class;
+        this.mem = [];
+        this.row_count = 65536 / 16;
+        this.refresh = null;
+    }
+
+    slice(start, end)
+    {
+        let data = [];
+        for (let i = start; i < end; ++i) {
+            let text = dump_line(i * 16, this.mem)
+            data.push(text);
+        }
+        return data;
+    }
+
+    set_mem(mem)
+    {
+        this.mem = mem;
+        this.refresh && this.refresh();
+    }
+}
+
 function attach_debugger_controls()
 {
     document.querySelectorAll('[id^="dbg-"][id$="-btn"]')
@@ -1430,6 +1458,11 @@ function attach_debugger_controls()
             debugger_set_breakpoint(session, row);
         }
     });
+
+
+    // virtual scroller for the dump / dbg-mem
+    dump_scroller = new VirtualScroll('dbg-mem');
+    dump_scroller.init(new DumpDataSource('mem-row'));
 }
 
 function find_addr_line(addr)
@@ -1563,19 +1596,10 @@ function disassemble(s)
     return pretext.slice(pretext.length - 4).join('') + text.join('');
 }
 
-function getCharMetrics(el) {
-  const span = document.createElement("span");
-  span.textContent = "M";
-  el.appendChild(span);
-  const rect = span.getBoundingClientRect();
-  el.removeChild(span);
-  return {w: rect.width, h: rect.height};
-}
-
 function debugger_scroll_mem_to(addr)
 {
     let mem = $("#dbg-mem");
-    const metrics = getCharMetrics(mem);
+    const metrics = Util.getCharMetrics(mem);
 
     const row = Math.max(0, Math.floor(addr / 16) - 2);
     mem.scrollTo(0, metrics.h * row);
@@ -1608,11 +1632,11 @@ function get_computed_padding(el)
 
 // a global inplace editor for dbg-mem view
 let dbg_mem_inplace = null;
-function attach_dbg_mem_inplace(dbg_mem, dumplines)
+function attach_dbg_mem_inplace(dbg_mem, mem)
 {
     const MODE_ADDR = 0;
     const MODE_BYTE = 1;
-    const metrics = getCharMetrics(dbg_mem);
+    const metrics = Util.getCharMetrics(dbg_mem);
 
     dbg_mem.removeEventListener("mousedown", dbg_mem_inplace);
 
@@ -1620,18 +1644,18 @@ function attach_dbg_mem_inplace(dbg_mem, dumplines)
         const row = Math.floor(addr / 16);
         const padding = get_computed_padding(dbg_mem);
         const left = padding.left + (mode == MODE_ADDR ? 0 : (6 + (addr % 16) * 3) * metrics.w);
-        const top  = padding.top + row * metrics.h;
+        const top  = /*padding.top +*/ row * metrics.h;
 
         let overlay = create_inplace_overlay(left, top, mode == MODE_ADDR ? 5 : 3, metrics);
         dbg_mem.appendChild(overlay);
 
         if (mode == MODE_ADDR) {
-            let addr_text = dumplines[row].slice(0,4);
+            let addr_text = Util.hex16(row * 16);
             overlay.value = addr_text;
         }
         else {
             let pos = 6 + (addr % 16) * 3;
-            overlay.value = dumplines[row].slice(pos, pos+2);
+            overlay.value = Util.hex8(mem[addr]);
         }
 
         let previousValue = overlay.value, originalValue = overlay.value;
@@ -1773,16 +1797,11 @@ function refresh_debugger_window(s)
     $("#dbg-mem-header").innerText = "      .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 .A .B .C .D .E .F    0123456789ABCDEF";
     let dbg_mem = $("#dbg-mem");
     let addr = dbg_mem.attributes.addr || 0; 
-    
-    let dumplines = [];
-    let text = "";
-    for (let line = 0; line < 65536/16; ++line) {
-        dumplines.push(dump_line(addr + line * 16, s.mem));
-    }
-    text = dumplines.join("\n");
-    dbg_mem.innerText = text;
 
-    attach_dbg_mem_inplace(dbg_mem, dumplines);
+    // refresh data in the hex dump view
+    dump_scroller && dump_scroller.data.set_mem(s.mem);
+    attach_dbg_mem_inplace(dbg_mem, s.mem);
+
 
     // 
     // handlers for clickable items
