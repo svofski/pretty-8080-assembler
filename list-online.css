@@ -407,6 +407,7 @@ span.t2:hover { background:#ffff7d; }
     display: flex;
     align-items: center; // vertical
     overflow: hidden;
+    user-select: none;
 }
 
 #ruslat {
