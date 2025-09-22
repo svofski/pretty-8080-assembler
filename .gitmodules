@@ -1,0 +1,3 @@
+[submodule "vector06js"]
+	path = vector06js
+	url = git@github.com:svofski/vector06js.git
