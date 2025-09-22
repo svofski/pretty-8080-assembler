@@ -110,10 +110,24 @@ String.prototype.trimStart = String.prototype.trimStart ? String.prototype.trimS
 
 Util.getCharMetrics = function(el)
 {
-  const span = document.createElement("span");
-  span.textContent = "M";
-  el.appendChild(span);
-  const rect = span.getBoundingClientRect();
-  el.removeChild(span);
-  return {w: rect.width, h: rect.height};
+    const span = document.createElement("span");
+    span.textContent = "M";
+    span.style = "width: min-content";
+    el.appendChild(span);
+    const rect = span.getBoundingClientRect();
+    el.removeChild(span);
+    return {w: rect.width, h: rect.height};
 };
+
+Util.getClickRowCol = function(evt, element)
+{
+    const rect = element.getBoundingClientRect();
+    const x = evt.clientX - rect.left + element.scrollLeft;
+    const y = evt.clientY - rect.top  + element.scrollTop;
+    const metrics = Util.getCharMetrics(element);
+
+    const col = Math.floor(x / metrics.w);
+    const row = Math.floor(y / metrics.h);
+
+    return [row, col];
+}

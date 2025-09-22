@@ -92,6 +92,9 @@ let current_emulator = null;
 let program_load = null;
 let debugger_stopped = false;
 let dump_scroller = null;
+let disassembled_window = [];
+let debugger_extra_breakpoints = {};
+let cpu_state = {};
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -1444,28 +1447,36 @@ function attach_debugger_controls()
         e.stop();   // like preventDefault but for ace
         var row = e.getDocumentPosition().row;
         var session = editor.getSession();
-        var breakpoints = session.getBreakpoints();
-
-        if (session.gutter_contents[row].hex.length == 0) 
-            return;
-
-        if (breakpoints[row]) {
-            session.clearBreakpoint(row);
-            debugger_clear_breakpoint(session, row);
-        }
-        else {
-            session.setBreakpoint(row);
-            debugger_set_breakpoint(session, row);
-        }
+        session_toggle_breakpoint(session, row);
     });
 
 
     // virtual scroller for the dump / dbg-mem
     dump_scroller = new VirtualScroll('dbg-mem');
     dump_scroller.init(new DumpDataSource('mem-row'));
+
+    // inplace input for the code window
+    attach_dbg_code_inplace();
 }
 
-function find_addr_line(addr)
+function session_toggle_breakpoint(session, row)
+{
+    var breakpoints = session.getBreakpoints();
+
+    if (session.gutter_contents[row].hex.length == 0) 
+        return;
+
+    if (breakpoints[row]) {
+        session.clearBreakpoint(row);
+        session_clear_breakpoint(session, row);
+    }
+    else {
+        session.setBreakpoint(row);
+        session_set_breakpoint(session, row);
+    }
+}
+
+function find_addr_line(addr, exact = false)
 {
     for (let file of Object.keys(sessions)) {
         let s = sessions[file];
@@ -1491,6 +1502,10 @@ function find_addr_line(addr)
         while (low < gc.length && gc[low].hex.length == 0) {
             ++low;
         }
+
+        if (exact && gc[low].addr !== addr) 
+            return [null, -1];
+
         return [file, low];
     }
 
@@ -1543,7 +1558,7 @@ function format_hexes(data, len, padding=12)
     return hexes.padEnd(padding, " ");
 }
 
-function dass_at(s, pc, data)
+function dass_at(s, pc, data, breakpoints)
 {
     for (let i = 0; i < 3; ++i) {
         data[i] = s.mem[(pc + i) & 0xffff];
@@ -1553,47 +1568,54 @@ function dass_at(s, pc, data)
     let hexes = format_hexes(data, dass.length);
 
     let cur = s.pc === pc ? "dbg-dasm-current" : "";
-    let text = `<div class="dbgwin-text ${cur}">${Util.hex16(pc)}: ${hexes}${dass.text}</div>`;
+    if (breakpoints.indexOf(pc & 0xffff) != -1) {
+        cur += " dbg-dasm-breakpoint";
+    }
+    let text = `<div class="dbgwin-text ${cur}">  ${Util.hex16(pc)}: ${hexes}${dass.text}</div>`;
 
-    pc += dass.length;
+    pc = pc + dass.length;
 
     return [text, pc];
 }
 
-function disassemble(s)
+function disassemble(s, set_addr)
 {
+    let breakpoints = debugger_collect_breakpoints();
     let data = new Uint8Array(3);
     let text = [];
 
-    let pc = s.pc;
+    if (set_addr === undefined) set_addr = s.pc;
+
+    let pc = set_addr;
     let das = "";
     text = [];
     for (let line = 0; line < 10; ++line) {
-        [das, pc] = dass_at(s, pc, data);
+        [das, pc] = dass_at(s, pc, data, breakpoints);
         text.push(das);
     }
 
-    pc = (s.pc - 12) & 0xffff;
+    //pc = (set_addr - 12) & 0xffff;
+    pc = set_addr - 12;
     let pretext = [];
     let prepc = [];
-    while (pc < s.pc) {
-        prepc.push(pc);
-        [das, pc] = dass_at(s, pc, data);
+
+    while (pc < set_addr) {
+        prepc.push(pc & 0xffff);
+        [das, pc] = dass_at(s, pc, data, breakpoints);
         pretext.push(das);
     }
 
-    if (pc > s.pc) {
+    if (pc > set_addr) {
         pretext.pop();
         prepc.pop();
         pc = prepc[prepc.length - 1];
 
-        let hexes = format_hexes(data, s.pc - pc - 1);
+        let hexes = format_hexes(data, set_addr - pc - 1);
         let db = "DB " + hexes;
-        pretext.push(`<div class="dbgwin-text">${Util.hex16(pc)}: ${hexes}${db}</div>`);
+        pretext.push(`<div class="dbgwin-text">  ${Util.hex16(pc)}: ${hexes}${db}</div>`);
     }
-    
 
-    return pretext.slice(pretext.length - 4).join('') + text.join('');
+    return pretext.slice(pretext.length - 4).concat(text);
 }
 
 function debugger_scroll_mem_to(addr)
@@ -1630,12 +1652,13 @@ function get_computed_padding(el)
     return padding;
 }
 
+const MODE_ADDR = 0;
+const MODE_BYTE = 1;
+
 // a global inplace editor for dbg-mem view
 let dbg_mem_inplace = null;
 function attach_dbg_mem_inplace(dbg_mem, mem)
 {
-    const MODE_ADDR = 0;
-    const MODE_BYTE = 1;
     const metrics = Util.getCharMetrics(dbg_mem);
 
     dbg_mem.removeEventListener("mousedown", dbg_mem_inplace);
@@ -1690,20 +1713,7 @@ function attach_dbg_mem_inplace(dbg_mem, mem)
                     overlay.blur();
                 }
             });
-            overlay.addEventListener('input', (e) => {
-                const trimlen = mode == MODE_ADDR ? 4 : 2;
-                const maxval = mode == MODE_ADDR ? 0xffff : 0xff;
-                if (overlay.value.length > trimlen) {
-                    overlay.value = overlay.value.slice(overlay.value.length - trimlen, overlay.value.length);
-                }
-
-                let n = Util.parseHexStrict(overlay.value);
-                if (isNaN(n) || n < 0 || n > maxval) {
-                    overlay.value = previousValue;
-                }
-
-                previousValue = overlay.value;
-            });
+            attach_hex_validator(overlay, mode);
         }, 50);
     };
 
@@ -1733,6 +1743,86 @@ function attach_dbg_mem_inplace(dbg_mem, mem)
     };
 
     dbg_mem.addEventListener("mousedown", dbg_mem_inplace);
+}
+
+function attach_hex_validator(input, mode)
+{
+    let previousValue = input.value, originalValue = input.value;
+    input.addEventListener('input', (e) => {
+        const trimlen = mode == MODE_ADDR ? 4 : 2;
+        const maxval = mode == MODE_ADDR ? 0xffff : 0xff;
+        if (input.value.length > trimlen) {
+            input.value = input.value.slice(input.value.length - trimlen, input.value.length);
+        }
+
+        let n = Util.parseHexStrict(input.value);
+        if (isNaN(n) || n < 0 || n > maxval) {
+            input.value = previousValue;
+        }
+
+        previousValue = input.value;
+    });
+
+}
+
+// input address
+function attach_dbg_code_inplace()
+{
+    let dbg_code = $("#dbg-code");
+
+    let open_inplace = function(row, col, addr) {
+        const metrics = Util.getCharMetrics(dbg_code);
+        const padding = get_computed_padding(dbg_code);
+        const left = padding.left + col * metrics.w;
+        const top  = padding.top + row * metrics.h;
+
+        let overlay = create_inplace_overlay(left, top, 5, metrics);
+        dbg_code.appendChild(overlay);
+
+        setTimeout(function() {
+            overlay.focus();
+            overlay.value = Util.hex16(addr);
+            attach_hex_validator(overlay, MODE_ADDR);
+
+            overlay.addEventListener('blur', () => {
+                dbg_code.removeChild(overlay);
+            });
+            overlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    overlay.blur();
+                    let newaddr = Util.parseHexStrict(overlay.value);
+                    console.log("newaddr=", overlay.value);
+                    render_code_window(newaddr);
+                }
+            });
+        }, 50);
+    };
+
+    let dbg_code_inplace = function(e) {
+        let dbg_code = $("#dbg-code");
+        let [row, col] = Util.getClickRowCol(e, dbg_code);
+
+        let plaintext;
+        if (row < disassembled_window.length) {
+            const div = document.createElement("div");
+            div.innerHTML = disassembled_window[row];
+            plaintext = div.firstChild.innerText;
+        }
+
+        console.log("clicked in code at ", row, col, "text=", plaintext);
+
+        if (col < 3 && plaintext) {
+            let addr = Util.parseHexStrict(plaintext.slice(2, 2+4));
+            debugger_toggle_breakpoint(addr);
+        }
+        else if (col >= 3 && col <=7 && plaintext) {
+            let addr = Util.parseHexStrict(plaintext.slice(2, 2+4));
+            open_inplace(row, 2, addr);
+        }
+    };
+
+    dbg_code.addEventListener("mousedown", dbg_code_inplace);
 }
 
 function refresh_debugger_window(s)
@@ -1813,6 +1903,7 @@ function refresh_debugger_window(s)
             let addr = parseInt('0x' + e.srcElement.innerText);
             if (!isNaN(addr) && addr >= 0 && addr <= 0xffff) {
                 show_editor_for_addr(addr);
+                render_code_window(addr);
             }
         };
     });
@@ -1923,13 +2014,17 @@ function refresh_debugger_window(s)
         });
     });
 
-    $("#dbg-code").innerHTML = disassemble(s);
+    render_code_window(s.pc);
+}
 
+function render_code_window(set_addr)
+{
+    disassembled_window = disassemble(cpu_state, set_addr);
+    $("#dbg-code").innerHTML = disassembled_window.join('');
 }
 
 function debuggerResponse(data)
 {
-    let cpu_state;
     switch (data.what) {
         case "stopped":
             debugger_stopped = true;
@@ -1942,19 +2037,28 @@ function debuggerResponse(data)
     }
 }
 
-function debugger_set_breakpoints(target)
+// collect all breakpoints from all editor sessions
+function debugger_collect_breakpoints()
 {
     let addrs = [];
-    // collect all breakpoints
     for (let file of Object.keys(sessions)) {
         let s = sessions[file];
         let breakpoints = s.getBreakpoints();
-        console.log("debugger_set_breakpoints: ", file, breakpoints);
         for (let line in breakpoints) {
             let addr = s.gutter_contents[line].addr;
             addrs.push(addr);
         }
     } 
+    for (let addr in debugger_extra_breakpoints) {
+        addrs.push(parseInt(addr));
+    }
+
+    return addrs;
+}
+
+function debugger_set_breakpoints(target)
+{
+    let addrs = debugger_collect_breakpoints();
     target.postMessage({cmd: "debugger", subcmd: "del-breakpoints", addrs: []}, location.href);
     target.postMessage({cmd: "debugger", subcmd: "set-breakpoints", addrs: addrs}, location.href);
 }
@@ -1985,10 +2089,36 @@ function debugger_write_byte(addr, value)
     return false;
 }
 
-function debugger_set_breakpoint(session, line)
+function debugger_target()
 {
     let iframe = $("#emulator-iframe");
-    let target = iframe ? iframe.contentWindow : null;
+    return iframe ? iframe.contentWindow : null;
+}
+
+function debugger_toggle_breakpoint(addr)
+{
+    let [file, row] = find_addr_line(addr, true);
+    if (file) {
+        return session_toggle_breakpoint(sessions[file], row);
+    }
+
+    let target = debugger_target();
+    if (!target) return;
+
+    // breakpoint outside available source
+    if (debugger_extra_breakpoints[addr]) {
+        target.postMessage({cmd: "debugger", subcmd: "del-breakpoints", addrs: [addr]});
+        delete debugger_extra_breakpoints[addr];
+    }
+    else {
+        debugger_extra_breakpoints[addr] = 1;
+        target.postMessage({cmd: "debugger", subcmd: "set-breakpoints", addrs: [addr]});
+    }
+}
+
+function session_set_breakpoint(session, line)
+{
+    let target = debugger_target();
     if (!target || !session || !session.gutter_contents || session.gutter_contents.length < line) return false;
 
     let addr = session.gutter_contents[line].addr;
@@ -1996,10 +2126,9 @@ function debugger_set_breakpoint(session, line)
     return true;
 }
 
-function debugger_clear_breakpoint(session, line)
+function session_clear_breakpoint(session, line)
 {
-    let iframe = $("#emulator-iframe");
-    let target = iframe ? iframe.contentWindow : null;
+    let target = debugger_target();
     if (!target || !session || !session.gutter_contents || session.gutter_contents.length < line) return false;
 
     let addr = session.gutter_contents[line].addr;

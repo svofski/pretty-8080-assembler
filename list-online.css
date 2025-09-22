@@ -862,6 +862,8 @@ span#wav-dl:hover {
     padding: 4px 8px;
     min-width: 18em;
     flex: 0;
+    cursor: pointer;
+    position: relative;
 }
 
 #dbg-registers {
@@ -970,6 +972,18 @@ span#wav-dl:hover {
 .dbg-dasm-current {
     background-color: #eee;
     color: black;
+}
+.dbg-dasm-breakpoint {
+    /*background-color: #e44;*/
+    /*color: white;*/
+}
+.dbg-dasm-breakpoint::before {
+    content: " ";
+    position: absolute;
+    border-radius: 5px;
+    background-color: #f33;
+    transform: scale(0.55);
+    width: 1em;
 }
 
 /* Target the scrollbar in Chrome, Safari, Edge, etc. */
