@@ -50,6 +50,12 @@ class VirtualScroll
             // Use throttling for better performance on fast scrolling
             requestAnimationFrame(() => this.updateVisibleItems()); // use => to capture this
         });
+
+        const resize_observer = new ResizeObserver(entries => {
+            requestAnimationFrame(() => this.updateVisibleItems());
+        });
+
+        resize_observer.observe(this.scroller);
     }
 }
 

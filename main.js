@@ -95,6 +95,7 @@ let dump_scroller = null;
 let disassembled_window = [];
 let debugger_extra_breakpoints = {};
 let cpu_state = {};
+let debugger_code_window_addr = 0;
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -1503,7 +1504,7 @@ function find_addr_line(addr, exact = false)
             ++low;
         }
 
-        if (exact && gc[low].addr !== addr) 
+        if (exact && (low >= gc.length || gc[low].addr !== addr)) 
             return [null, -1];
 
         return [file, low];
@@ -1792,7 +1793,7 @@ function attach_dbg_code_inplace()
     let dbg_code_inplace = function(e) {
         let dbg_code = $("#dbg-code");
         const padding = Util.get_computed_padding(dbg_code);
-        let [row, col] = Util.getClickRowCol(e, dbg_code, padding.left, padding.top);
+        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
 
         let plaintext;
         if (row < disassembled_window.length) {
@@ -1816,7 +1817,7 @@ function attach_dbg_code_inplace()
     dbg_code.addEventListener("mousedown", dbg_code_inplace);
 }
 
-function refresh_debugger_window(s)
+function refresh_debugger_window(s, code_addr)
 {
     // regs
     let reg_af = (s.regs[7] << 8) | (s.psw);
@@ -2005,11 +2006,12 @@ function refresh_debugger_window(s)
         });
     });
 
-    render_code_window(s.pc);
+    render_code_window(code_addr);
 }
 
 function render_code_window(set_addr)
 {
+    debugger_code_window_addr = set_addr;
     disassembled_window = disassemble(cpu_state, set_addr);
     $("#dbg-code").innerHTML = disassembled_window.join('');
 }
@@ -2023,7 +2025,15 @@ function debuggerResponse(data)
             console.log("debugger stopped pc=", Util.hex16(cpu_state.pc), cpu_state);
             show_debugger_line(cpu_state.pc);
             update_debugger_controls();
-            refresh_debugger_window(cpu_state);
+            refresh_debugger_window(cpu_state, cpu_state.pc);
+            break;
+        case "ok":
+            debugger_stopped = true;
+            cpu_state = data.cpu_state;
+            console.log("debugger ok pc=", Util.hex16(cpu_state.pc), cpu_state);
+            //show_debugger_line(cpu_state.pc);
+            update_debugger_controls();
+            refresh_debugger_window(cpu_state, debugger_code_window_addr);
             break;
     }
 }
