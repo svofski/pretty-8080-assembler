@@ -452,21 +452,29 @@ span.t2:hover { background:#ffff7d; }
     background-color: #fff2;
     color: white;
 }
-#emulator-controls #dock-emu-btn::before {
-    content: '🡆';
+
+#emulator-controls #dock-emu-btn-box {
+    display: none;
 }
-#emulator.docked #emulator-controls #dock-emu-btn::before {
-    content: '▢';
+#emulator-controls #dock-emu-btn-arrow {
+    display: inline-block;
+}
+#emulator.docked #emulator-controls #dock-emu-btn-box {
+    display: inline-block;
+}
+#emulator.docked #emulator-controls #dock-emu-btn-arrow {
+    display: none;
 }
 
 #emulator-controls #close {
     color: #999;
     padding-right: 1ex;
     padding-left: 1ex;
-    padding-top: 4px;
+    padding-top: 0px;
     flex-shrink: 0;
-    height: 100%;
+    display: flex;
     align-items: center;
+    height: 100%;
 }
 #emulator-controls #close:hover {
     background-color: #a42;
