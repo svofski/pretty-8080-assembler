@@ -1639,19 +1639,6 @@ function create_inplace_overlay(left, top, width, metrics)
     return overlay;
 }
 
-function get_computed_padding(el)
-{
-    const computedStyle = window.getComputedStyle(el);
-    // container padding for exact offsets
-    const padding = {
-        top: parseInt(computedStyle.getPropertyValue('padding-top'), 10),
-        right: parseInt(computedStyle.getPropertyValue('padding-right'), 10),
-        bottom: parseInt(computedStyle.getPropertyValue('padding-bottom'), 10),
-        left: parseInt(computedStyle.getPropertyValue('padding-left'), 10),
-    };
-    return padding;
-}
-
 const MODE_ADDR = 0;
 const MODE_BYTE = 1;
 
@@ -1665,7 +1652,7 @@ function attach_dbg_mem_inplace(dbg_mem, mem)
 
     let open_inplace = function(mode, addr) {
         const row = Math.floor(addr / 16);
-        const padding = get_computed_padding(dbg_mem);
+        const padding = Util.get_computed_padding(dbg_mem);
         const left = padding.left + (mode == MODE_ADDR ? 0 : (6 + (addr % 16) * 3) * metrics.w);
         const top  = /*padding.top +*/ row * metrics.h;
 
@@ -1772,7 +1759,7 @@ function attach_dbg_code_inplace()
 
     let open_inplace = function(row, col, addr) {
         const metrics = Util.getCharMetrics(dbg_code);
-        const padding = get_computed_padding(dbg_code);
+        const padding = Util.get_computed_padding(dbg_code);
         const left = padding.left + col * metrics.w;
         const top  = padding.top + row * metrics.h;
 
@@ -1792,8 +1779,11 @@ function attach_dbg_code_inplace()
                     e.preventDefault();
                     overlay.blur();
                     let newaddr = Util.parseHexStrict(overlay.value);
-                    console.log("newaddr=", overlay.value);
                     render_code_window(newaddr);
+                }
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    overlay.blur();
                 }
             });
         }, 50);
@@ -1801,7 +1791,8 @@ function attach_dbg_code_inplace()
 
     let dbg_code_inplace = function(e) {
         let dbg_code = $("#dbg-code");
-        let [row, col] = Util.getClickRowCol(e, dbg_code);
+        const padding = Util.get_computed_padding(dbg_code);
+        let [row, col] = Util.getClickRowCol(e, dbg_code, padding.left, padding.top);
 
         let plaintext;
         if (row < disassembled_window.length) {

@@ -119,11 +119,11 @@ Util.getCharMetrics = function(el)
     return {w: rect.width, h: rect.height};
 };
 
-Util.getClickRowCol = function(evt, element)
+Util.getClickRowCol = function(evt, element, padding_x = 0, padding_y = 0)
 {
     const rect = element.getBoundingClientRect();
-    const x = evt.clientX - rect.left + element.scrollLeft;
-    const y = evt.clientY - rect.top  + element.scrollTop;
+    const x = evt.clientX - rect.left + element.scrollLeft - padding_x;
+    const y = evt.clientY - rect.top  + element.scrollTop - padding_y;
     const metrics = Util.getCharMetrics(element);
 
     const col = Math.floor(x / metrics.w);
@@ -131,3 +131,17 @@ Util.getClickRowCol = function(evt, element)
 
     return [row, col];
 }
+
+Util.get_computed_padding = function(el)
+{
+    const computedStyle = window.getComputedStyle(el);
+    // container padding for exact offsets
+    const padding = {
+        top: parseInt(computedStyle.getPropertyValue('padding-top'), 10),
+        right: parseInt(computedStyle.getPropertyValue('padding-right'), 10),
+        bottom: parseInt(computedStyle.getPropertyValue('padding-bottom'), 10),
+        left: parseInt(computedStyle.getPropertyValue('padding-left'), 10),
+    };
+    return padding;
+}
+
