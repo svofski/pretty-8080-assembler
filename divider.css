@@ -19,6 +19,18 @@
     touch-action: pan-y;
   }
 
+  .divider.hidden {
+      display: none;
+  }
+
+
+  /* quirky and doesn't work in ff
+  .divider:has(+ .docked) {
+      display: block;
+  }
+  */
+
+
   /* visual grabber */
   .divider::before {
     content: "";

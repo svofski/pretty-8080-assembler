@@ -535,18 +535,54 @@ function run_emulator(bytes, filename, tapeformat, start_addr)
     }
 
     if (tapeformat.startsWith("v06c")) {
-        return run_vector06js(bytes, filename);
+        run_vector06js(bytes, filename);
     }
     else {
         let stream = new TapeFormat(tapeformat, true).format(bytes, start_addr, filename);
 
         const platform = tapeformat_to_emu80_platform(tapeformat);
         if (platform) {
-            return run_emu80(stream.data, filename + ".cas", platform);
+            run_emu80(stream.data, filename + ".cas", platform);
         }
     }
 
-    console.log("run_emulator: can't decide what to run");
+    let emulator_pane = $("#emulator");
+    emulator_pane.classList.add("visible");
+    if (options.emulator_docked) {
+        emulator_pane.classList.add("docked");
+    }
+    else {
+        emulator_pane.classList.remove("docked");
+    }
+
+    close_emulator_cb = () => {
+        let iframe = $("#emulator-iframe");
+        let container = $("#emulator-container");
+        container.removeChild(iframe);
+        emulator_pane.classList.remove("visible");
+        blinkCount = 16;
+        close_emulator_cb = null;
+        editor.focus();
+        closedEmulator();
+        setTimeout(() => attach_divider_stuff(), 100);
+    };
+
+    let close_btn = document.getElementById("close");
+    close_btn.onclick = function() {
+        close_emulator_cb && close_emulator_cb();
+    };
+
+    // toggle docked emulator
+    let dock = document.getElementById("dock-emu-btn");
+    dock.onclick = function(e) {
+        e.preventDefault();
+        emulator_pane.classList.toggle("docked");
+        options.emulator_docked = emulator_pane.classList.contains("docked");
+        saveState();
+        setTimeout(() => attach_divider_stuff(), 100);
+    };
+
+    attach_divider_stuff();
 }
 
 function set_emulator_version(str)
@@ -609,38 +645,7 @@ function run_emu80(bytes, filename, platform)
         program_load(iframe, filename);
     }
 
-    emulator_pane.classList.add("visible");
-    if (options.emulator_docked) {
-        emulator_pane.classList.add("docked");
-    }
-    else {
-        emulator_pane.classList.remove("docked");
-    }
-
     emu80OnNewFrame(iframe);
-
-    close_emulator_cb = () => {
-        container.removeChild(iframe);
-        emulator_pane.classList.remove("visible");
-        blinkCount = 16;
-        close_emulator_cb = null;
-        editor.focus();
-        closedEmulator();
-    };
-
-    let close_btn = document.getElementById("close");
-    close_btn.onclick = function() {
-        close_emulator_cb && close_emulator_cb();
-    };
-
-    // toggle docked emulator
-    let dock = document.getElementById("dock-emu-btn");
-    dock.onclick = function(e) {
-        e.preventDefault();
-        emulator_pane.classList.toggle("docked");
-        options.emulator_docked = emulator_pane.classList.contains("docked");
-        saveState();
-    };
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
@@ -701,36 +706,6 @@ function run_vector06js(bytes, filename) {
     window.parent.fullscreen = () => {
     };
 
-    emulator_pane.classList.add("visible");
-    if (options.emulator_docked) {
-        emulator_pane.classList.add("docked");
-    }
-    else {
-        emulator_pane.classList.remove("docked");
-    }
-
-    close_emulator_cb = () => {
-        container.removeChild(iframe);
-        emulator_pane.classList.remove("visible");
-        blinkCount = 16;
-        close_emulator_cb = null;
-        editor.focus();
-        closedEmulator();
-    };
-
-    let close_btn = document.getElementById("close");
-    close_btn.onclick = function() {
-        close_emulator_cb && close_emulator_cb();
-    };
-
-    // toggle docked emulator
-    let dock = document.getElementById("dock-emu-btn");
-    dock.onclick = function(e) {
-        e.preventDefault();
-        emulator_pane.classList.toggle("docked");
-        options.emulator_docked = emulator_pane.classList.contains("docked");
-        saveState();
-    };
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
