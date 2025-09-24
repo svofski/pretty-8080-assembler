@@ -135,8 +135,8 @@ flex-direction: column;
     font-variant: small-caps;
     font-size: larger;
     letter-spacing: 0.4ex;
-    padding-left:20px;
-    padding-right:20px;
+    padding-left: clamp(4px, 2vw, 20px);
+    padding-right: clamp(4px, 2vw, 20px);
     padding-top:2px;
     padding-bottom: 0.25ex;
     color: #887;
@@ -147,6 +147,8 @@ flex-direction: column;
     -khtml-user-select: none;
     border-radius: 5px;
     margin: 5px 5px;
+    overflow: hidden;
+    text-wrap: nowrap;
 }
 
 .baton.project {
