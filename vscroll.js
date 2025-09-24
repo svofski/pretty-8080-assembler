@@ -19,8 +19,6 @@ class VirtualScroll
         // Filter the items to display, with a small buffer for smoother scrolling
         const visibleData = this.data.slice(startIndex, endIndex);
 
-        console.log("start=", startIndex, "end=", endIndex, "visibleData=", visibleData[0]);
-
         // Clear and re-render the visible items
         this.itemsContainer.innerHTML = visibleData
             .map(item => `<div class="${this.data.row_class}" style="height: ${this.rowHeight}px;">${item}</div>`)

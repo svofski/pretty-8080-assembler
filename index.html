@@ -27,6 +27,8 @@ Rev.L: Worker + Base64
 <script src="vscroll.js" type="text/javascript" charset="utf-8"></script>
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
 <link href="ace-extras.css" rel="stylesheet" type="text/css" media="screen"/>
+<link href="divider.css" rel="stylesheet" type="text/css" media="screen"/>
+<script src="divider.js" type="text/javascript" charset="utf-8"></script>
 <link
 <!-- styleSheets[1] -->
 <style type="text/css">
@@ -123,6 +125,7 @@ delay:
         ret
 </pre>
 </div>
+  <div class="divider" id="divider" tabindex="0" role="separator" aria-orientation="vertical" aria-label="Resize panes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
 <div id="emulator">
         <div id="emulator-box">
             <header id="emulator-controls">
@@ -220,14 +223,6 @@ SP+0E: 0000
 <div class="baton project" onclick="defaultProject()"><span class="baton-icon">&#128196;</span><span class="baton-text">New</span></div>
 
 </div>
-
-
-
-
-<script>
-    //AceHook();
-    //IdeStart();
-</script>
 
 </body>
 </html>

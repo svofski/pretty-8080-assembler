@@ -1,0 +1,36 @@
+  :root{
+    --divider-size: 8px;
+    --min-left: 120px;
+    --min-right: 120px;
+  }
+
+  .divider {
+    width: var(--divider-size);
+    background: linear-gradient(180deg,#0000,#0002);
+    cursor: col-resize;
+    display: flex;
+    flex: 0 0 var(--divider-size);
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    -webkit-user-drag: none;
+    position: relative;
+  }
+
+  /* visual grabber */
+  .divider::before {
+    content: "";
+    display: block;
+    width: 2px;
+    height: 36px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+  }
+
+  .divider:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(100,150,255,0.16);
+  }
+

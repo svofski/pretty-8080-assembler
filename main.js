@@ -1046,6 +1046,7 @@ function loaded() {
 
     window.addEventListener("message", windowMessageListener);
     attach_debugger_controls();
+    attach_divider_stuff();
 
     cock(100);
 }

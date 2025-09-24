@@ -181,8 +181,10 @@ flex-direction: column;
     height: 100%;
     flex: 1;
 }
+
+/* left pane */
 #ta {
-    flex: 2;
+    flex: 2 1 0%;
     height: 100%;
 }
 
@@ -323,7 +325,7 @@ span.t2:hover { background:#ffff7d; }
 
 #emulator.docked {
     position: initial;
-    flex: 1;
+    flex: 1 1 0%;
     width: initial;
     flex-direction: column;
 }
