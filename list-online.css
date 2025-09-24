@@ -1,3 +1,7 @@
+:root {
+    --header-bg: #522;
+}
+
 html { }
 body {
 font-size:small; background-color: #333; font-family: Monaco, Lucida Console, monospace;
@@ -29,7 +33,7 @@ flex-direction: column;
 #header {
     font-family:Gill Sans, Franklin Gothic Medium, sans-serif;
     display: flex;
-    background-color: #522;
+    background-color: var(--header-bg);
     color:#ccc;
     padding:5px 5px 5px 5px;
     margin-left: -8px;

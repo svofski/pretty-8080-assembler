@@ -1,12 +1,12 @@
   :root{
-    --divider-size: 8px;
+    --divider-size: 6px;
     --min-left: 120px;
     --min-right: 120px;
   }
 
   .divider {
     width: var(--divider-size);
-    background: linear-gradient(180deg,#0000,#0002);
+    background: var(--header-bg);
     cursor: col-resize;
     display: flex;
     flex: 0 0 var(--divider-size);
@@ -16,6 +16,7 @@
     box-sizing: border-box;
     -webkit-user-drag: none;
     position: relative;
+    touch-action: pan-y;
   }
 
   /* visual grabber */
@@ -32,5 +33,30 @@
   .divider:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(100,150,255,0.16);
+  }
+
+
+  /* tab is hidden by default */
+  .grab-tab {
+    display: none;
+  }
+
+
+  @media (hover: none) and (pointer: coarse) {
+      .grab-tab {
+          display: block;
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 30px;
+          height: 30px;
+          border-radius: 0px 0px 8px 8px;
+          border-left: 2px solid color-mix(in srgb, var(--header-bg) 90%, white);
+          border-right: 2px solid color-mix(in srgb, var(--header-bg) 90%, white);
+          border-bottom: 2px solid color-mix(in srgb, var(--header-bg) 95%, white);
+          background-color: var(--header-bg);
+          z-index: 100;
+      }
   }
 
