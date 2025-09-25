@@ -2,7 +2,8 @@
 
 class VirtualScroll
 {
-    updateVisibleItems() {
+    updateVisibleItems()
+    {
         this.rowHeight = Util.getCharMetrics(this.itemsContainer).h || 30;
         this.visibleHeight = this.scroller.clientHeight;
         this.visibleItemsCount = Math.ceil(this.visibleHeight / this.rowHeight);
@@ -26,6 +27,12 @@ class VirtualScroll
 
         // Position the items correctly using a translation
         this.itemsContainer.style.transform = `translateY(${startIndex * this.rowHeight}px)`;
+    }
+
+    scrollToLine(n)
+    {
+        this.scroller.scrollTop = this.rowHeight * n;
+        this.updateVisibleItems(); // force refresh even when position remains unchanged
     }
     
     

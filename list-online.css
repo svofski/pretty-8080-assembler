@@ -872,14 +872,15 @@ span#wav-dl:hover {
 
 #dbg-code {
     border: 1px solid #888;
-    display: inline-flex;
-    flex-direction: column;
     margin: 2px 2px;
     padding: 4px 8px;
-    min-width: 18em;
+    min-width: 36ch;
     flex: 0;
     cursor: pointer;
     position: relative;
+    height: 18vh;
+
+    overflow: auto;
 }
 
 #dbg-registers {
@@ -983,7 +984,7 @@ span#wav-dl:hover {
 }
 .dbgwin-text {
     font-family: monospace;
-    display: inline-block;
+    display: block;
 }
 .dbg-dasm-current {
     background-color: #eee;

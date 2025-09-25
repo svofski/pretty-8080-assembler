@@ -92,10 +92,10 @@ let current_emulator = null;
 let program_load = null;
 let debugger_stopped = false;
 let dump_scroller = null;
+let dasm_scroller = null;
 let disassembled_window = [];
 let debugger_extra_breakpoints = {};
 let cpu_state = {};
-let debugger_code_window_addr = 0;
 
 // http://stackoverflow.com/a/9458996/128597
 function _arrayBufferToBase64(buffer) {
@@ -654,7 +654,7 @@ function run_emu80(bytes, filename, platform)
                 close_emulator_cb && close_emulator_cb();
             }
         });
-        debugger_show(false);
+        debugger_show(true);
     };
     update_debugger_controls(); // need to call it if frame was already loaded
 }
@@ -1020,6 +1020,7 @@ function loaded() {
     }
 
     window.addEventListener("message", windowMessageListener);
+    debug = new Debug(cpu_state);
     attach_debugger_controls();
     attach_divider_stuff();
 
@@ -1432,6 +1433,9 @@ function attach_debugger_controls()
     dump_scroller = new VirtualScroll('dbg-mem');
     dump_scroller.init(new DumpDataSource('mem-row'));
 
+    dasm_scroller = new VirtualScroll('dbg-code');
+    dasm_scroller.init(debug.dasm_data_source);
+
     // inplace input for the code window
     attach_dbg_code_inplace();
 }
@@ -1526,74 +1530,65 @@ function dump_line(addr, bytes)
 
 }
 
-function format_hexes(data, len, padding=12)
-{
-    let hexes = "";
-    for (let i = 0; i < len; ++i) {
-        hexes += Util.hex8(data[i]) + " ";
-    }
-    return hexes.padEnd(padding, " ");
-}
-
-function dass_at(s, pc, data, breakpoints)
-{
-    for (let i = 0; i < 3; ++i) {
-        data[i] = s.mem[(pc + i) & 0xffff];
-    }
-    let dass = I8080_disasm(data);
-
-    let hexes = format_hexes(data, dass.length);
-
-    let cur = s.pc === pc ? "dbg-dasm-current" : "";
-    if (breakpoints.indexOf(pc & 0xffff) != -1) {
-        cur += " dbg-dasm-breakpoint";
-    }
-    let text = `<div class="dbgwin-text ${cur}">  ${Util.hex16(pc)}: ${hexes}${dass.text}</div>`;
-
-    pc = pc + dass.length;
-
-    return [text, pc];
-}
-
-function disassemble(s, set_addr)
-{
-    let breakpoints = debugger_collect_breakpoints();
-    let data = new Uint8Array(3);
-    let text = [];
-
-    if (set_addr === undefined) set_addr = s.pc;
-
-    let pc = set_addr;
-    let das = "";
-    text = [];
-    for (let line = 0; line < 10; ++line) {
-        [das, pc] = dass_at(s, pc, data, breakpoints);
-        text.push(das);
-    }
-
-    //pc = (set_addr - 12) & 0xffff;
-    pc = set_addr - 12;
-    let pretext = [];
-    let prepc = [];
-
-    while (pc < set_addr) {
-        prepc.push(pc & 0xffff);
-        [das, pc] = dass_at(s, pc, data, breakpoints);
-        pretext.push(das);
-    }
-
-    if (pc > set_addr) {
-        pretext.pop();
-        prepc.pop();
-        pc = prepc[prepc.length - 1];
-
-        let hexes = format_hexes(data, set_addr - pc - 1);
-        let db = "DB " + hexes;
-        pretext.push(`<div class="dbgwin-text">  ${Util.hex16(pc)}: ${hexes}${db}</div>`);
-    }
-
-    return pretext.slice(pretext.length - 4).concat(text);
-}
+//
+//function dass_at(s, pc, data, breakpoints)
+//{
+//    for (let i = 0; i < 3; ++i) {
+//        data[i] = s.mem[(pc + i) & 0xffff];
+//    }
+//    let dass = I8080_disasm(data);
+//
+//    let hexes = format_hexes(data, dass.length);
+//
+//    let cur = s.pc === pc ? "dbg-dasm-current" : "";
+//    if (breakpoints.indexOf(pc & 0xffff) != -1) {
+//        cur += " dbg-dasm-breakpoint";
+//    }
+//    let text = `<div class="dbgwin-text ${cur}">  ${Util.hex16(pc)}: ${hexes}${dass.text}</div>`;
+//
+//    pc = pc + dass.length;
+//
+//    return [text, pc];
+//}
+//
+//function disassemble(s, set_addr)
+//{
+//    let breakpoints = debugger_collect_breakpoints();
+//    let data = new Uint8Array(3);
+//    let text = [];
+//
+//    if (set_addr === undefined) set_addr = s.pc;
+//
+//    let pc = set_addr;
+//    let das = "";
+//    text = [];
+//    for (let line = 0; line < 10; ++line) {
+//        [das, pc] = dass_at(s, pc, data, breakpoints);
+//        text.push(das);
+//    }
+//
+//    pc = set_addr - 12;
+//    let pretext = [];
+//    let prepc = [];
+//
+//    while (pc < set_addr) {
+//        prepc.push(pc & 0xffff);
+//        [das, pc] = dass_at(s, pc, data, breakpoints);
+//        pretext.push(das);
+//    }
+//
+//    if (pc > set_addr) {
+//        pretext.pop();
+//        prepc.pop();
+//        pc = prepc[prepc.length - 1];
+//
+//        let hexes = format_hexes(data, set_addr - pc - 1);
+//        let db = "DB " + hexes;
+//        pretext.push(`<div class="dbgwin-text">  ${Util.hex16(pc)}: ${hexes}${db}</div>`);
+//    }
+//
+//    return pretext.slice(pretext.length - 4).concat(text);
+//}
 
 function debugger_scroll_mem_to(addr)
 {
@@ -1738,7 +1733,7 @@ function attach_dbg_code_inplace()
         const metrics = Util.getCharMetrics(dbg_code);
         const padding = Util.get_computed_padding(dbg_code);
         const left = padding.left + col * metrics.w;
-        const top  = padding.top + row * metrics.h;
+        const top  = /*padding.top +*/ row * metrics.h;
 
         let overlay = create_inplace_overlay(left, top, 5, metrics);
         dbg_code.appendChild(overlay);
@@ -1771,25 +1766,18 @@ function attach_dbg_code_inplace()
         const padding = Util.get_computed_padding(dbg_code);
         let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
 
-        let plaintext;
-        if (row < disassembled_window.length) {
-            const div = document.createElement("div");
-            div.innerHTML = disassembled_window[row];
-            plaintext = div.firstChild.innerText;
-        }
+        let addr = debug.line_to_addr(row);
 
-        console.log("clicked in code at ", row, col, "text=", plaintext);
+        console.log("clicked in code at ", row, col, "addr=", addr);
 
-        if (col < 3 && plaintext) {
-            let addr = Util.parseHexStrict(plaintext.slice(2, 2+4));
+        if (col < 3) {
             debugger_toggle_breakpoint(addr);
         }
-        else if (col >= 3 && col <=7 && plaintext) {
-            let addr = Util.parseHexStrict(plaintext.slice(2, 2+4));
+        else if (col >= 3 && col <= 7) {
             open_inplace(row, 2, addr);
         }
     };
-
+    
     dbg_code.addEventListener("mousedown", dbg_code_inplace);
 }
 
@@ -1860,12 +1848,14 @@ function refresh_debugger_window(s, code_addr)
     dump_scroller && dump_scroller.data.set_mem(s.mem);
     attach_dbg_mem_inplace(dbg_mem, s.mem);
 
+    //dasm_scroller && dasm_scroller.data.set_mem(s.mem);
+    debug.set_cpu_state(cpu_state);
 
     // 
     // handlers for clickable items
     //
 
-    // clicks on breakpoints in the debugger sheet
+    // clicks in breakpoints table in the debugger sheet
     document.querySelectorAll('[dbg-attr="breakpoint"]').forEach(item => {
         item.onclick = (e) => {
             let addr = parseInt('0x' + e.srcElement.innerText);
@@ -1987,9 +1977,13 @@ function refresh_debugger_window(s, code_addr)
 
 function render_code_window(set_addr)
 {
-    debugger_code_window_addr = set_addr;
-    disassembled_window = disassemble(cpu_state, set_addr);
-    $("#dbg-code").innerHTML = disassembled_window.join('');
+    if (set_addr) {
+        debug.reference_addr = set_addr;
+        dasm_scroller.scrollToLine(debug.addr_to_line(set_addr) - 4);
+    }
+    else {
+        dasm_scroller.updateVisibleItems();
+    }
 }
 
 function debuggerResponse(data)
@@ -2007,9 +2001,8 @@ function debuggerResponse(data)
             debugger_stopped = true;
             cpu_state = data.cpu_state;
             console.log("debugger ok pc=", Util.hex16(cpu_state.pc), cpu_state);
-            //show_debugger_line(cpu_state.pc);
             update_debugger_controls();
-            refresh_debugger_window(cpu_state, debugger_code_window_addr);
+            refresh_debugger_window(cpu_state);
             break;
     }
 }

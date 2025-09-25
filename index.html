@@ -24,6 +24,7 @@ Rev.L: Worker + Base64
 <script src="cpp.js/cpp.js" type="text/javascript" charset="utf-8"></script>
 <script src="emu80int.js" type="text/javascript" charset="utf-8"></script>
 <script src="i8080_disasm.js" type="text/javascript" charset="utf-8"></script>
+<script src="debug.js" type="text/javascript" charset="utf-8"></script>
 <script src="vscroll.js" type="text/javascript" charset="utf-8"></script>
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
 <link href="ace-extras.css" rel="stylesheet" type="text/css" media="screen"/>
@@ -160,8 +161,7 @@ delay:
         </div>
     <div id="debugger-sheet" class="hidden">
         <div id="dbg-row1">
-<div id="dbg-code">
-</div>
+<div id="dbg-code" class="scroller-container"><div class="scroller-phantom"></div><div class="scroller-items"></div></div>
 <div id="dbg-registers">AF=0000
 BC=0000
 DE=0000
@@ -189,16 +189,9 @@ SP+0E: 0000
 </div>
 </div>
 <div id="dbg-mem-header">      .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 .A .B .C .D .E .F    0123456789ABCDEF</div><div id="dbg-mem" class="scroller-container"><div class="scroller-phantom"></div><div class="scroller-items"></div></div>
-<!--input id="overlay" class="hidden"-->
   </div>
 </div>
 </div>
-<!--
-<div id="messagepane">
-</div>
-<div style="height:0.5ex"><br/></div>
-<div id="buttbr" class="hordiv"></div>
--->
 <div id="buttons-below">
 <input type="text" id="hex" name="hex" style="display:none;"/>
 <input type="text" id="formbinname" name="formbinname" style="display:none;"/>

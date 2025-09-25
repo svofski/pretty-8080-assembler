@@ -145,3 +145,21 @@ Util.get_computed_padding = function(el)
     return padding;
 }
 
+Util.measureFunctionTime = function(func, ...args) {
+  const start = performance.now();
+  const result = func(...args); // Execute the function with its arguments
+  const end = performance.now();
+  const timeTaken = end - start;
+  console.log(`Function '${func.name}' took ${timeTaken} ms to execute.`);
+  return result; // Return the original function's result
+}
+
+
+Util.format_hexes = function(data, len, padding=12)
+{
+    let hexes = "";
+    for (let i = 0; i < len; ++i) {
+        hexes += Util.hex8(data[i]) + " ";
+    }
+    return hexes.padEnd(padding, " ");
+}
