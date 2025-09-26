@@ -828,6 +828,7 @@ span#wav-dl:hover {
     align-items: center;
     cursor:pointer;
     font-family: "Segoe UI Symbol", "Arial Unicode MS", sans-serif;
+    font-weight: bold;
 }
 
 .button-like.attract {
