@@ -15,15 +15,26 @@ class VirtualScroll
 
         const scrollTop = this.scroller.scrollTop;
         const startIndex = Math.floor(scrollTop / this.rowHeight);
+        this.startIndex = startIndex; // for later reference
         const endIndex = startIndex + this.visibleItemsCount;
 
         // Filter the items to display, with a small buffer for smoother scrolling
         const visibleData = this.data.slice(startIndex, endIndex);
 
-        // Clear and re-render the visible items
-        this.itemsContainer.innerHTML = visibleData
-            .map(item => `<div class="${this.data.row_class}" style="height: ${this.rowHeight}px;">${item}</div>`)
-            .join('');
+        let existing = [...this.itemsContainer.querySelectorAll("." + this.data.row_class)];
+        if (visibleData.length && existing.length == visibleData.length) {
+            // fill the existing ones
+            for (let i in existing) {
+                existing[i].innerHTML = visibleData[i];
+            }
+        }
+        else 
+        {
+            // Clear and re-render the visible items
+            this.itemsContainer.innerHTML = visibleData
+                .map(item => `<div class="${this.data.row_class}" style="height: ${this.rowHeight}px;">${item}</div>`)
+                .join('');
+        }
 
         // Position the items correctly using a translation
         this.itemsContainer.style.transform = `translateY(${startIndex * this.rowHeight}px)`;
@@ -33,6 +44,13 @@ class VirtualScroll
     {
         this.scroller.scrollTop = this.rowHeight * n;
         this.updateVisibleItems(); // force refresh even when position remains unchanged
+    }
+
+    getItemAtRow(row)
+    {
+        let n = row - this.startIndex;
+        let items = [...this.itemsContainer.querySelectorAll("." + this.data.row_class)];
+        return items[n];
     }
     
     
@@ -52,8 +70,26 @@ class VirtualScroll
 
         // Update on scroll event
         this.scroller.addEventListener('scroll', () => {
-            // Use throttling for better performance on fast scrolling
             requestAnimationFrame(() => this.updateVisibleItems()); // use => to capture this
+        });
+
+        this.scroller.addEventListener('wheel', e => {
+            e.preventDefault(); // stop native scroll
+
+            // One row up or down per wheel event
+            const direction = e.deltaY > 0 ? 1 : -1;
+            this.scroller.scrollTop += this.rowHeight * direction;
+        }, { passive: false });
+
+        this.scroller.addEventListener('keydown', e => {
+            if (e.key === 'ArrowDown') {
+                this.scroller.scrollTop += this.rowHeight;
+                e.preventDefault();
+            }
+            if (e.key === 'ArrowUp') {
+                this.scroller.scrollTop -= this.rowHeight;
+                e.preventDefault();
+            }
         });
 
         const resize_observer = new ResizeObserver(entries => {

@@ -77,13 +77,10 @@ class DasmDataSource
         if (!this.debug.cpu_state || !this.debug.cpu_state.mem || !this.debug.cpu_state.mem.length) return [];
 
         let addr1 = this.debug.line_map[start];
-        let addr2 = this.debug.line_map[end] || 0xffff;
+        let addr2 = this.debug.line_map[end] || 0x10000;
 
         let [disassembled, pcline, pcaddr] = this.disass2(addr1, addr2);
         return disassembled;
-        //let ofs = start - pcaddr;
-        //console.log(ofs);
-        //return disassembled.slice(pcline-4 + ofs, pcline+12 + ofs);
     }
 
     disass2(addr1, addr2)
@@ -105,9 +102,6 @@ class DasmDataSource
                     break;
                 }
             }
-            //if (cpu_pc > addr && cpu_pc < next_addr) {
-            //    [das, next_addr] = this.dass_db(addr, data, cpu_pc - addr);
-            //}
             text.push(das);
             addr = next_addr;
         }

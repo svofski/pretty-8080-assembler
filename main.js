@@ -141,6 +141,10 @@ function getReferencingLines(lineno) {
     return refs;
 }
 
+function getLabelForAddr(addr) {
+    return Object.keys(asmcache.labels).find(key => asmcache.labels[key] === addr);
+}
+
 var last_src = null;
 let stats_timer = null;
 let error_lines = [];
@@ -1530,66 +1534,6 @@ function dump_line(addr, bytes)
 
 }
 
-//
-//function dass_at(s, pc, data, breakpoints)
-//{
-//    for (let i = 0; i < 3; ++i) {
-//        data[i] = s.mem[(pc + i) & 0xffff];
-//    }
-//    let dass = I8080_disasm(data);
-//
-//    let hexes = format_hexes(data, dass.length);
-//
-//    let cur = s.pc === pc ? "dbg-dasm-current" : "";
-//    if (breakpoints.indexOf(pc & 0xffff) != -1) {
-//        cur += " dbg-dasm-breakpoint";
-//    }
-//    let text = `<div class="dbgwin-text ${cur}">  ${Util.hex16(pc)}: ${hexes}${dass.text}</div>`;
-//
-//    pc = pc + dass.length;
-//
-//    return [text, pc];
-//}
-//
-//function disassemble(s, set_addr)
-//{
-//    let breakpoints = debugger_collect_breakpoints();
-//    let data = new Uint8Array(3);
-//    let text = [];
-//
-//    if (set_addr === undefined) set_addr = s.pc;
-//
-//    let pc = set_addr;
-//    let das = "";
-//    text = [];
-//    for (let line = 0; line < 10; ++line) {
-//        [das, pc] = dass_at(s, pc, data, breakpoints);
-//        text.push(das);
-//    }
-//
-//    pc = set_addr - 12;
-//    let pretext = [];
-//    let prepc = [];
-//
-//    while (pc < set_addr) {
-//        prepc.push(pc & 0xffff);
-//        [das, pc] = dass_at(s, pc, data, breakpoints);
-//        pretext.push(das);
-//    }
-//
-//    if (pc > set_addr) {
-//        pretext.pop();
-//        prepc.pop();
-//        pc = prepc[prepc.length - 1];
-//
-//        let hexes = format_hexes(data, set_addr - pc - 1);
-//        let db = "DB " + hexes;
-//        pretext.push(`<div class="dbgwin-text">  ${Util.hex16(pc)}: ${hexes}${db}</div>`);
-//    }
-//
-//    return pretext.slice(pretext.length - 4).concat(text);
-//}
-
 function debugger_scroll_mem_to(addr)
 {
     let mem = $("#dbg-mem");
@@ -1597,7 +1541,6 @@ function debugger_scroll_mem_to(addr)
 
     const row = Math.max(0, Math.floor(addr / 16) - 2);
     mem.scrollTo(0, metrics.h * row);
-
 }
 
 function create_inplace_overlay(left, top, width, metrics)
@@ -1608,6 +1551,52 @@ function create_inplace_overlay(left, top, width, metrics)
     overlay.style.top  = top  + "px";
     overlay.style.width = metrics.w * width + "px";
     overlay.style.height = metrics.h + "px";
+    return overlay;
+}
+
+function create_nav_overlay(left, top, oncode_click, ondata_click, onedit_click)
+{
+    let old = $("#nav-menu");
+    if (old) {
+        old.parentElement.removeChild(old);
+    }
+    let overlay = document.createElement("div");
+    overlay.id = "nav-menu";
+    overlay.style.left = (left - 4) + "px";
+    overlay.style.top = (top - 4) + "px";
+
+    let code = document.createElement("div");
+    code.className = "menu-like nav";
+    code.onclick = oncode_click;
+    code.innerText = "→CODE";
+    overlay.appendChild(code);
+
+    let data = document.createElement("div");
+    data.className = "menu-like nav";
+    data.onclick = ondata_click;
+    data.innerText = "→DATA";
+    overlay.appendChild(data);
+
+    let edit = document.createElement("div");
+    edit.className = "menu-like nav";
+    edit.onclick = onedit_click;
+    edit.innerText = "→EDIT";
+    overlay.appendChild(edit);
+    return [overlay, code, data, edit];
+}
+
+function create_label_overlay(left, top, label)
+{
+    let old = $("#nav-label");
+    if (old) {
+        old.parentElement.removeChild(old);
+    }
+    let overlay = document.createElement("div");
+    overlay.id = "nav-label";
+    overlay.style.left = (left - 4) + "px";
+    overlay.style.top = (top - 4) + "px";
+    overlay.innerText = label;
+
     return overlay;
 }
 
@@ -1670,6 +1659,7 @@ function attach_dbg_mem_inplace(dbg_mem, mem)
                     e.preventDefault();
                     overlay.value = originalValue;
                     overlay.blur();
+                    $("#dbg-mem").focus();
                 }
             });
             attach_hex_validator(overlay, mode);
@@ -1725,13 +1715,41 @@ function attach_hex_validator(input, mode)
 }
 
 // input address
+let close_nav_timer;
+let close_nav = function() {
+    if (close_nav_timer) {
+        clearTimeout(close_nav_timer);
+        close_nav_timer = null;
+    }
+
+    let menu = $("#nav-menu");
+    if (menu && menu.parentElement) {
+        menu.parentElement.removeChild(menu);
+    }
+};
+
+let hover_label_addr = -1;
+let hover_label_timer = null;
+let close_label_timer;
+let close_label = function() {
+    if (close_label_timer) {
+        clearTimeout(close_label_timer);
+        close_label_timer = null;
+    }
+    let label = $("#nav-label");
+    if (label && label.parentElement) {
+        label.parentElement.removeChild(label);
+    }
+}
+
 function attach_dbg_code_inplace()
 {
     let dbg_code = $("#dbg-code");
+    const padding = Util.get_computed_padding(dbg_code);
 
     let open_inplace = function(row, col, addr) {
+        let dbg_code = $("#dbg-code");
         const metrics = Util.getCharMetrics(dbg_code);
-        const padding = Util.get_computed_padding(dbg_code);
         const left = padding.left + col * metrics.w;
         const top  = /*padding.top +*/ row * metrics.h;
 
@@ -1750,35 +1768,135 @@ function attach_dbg_code_inplace()
                 if (e.key === 'Enter' || e.key === 'Tab') {
                     e.preventDefault();
                     overlay.blur();
+                    $("#dbg-code").focus();
                     let newaddr = Util.parseHexStrict(overlay.value);
                     render_code_window(newaddr);
                 }
                 if (e.key === 'Escape') {
                     e.preventDefault();
                     overlay.blur();
+                    $("#dbg-code").focus();
                 }
             });
         }, 50);
     };
 
-    let dbg_code_inplace = function(e) {
+    let jump_code = function(addr) {
+        render_code_window(addr);
+    };
+
+    let jump_data = function(addr) {
+        debugger_scroll_mem_to(addr);
+    };
+
+    let jump_edit = function(addr) {
+        show_editor_for_addr(addr);
+    };
+
+    let open_nav = function(row, col, addr) {
         let dbg_code = $("#dbg-code");
-        const padding = Util.get_computed_padding(dbg_code);
+        const metrics = Util.getCharMetrics(dbg_code);
+        const left = padding.left + col * metrics.w;
+        const top  = /*padding.top +*/ row * metrics.h;
+        let [menu, code_btn, data_btn, edit_btn] = 
+            create_nav_overlay(left, top, 
+                ()=>jump_code(addr), 
+                ()=>jump_data(addr),
+                ()=>jump_edit(addr));
+        dbg_code.appendChild(menu);
+
+        close_nav_timer = setTimeout(close_nav, 5000);
+        menu.addEventListener('mouseleave', close_nav);
+    };
+
+    let open_label = function(row, col, addr, text) {
+        let dbg_code = $("#dbg-code");
+        const metrics = Util.getCharMetrics(dbg_code);
+        const left = padding.left + col * metrics.w;
+        const top  = /*padding.top +*/ row * metrics.h;
+        let label = create_label_overlay(left, top, text);
+        dbg_code.appendChild(label);
+
+        close_label_timer = setTimeout(close_label, 5000);
+        label.addEventListener('mouseleave', close_label);
+    };
+
+
+    let get_hexual = function(e) {
         let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
+        let element = dasm_scroller.getItemAtRow(row);
+        if (!element) return [null, null];
+        let item = element.innerText;
 
+        let x1 = -1, x2 = -1;
+        for (let i = 0; i < 6; ++i) {
+            if (x1 == -1 && item[col - i] == ' ') {
+                x1 = col - i;
+            }
+            if (x2 == -1 && (col + i >= item.length || item[col + i] == ' ')) {
+                x2 = col + i;
+            }
+        }
+        if (x1 >= 0 && x2 >= 0) {
+            let addr_like = item.slice(x1, x2 + 1).trim();
+            if (!addr_like) return [null, null];
+
+            if (addr_like.length == 4 || addr_like.length == 2) {
+                let value = Util.parseHexStrict(addr_like);
+                if (!isNaN(value)) return [addr_like, value];
+            }
+        }
+        return [null, null];
+    };
+
+    let dbg_code_inplace = function(e) {
+        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
         let addr = debug.line_to_addr(row);
-
-        console.log("clicked in code at ", row, col, "addr=", addr);
-
         if (col < 3) {
             debugger_toggle_breakpoint(addr);
         }
         else if (col >= 3 && col <= 7) {
             open_inplace(row, 2, addr);
         }
+        else {
+            let [hexual, addr] = get_hexual(e);
+            if (hexual && hexual.length == 4) {
+                open_nav(row, 31, addr);
+            }
+            else {
+                setTimeout(close_nav, 250);
+            }
+        }
+    };
+
+    let hover = function(e) {
+        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
+        let addr = debug.line_to_addr(row);
+        if (col > 7) {
+            let [hexual, addr] = get_hexual(e);
+            if (hexual && hexual.length == 4) {
+                if (hover_label_addr != addr) {
+                    close_label();
+                    hover_label_addr = -1;
+                    clearTimeout(hover_label_timer);
+                }
+                if (hover_label_addr == -1) {
+                    hover_label_timer = setTimeout(() => {
+                        let label = getLabelForAddr(addr);
+                        if (label) {
+                            open_label(row, col, addr, label);
+                        }
+                    }, 500);
+                    hover_label_addr = addr;
+                }
+
+                //console.log('hovering over ref to: ', getLabelForAddr(addr));
+            }
+        }
     };
     
     dbg_code.addEventListener("mousedown", dbg_code_inplace);
+    dbg_code.addEventListener("mousemove", hover);
 }
 
 function refresh_debugger_window(s, code_addr)
@@ -1977,7 +2095,7 @@ function refresh_debugger_window(s, code_addr)
 
 function render_code_window(set_addr)
 {
-    if (set_addr) {
+    if (set_addr !== undefined) {
         debug.reference_addr = set_addr;
         dasm_scroller.scrollToLine(debug.addr_to_line(set_addr) - 4);
     }

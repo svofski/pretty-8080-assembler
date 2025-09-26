@@ -6,6 +6,10 @@
     --button-bg-hover: #333;
     --dlicons-fg: #833;
     --titlebar-icon-fg: #999;
+    --debug-menu-bg: #09a;
+    --debug-menu-fg: #fff;
+    --debug-menu-current-bg: #522;
+    --debug-menu-current-fg: #fff;
 }
 
 :root.theme-light {
@@ -16,6 +20,11 @@
     --button-bg-hover: #444;
     --dlicons-fg: #bbf;
     --titlebar-icon-fg: #fff;
+    --debug-menu-bg: #fff;
+    --debug-menu-fg: #000;
+    --debug-menu-current-bg: #000;
+    --debug-menu-current-fg: #fff;
+}
 }
 
 html { }
@@ -891,7 +900,7 @@ span#wav-dl:hover {
     border: 1px solid #888;
     margin: 2px 2px;
     padding: 4px 8px;
-    min-width: 36ch;
+    min-width: 38ch;
     flex: 0;
     cursor: pointer;
     position: relative;
@@ -957,6 +966,10 @@ span#wav-dl:hover {
   color: #eee;
 }
 
+.scroller-container:focus {
+    outline: none;
+}
+
 .scroller-phantom {
   /* This element fakes the height of the entire list */
   /*  background-color: blue; */
@@ -984,6 +997,63 @@ span#wav-dl:hover {
   outline: 0px;
 }
 
+#nav-menu {
+  position: absolute;
+  font-family: monospace;
+  padding: 0;
+  margin: 0;
+  background-color: color-mix(in srgb, var(--bg) 80%, white);
+  color: white;
+  border: 0px;
+  outline: 0px;
+  padding: 4px;
+  background-color: var(--debug-menu-bg);
+  color: var(--debug-menu-fg);
+  cursor: pointer;
+  border-radius: 5px;
+  z-index: 1;
+}
+
+#nav-menu::before {
+    content: "◀";
+    position: absolute;
+    left: -1.3ch;
+    top: 0.5ch;
+    bottom: 0;
+    right: 0;
+    color: var(--debug-menu-bg);
+    z-index: -1;
+}
+
+.menu-like {
+}
+
+.menu-like.nav {
+    padding-right: 4px;
+}
+
+.menu-like.nav:hover {
+    background-color: var(--debug-menu-current-bg);
+    color: var(--debug-menu-current-fg);
+}
+
+#nav-label {
+  position: absolute;
+  font-family: monospace;
+  padding: 0;
+  margin: 0;
+  background-color: color-mix(in srgb, var(--bg) 80%, white);
+  color: white;
+  border: 0px;
+  outline: 0px;
+  padding: 4px;
+  background-color: var(--debug-menu-bg);
+  color: var(--debug-menu-fg);
+  cursor: pointer;
+  border-radius: 5px;
+  z-index: 1;
+}
+
 
 .inline {
     display: inline;
@@ -1002,6 +1072,11 @@ span#wav-dl:hover {
 .dbgwin-text {
     font-family: monospace;
     display: block;
+}
+/* row of disasm in virtual scroller */
+.code-row {
+    will-change: transform;
+    contain: content;
 }
 .dbg-dasm-current {
     background-color: #eee;
