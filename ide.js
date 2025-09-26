@@ -54,6 +54,7 @@ function loadOptions()
         options.theme = "twilight";
     }
     editor.setTheme("ace/theme/" + options.theme);
+    ideSelectTheme(options.theme);
     setKeyboardHandler();
 }
 
@@ -243,6 +244,7 @@ function selectTheme(item)
     let theme = themeNameFromId(item.id);
     options.theme = theme;
     editor.setTheme("ace/theme/" + options.theme);
+    ideSelectTheme(options.theme);
     saveState();
     updateThemeMenuItems();
 }
@@ -608,3 +610,55 @@ function setKeyboard(keymap)
     setKeyboardHandler();
 }
 
+const dark_themes = 
+   ["ambiance",
+    "chaos",
+    "clouds_midnight",
+    "cobalt",
+    "dracula",
+    "gob",
+    "gruvbox",
+    "idle_fingers",
+    "kr_theme",
+    "merbivore",
+    "merbivore_soft",
+    "mono_industrial",
+    "monokai",
+    "nord_dark",
+    "one_dark",
+    "pastel_on_dark",
+    "solarized_dark",
+    "terminal",
+    "tomorrow_night",
+    "tomorrow_night_blue",
+    "tomorrow_night_bright",
+    "tomorrow_night_eighties",
+    "twilight",
+    "vibrant_ink"];
+
+const light_themes =
+   ["chrome",
+    "clouds",
+    "crimson_editor",
+    "dawn",
+    "dreamweaver",
+    "eclipse",
+    "github",
+    "iplastic",
+    "katzenmilch",
+    "kuroir",
+    "solarized_light",
+    "sqlserver",
+    "textmate",
+    "tomorrow",
+    "xcode"];
+
+function ideSelectTheme(name)
+{
+    if (light_themes.indexOf(name) != -1) {
+        document.documentElement.classList.add("theme-light");
+    }
+    else {
+        document.documentElement.classList.remove("theme-light");
+    }
+}

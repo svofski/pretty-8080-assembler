@@ -1,5 +1,21 @@
 :root {
     --header-bg: #522;
+    --button-fg: #887;
+    --button-bg: #111;
+    --button-fg-hover: #cc8;
+    --button-bg-hover: #333;
+    --dlicons-fg: #833;
+    --titlebar-icon-fg: #999;
+}
+
+:root.theme-light {
+    --header-bg: #000;
+    --button-fg: #fff;
+    --button-bg: #000;
+    --button-fg-hover: #eee;
+    --button-bg-hover: #444;
+    --dlicons-fg: #bbf;
+    --titlebar-icon-fg: #fff;
 }
 
 html { }
@@ -139,8 +155,8 @@ flex-direction: column;
     padding-right: clamp(4px, 2vw, 20px);
     padding-top:2px;
     padding-bottom: 0.25ex;
-    color: #887;
-    background-color: #111;
+    color: var(--button-fg);
+    background-color: var(--button-bg);
     margin-top:0.65ex;
     user-select:none;
     -moz-user-select: none;
@@ -156,8 +172,8 @@ flex-direction: column;
 }
 
 .baton:hover {
-    color: #cc8;
-    background: #333;
+    color: var(--button-fg-hover);
+    background-color: var(--button-bg-hover);
 }
 
 .baton.disabled {
@@ -434,20 +450,20 @@ span.t2:hover { background:#ffff7d; }
 
 #emu-help {
     font-size: 8px;
-    color: #887;
+    color: var(--button-fg);
     display: flex;
     margin-left: 1em;
 }
 
 #emu-version {
     font-size: 8px;
-    color: #887;
+    color: var(--button-fg);
     margin-left: 1em;
     margin-right: 1em;
 }
 
 #emulator-controls #dock-emu-btn {
-    color: #999;
+    color: var(--titlebar-icon-fg);
     padding-right: 1ex;
     padding-left: 1ex;
     padding-top: 0px;
@@ -475,7 +491,7 @@ span.t2:hover { background:#ffff7d; }
 }
 
 #emulator-controls #close {
-    color: #999;
+    color: var(--titlebar-icon-fg);
     padding-right: 1ex;
     padding-left: 1ex;
     padding-top: 0px;
@@ -491,10 +507,10 @@ span.t2:hover { background:#ffff7d; }
 
 span#wav-dl {
     font-size: smaller;
-    color: #833;
+    color: var(--dlicons-fg);
     display: inline-block;
     transform: scaleX(2);
-    //box-shadow: inset 0 0px 0 white, inset 0 -2px 0 #833;
+    //box-shadow: inset 0 0px 0 white, inset 0 -2px 0 var(--dlicons-fg);
     cursor: pointer;
 }
 
@@ -505,7 +521,7 @@ span#wav-dl:hover {
 
 #wav-play {
     font-size: smaller;
-    color: #833;
+    color: var(--dlicons-fg);
     cursor: pointer;
 }
 
@@ -515,7 +531,7 @@ span#wav-dl:hover {
 
 #wav-emu {
     font-size: smaller;
-    color: #833;
+    color: var(--dlicons-fg);
     cursor: pointer;
     letter-spacing: 0px;
 }
@@ -782,7 +798,7 @@ span#wav-dl:hover {
 /* debugger buttons etc */
 
 #dbg-pause-btn {
-    color: #999;
+    color: var(--titlebar-icon-fg);
     padding-right: 1ex;
     padding-left: 1ex;
     padding-top: 0px;
@@ -803,7 +819,7 @@ span#wav-dl:hover {
 }
 
 .button-like {
-    color: #999;
+    color: var(--titlebar-icon-fg);
     padding-right: 1ex;
     padding-left: 1ex;
     padding-top: 0px;
