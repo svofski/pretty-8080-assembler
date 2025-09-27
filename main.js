@@ -97,7 +97,6 @@ var play_listener_added = false;
 var player = undefined;
 let current_emulator = null;
 let program_load = null;
-let debugger_stopped = false;
 let dump_scroller = null;
 let dasm_scroller = null;
 let disassembled_window = [];
@@ -542,8 +541,8 @@ function tapeFormatSupported(tf)
 
 function run_emulator(bytes, filename, tapeformat, start_addr)
 {
-    if (debugger_visible() && debugger_stopped) {
-        debugger_animate_stop_button();
+    if (debug.visible() && debug.stopped) {
+        debug.animate_stop_button();
     }
 
     if (tapeformat.startsWith("v06c")) {
@@ -666,9 +665,9 @@ function run_emu80(bytes, filename, platform)
                 close_emulator_cb && close_emulator_cb();
             }
         });
-        debugger_show(true);
+        debug.show(true);
     };
-    update_debugger_controls(); // need to call it if frame was already loaded
+    debug.update_controls(); // need to call it if frame was already loaded
 }
 
 function run_vector06js(bytes, filename) {
@@ -683,7 +682,7 @@ function run_vector06js(bytes, filename) {
         }
 
         const file = new File([bytes], filename, { type: "application/octet-stream" });
-        debugger_set_breakpoints(iframe.contentWindow);
+        debug.set_breakpoints(iframe.contentWindow);
         iframe.contentWindow.postMessage({cmd: "loadfile", file}, location.href);
     };
 
@@ -715,8 +714,7 @@ function run_vector06js(bytes, filename) {
         program_load(iframe);
     }
 
-    window.parent.fullscreen = () => {
-    };
+    window.parent.fullscreen = () => {};
 
 
     iframe.onload = function() {
@@ -726,9 +724,9 @@ function run_vector06js(bytes, filename) {
                 close_emulator_cb && close_emulator_cb();
             }
         });
-        debugger_show(true);
+        debug.show(true);
     };
-    update_debugger_controls(); // need to call it if frame was already loaded
+    debug.update_controls(); // need to call it if frame was already loaded
 }
 
 var blksbr;
@@ -1357,73 +1355,6 @@ function i18n() {
     create_ryba_menu();
 }
 
-
-function update_debugger_controls()
-{
-    let visible = debugger_visible();
-    document.querySelectorAll('[id^="dbg-"][id$="-btn"]')
-        .forEach(item => {
-            if (!visible) {
-                item.classList.add("disabled");
-                return;
-            }
-
-            if (debugger_stopped) {
-                item.classList.remove("disabled");
-            }
-            else {
-                if (item.id != "dbg-pause-btn") {
-                    item.classList.add("disabled");
-                }
-                else {
-                    item.classList.remove("disabled");
-                }
-            }
-        });
-    if (debugger_stopped) {
-        $("#debugger-sheet").classList.remove("disabled");
-    }
-    else {
-        $("#debugger-sheet").classList.add("disabled");
-    }
-}
-
-function debugger_animate_stop_button()
-{
-    let btn = $("#dbg-pause-btn");
-    btn.classList.add("attract");
-    setTimeout(function() {
-        btn.classList.remove("attract");
-    }, 1500);
-}
-
-class DumpDataSource
-{
-    constructor(row_class)
-    {
-        this.row_class = row_class;
-        this.mem = [];
-        this.row_count = 65536 / 16;
-        this.refresh = null;
-    }
-
-    slice(start, end)
-    {
-        let data = [];
-        for (let i = start; i < end; ++i) {
-            let text = dump_line(i * 16, this.mem)
-            data.push(text);
-        }
-        return data;
-    }
-
-    set_mem(mem)
-    {
-        this.mem = mem;
-        this.refresh && this.refresh();
-    }
-}
-
 function attach_debugger_controls()
 {
     document.querySelectorAll('[id^="dbg-"][id$="-btn"]')
@@ -1436,15 +1367,15 @@ function attach_debugger_controls()
                     iframe.contentWindow.postMessage({cmd: "debugger", subcmd: subcmd}, location.href);
 
                     editor.session.removeMarker(debugger_position_marker);
-                    debugger_stopped = false;
-                    update_debugger_controls();
+                    debug.stopped = false;
+                    debug.update_controls();
                 };
             }
             else {
                 item.classList.add("error-like");
             }
         });
-    update_debugger_controls();
+    debug.update_controls();
 
     // gutter clicks
     editor.on("guttermousedown", function(e) {
@@ -1467,7 +1398,7 @@ function attach_debugger_controls()
     dasm_scroller.init(debug.dasm_data_source);
 
     // inplace input for the code window
-    attach_dbg_code_inplace();
+    debug.attach_dbg_code_inplace();
 }
 
 function session_toggle_breakpoint(session, row)
@@ -1554,665 +1485,31 @@ function show_editor_for_addr(addr)
     }
 }
 
-function dump_line(addr, bytes)
-{
-    addr = addr & 0xfff0;
-    let txt = Util.hex16(addr) + ": ";
-    let chars = '';
-    for (let n = 0; n < 16; ++n) {
-        txt += Util.hex8(bytes[addr + n]);
-        txt += n == 7 ? '-' : ' ';
-        chars += Util.char8(bytes[addr+n]);
-    }
-
-    return txt + "   " + chars;
-
-}
-
-function debugger_scroll_mem_to(addr)
-{
-    let mem = $("#dbg-mem");
-    const metrics = Util.getCharMetrics(mem);
-
-    const row = Math.max(0, Math.floor(addr / 16) - 2);
-    mem.scrollTo(0, metrics.h * row);
-}
-
-function create_inplace_overlay(left, top, width, metrics)
-{
-    let overlay = document.createElement("input");
-    overlay.id = "overlay";
-    overlay.style.left = left + "px";
-    overlay.style.top  = top  + "px";
-    overlay.style.width = metrics.w * width + "px";
-    overlay.style.height = metrics.h + "px";
-    return overlay;
-}
-
-function create_nav_overlay(left, top, oncode_click, ondata_click, onedit_click)
-{
-    let overlay = $("#nav-menu");
-    let code, data, edit;
-    if (!overlay) {
-        overlay = document.createElement("div");
-        overlay.id = "nav-menu";
-
-        code = document.createElement("div");
-        code.id = "nav-menu-code";
-        code.className = "menu-like nav";
-        code.innerText = "→CODE";
-        overlay.appendChild(code);
-
-        data = document.createElement("div");
-        data.id = "nav-menu-data";
-        data.className = "menu-like nav";
-        data.innerText = "→DATA";
-        overlay.appendChild(data);
-
-        edit = document.createElement("div");
-        edit.id = "nav-menu-edit";
-        edit.className = "menu-like nav";
-        edit.innerText = "→EDIT";
-        overlay.appendChild(edit);
-    }
-    else {
-        code = $("#nav-menu-code");
-        data = $("#nav-menu-data");
-        edit = $("#nav-menu-edit");
-    }
-
-    overlay.style.left = (left - 4) + "px";
-    overlay.style.top = (top - 4) + "px";
-
-    code.onclick = oncode_click;
-    data.onclick = ondata_click;
-
-    if (onedit_click) {
-        edit.onclick = onedit_click;
-        edit.classList.remove("hidden");
-    }
-    else {
-        edit.classList.add("hidden");
-    }
-
-    overlay.classList.remove("hidden");
-
-    return [overlay, code, data, edit];
-}
-
-const MODE_ADDR = 0;
-const MODE_BYTE = 1;
-
-// a global inplace editor for dbg-mem view
-let dbg_mem_inplace = null;
-function attach_dbg_mem_inplace(dbg_mem, mem)
-{
-    const metrics = Util.getCharMetrics(dbg_mem);
-
-    dbg_mem.removeEventListener("mousedown", dbg_mem_inplace);
-
-    let open_inplace = function(mode, addr) {
-        const row = Math.floor(addr / 16);
-        const padding = Util.get_computed_padding(dbg_mem);
-        const left = padding.left + (mode == MODE_ADDR ? 0 : (6 + (addr % 16) * 3) * metrics.w);
-        const top  = /*padding.top +*/ row * metrics.h;
-
-        let overlay = create_inplace_overlay(left, top, mode == MODE_ADDR ? 5 : 3, metrics);
-        dbg_mem.appendChild(overlay);
-
-        if (mode == MODE_ADDR) {
-            let addr_text = Util.hex16(row * 16);
-            overlay.value = addr_text;
-        }
-        else {
-            let pos = 6 + (addr % 16) * 3;
-            overlay.value = Util.hex8(mem[addr]);
-        }
-
-        let previousValue = overlay.value, originalValue = overlay.value;
-        setTimeout(function() {
-            overlay.focus();
-            overlay.addEventListener('blur', () => {
-                dbg_mem.removeChild(overlay);
-            });
-            overlay.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === 'Tab') {
-                    e.preventDefault();
-                    overlay.blur();
-
-                    if (mode == MODE_ADDR) {
-                        // Enter and Tab confirms the input
-                        let addr = Util.parseHexStrict(overlay.value);
-                        if (!isNaN(addr) && addr >= 0 && addr <= 0xffff) {
-                            debugger_scroll_mem_to(addr);
-                        }
-                    }
-                    else {
-                        let val = Util.parseHexStrict(overlay.value);
-                        if (!isNaN(val) && val >= 0 && val <= 0xff) {
-                            debugger_write_byte(addr, val);
-                        }
-                        setTimeout(() => { open_inplace(mode, (addr + 1) & 0xffff); }, 50);
-                    }
-                }
-                else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    overlay.value = originalValue;
-                    overlay.blur();
-                    $("#dbg-mem").focus();
-                }
-            });
-            attach_hex_validator(overlay, mode);
-        }, 50);
-    };
-
-    // mad inplace editor in dbg-mem
-    dbg_mem_inplace = function(e) {
-        console.log(e);
-        const rect = dbg_mem.getBoundingClientRect();
-        const x = e.clientX - rect.left + dbg_mem.scrollLeft;
-        const y = e.clientY - rect.top  + dbg_mem.scrollTop;
-
-        const col = Math.floor(x / metrics.w);
-        const row = Math.floor(y / metrics.h);
-
-        console.log("dbg_mem_inplace click row", row, "col", col);
-
-        let mode = MODE_ADDR, mem_addr; 
-        let addr = row * 16;
-        if (col > 54) {
-            return;
-        }
-        if (col > 6) {
-            mode = MODE_BYTE;
-            addr += Math.floor((col - 7) / 3);
-        }
-
-        open_inplace(mode, addr);
-    };
-
-    dbg_mem.addEventListener("mousedown", dbg_mem_inplace);
-}
-
-function attach_hex_validator(input, mode)
-{
-    let previousValue = input.value, originalValue = input.value;
-    input.addEventListener('input', (e) => {
-        const trimlen = mode == MODE_ADDR ? 4 : 2;
-        const maxval = mode == MODE_ADDR ? 0xffff : 0xff;
-        if (input.value.length > trimlen) {
-            input.value = input.value.slice(input.value.length - trimlen, input.value.length);
-        }
-
-        let n = Util.parseHexStrict(input.value);
-        if (isNaN(n) || n < 0 || n > maxval) {
-            input.value = previousValue;
-        }
-
-        previousValue = input.value;
-    });
-
-}
-
-// input address
-let nav_menu_addr = -1;
-let close_nav_timer;
-let close_nav = function() {
-    if (close_nav_timer) {
-        clearTimeout(close_nav_timer);
-        close_nav_timer = null;
-    }
-
-    let menu = $("#nav-menu");
-    if (menu && menu.parentElement) {
-        menu.classList.add("hidden");
-    }
-
-    nav_menu_addr = -1;
-};
-
-function attach_dbg_code_inplace()
-{
-    let dbg_code = $("#dbg-code");
-    const padding = Util.get_computed_padding(dbg_code);
-
-    let open_inplace = function(row, col, addr) {
-        let dbg_code = $("#dbg-code");
-        const metrics = Util.getCharMetrics(dbg_code);
-        const left = padding.left + col * metrics.w;
-        const top  = /*padding.top +*/ row * metrics.h;
-
-        let overlay = create_inplace_overlay(left, top, 5, metrics);
-        dbg_code.appendChild(overlay);
-
-        setTimeout(function() {
-            overlay.focus();
-            overlay.value = Util.hex16(addr);
-            attach_hex_validator(overlay, MODE_ADDR);
-
-            overlay.addEventListener('blur', () => {
-                dbg_code.removeChild(overlay);
-            });
-            overlay.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === 'Tab') {
-                    e.preventDefault();
-                    overlay.blur();
-                    $("#dbg-code").focus();
-                    let newaddr = Util.parseHexStrict(overlay.value);
-                    render_code_window(newaddr);
-                }
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    overlay.blur();
-                    $("#dbg-code").focus();
-                }
-            });
-        }, 50);
-    };
-
-    let jump_code = function(addr) {
-        {
-            let state = {dasm_scroller_startIndex: dasm_scroller.startIndex};
-            history.replaceState(state, '', '');
-        }
-
-        render_code_window(addr);
-        close_nav();
-
-        let state = {dasm_scroller_startIndex: dasm_scroller.startIndex};
-        history.pushState(state, '', '');
-        console.log("history: push state=", state);
-    };
-
-    let jump_data = function(addr) {
-        debugger_scroll_mem_to(addr);
-        close_nav();
-    };
-
-    let jump_edit = function(addr) {
-        show_editor_for_addr(addr);
-        close_nav();
-    };
-
-    let open_nav = function(x, y, addr) {
-        if (close_nav_timer) {
-            if (nav_menu_addr === addr) return;
-            close_nav();
-        }
-        let dbg_sheet = $("#debugger-sheet");
-
-        let edit_click = can_show_editor_for_addr(addr) ? ()=>jump_edit(addr) : null; 
-
-        let [menu, code_btn, data_btn, edit_btn] = 
-            create_nav_overlay(x, y, 
-                ()=>jump_code(addr), 
-                ()=>jump_data(addr),
-                edit_click);
-        dbg_sheet.appendChild(menu);
-
-        close_nav_timer = setTimeout(close_nav, 5000);
-        menu.addEventListener('mouseleave', close_nav);
-
-        nav_menu_addr = addr;
-
-        dasm_scroller.scroller.removeEventListener('scroll', close_nav);
-        dasm_scroller.scroller.addEventListener('scroll', close_nav);
-    };
-
-    let get_hexual = function(e) {
-        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
-        let element = dasm_scroller.getItemAtRow(row);
-        if (!element || element.childNodes.length === 0) return [null, null];
-        let refaddr = element.childNodes[0].attributes["refaddr"];
-        if (refaddr) {
-            return [refaddr.value, Util.parseHexStrict(refaddr.value)];
-        }
-        return [null, null];
-    };
-
-    let get_navxy = function(e) {
-        let parentbox = $("#debugger-sheet").getBoundingClientRect();
-        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
-        let element = dasm_scroller.getItemAtRow(row);
-        if (element && element.childNodes[0]) {
-            let bbox = element.childNodes[0].getBoundingClientRect();
-            bbox.x -= parentbox.x;
-            bbox.y -= parentbox.y;
-            let x = bbox.x + bbox.width + 12;
-            let y = bbox.y;
-            return [x, y];
-        }
-
-        return [-1, -1];
-    }
-
-    let dbg_code_inplace = function(e) {
-        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
-        let addr = debug.line_to_addr(row);
-        if (col < 3) {
-            debugger_toggle_breakpoint(addr);
-        }
-        else if (col >= 3 && col <= 7) {
-            open_inplace(row, 2, addr);
-        }
-        else {
-            let [hexual, addr] = get_hexual(e);
-            if (hexual && hexual.length == 4) {
-                let [x, y] = get_navxy(e);
-                open_nav(x, y, addr);
-            }
-            else {
-                setTimeout(close_nav, 250);
-            }
-        }
-    };
-
-    dbg_code.addEventListener("mousedown", dbg_code_inplace);
-}
-
-function refresh_debugger_window(s, code_addr)
-{
-    // regs
-    let reg_af = (s.regs[7] << 8) | (s.psw);
-    let reg_bc = (s.regs[0] << 8) | (s.regs[1]);
-    let reg_de = (s.regs[2] << 8) | (s.regs[3]);
-    let reg_hl = (s.regs[4] << 8) | (s.regs[5]);
-
-    let mkreg = (name,val) => {
-        return `<div class="dbgwin-text">${name}=<div class="dbgwin-clickable inline" dbg-reg="${name}" dbg-attr="register" contenteditable="true">${Util.hex16(val)}</div></div>`;
-    };
-
-    $("#dbg-registers").innerHTML = 
-        mkreg("AF", reg_af) +
-        mkreg("BC", reg_bc) +
-        mkreg("DE", reg_de) +
-        mkreg("HL", reg_hl) +
-        mkreg("SP", s.sp) +
-        mkreg("PC", s.pc);
-
-    // psw flags
-    let mkbit = (name,mask) => {
-        let val = (s.psw & mask) ? 1 : 0;
-        if (name === "IFF")
-            val = s.iff ? 1 : 0;
-        name = name.padStart(3, " ");
-        return `<div class="dbgwin-text">${name}=<div class="dbgwin-clickable inline" dbg-mask="${mask}" dbg-attr="psw" dbg-bit="${name}" contenteditable="true">${val}</div></div>`;
-    };
-
-    let psw_text = 
-        mkbit("C", 0x01) +
-        mkbit("P", 0x04) +
-        mkbit("Z", 0x40) +
-        mkbit("S", 0x80) +
-        mkbit("AC", 0x10) +
-        mkbit("IFF", 0x00);
-
-    $("#dbg-psw").innerHTML = psw_text;
-
-    // stack
-    let stack_text = "";
-    for (let n = 0; n < 16; n += 2) {
-        let sp2 = s.sp + n;
-        let val = s.mem[sp2] | (s.mem[sp2 + 1] << 8);
-        stack_text += `<div class="dbgwin-text">SP+${Util.hex8(n)}: <div class="dbgwin-clickable inline" dbg-attr="breakpoint">${Util.hex16(val)}</div></div>`;
-    }
-    $("#dbg-stack").innerHTML = stack_text;
-
-    // breakpoints
-    let bpt_text = "";
-    for (let a in s.breakpoints) {
-        bpt_text += `<div class="dbgwin-clickable" dbg-attr="breakpoint">${Util.hex16(a)}</div>`;
-    }
-    if (bpt_text.length == 0) {
-        bpt_text = "<div>&nbsp;&nbsp;&nbsp;&nbsp;</div>";
-    }
-    $("#dbg-breakpoints").innerHTML = bpt_text;
-
-    // mem
-    $("#dbg-mem-header").innerText = "      .0 .1 .2 .3 .4 .5 .6 .7 .8 .9 .A .B .C .D .E .F    0123456789ABCDEF";
-    let dbg_mem = $("#dbg-mem");
-    let addr = dbg_mem.attributes.addr || 0; 
-
-    // refresh data in the hex dump view
-    dump_scroller && dump_scroller.data.set_mem(s.mem);
-    attach_dbg_mem_inplace(dbg_mem, s.mem);
-
-    //dasm_scroller && dasm_scroller.data.set_mem(s.mem);
-    debug.set_cpu_state(cpu_state);
-
-    // 
-    // handlers for clickable items
-    //
-
-    // clicks in breakpoints table in the debugger sheet
-    document.querySelectorAll('[dbg-attr="breakpoint"]').forEach(item => {
-        item.onclick = (e) => {
-            let addr = parseInt('0x' + e.srcElement.innerText);
-            if (!isNaN(addr) && addr >= 0 && addr <= 0xffff) {
-                show_editor_for_addr(addr);
-                render_code_window(addr);
-            }
-        };
-    });
-
-
-    // register inplace editor
-    document.querySelectorAll('[dbg-attr="register"]').forEach(item => {
-        let originalText;
-        let previousText;
-        item.addEventListener('focus', () => {
-            previousText = originalText = item.innerText;
-            //console.log("New value for: ", item.attributes["dbg-reg"], item.innerText);
-            //debugger_set_register(item.attributes["dbg-reg"].value.toLowerCase(), "0x" + item.innerText);
-        });
-        item.addEventListener('blur', () => {
-            console.log("New value for: ", item.attributes["dbg-reg"], item.innerText);
-            debugger_set_register(item.attributes["dbg-reg"].value.toLowerCase(), Util.parseHexStrict(item.innerText));
-        });
-
-        item.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                e.srcElement.blur()
-            }
-            else if (e.key === 'Escape') {
-                e.preventDefault();
-                e.srcElement.innerText = originalText;
-                e.srcElement.blur();
-            }
-        });
-
-        item.addEventListener('input', function(e) {
-            if (item.innerText.length > 4) {
-                item.innerText = item.innerText.slice(item.innerText.length - 4, item.innerText.length);
-            }
-
-            let n = Util.parseHexStrict(item.innerText);
-            if (isNaN(n) || n < 0 || n > 0xffff) {
-                item.innerText = previousText;
-            }
-
-            // move caret to the end
-            const range = document.createRange();
-            range.selectNodeContents(item);
-            range.collapse(false);
-            const sel = window.getSelection();
-            console.log(sel);
-            sel.removeAllRanges();
-            sel.addRange(range);
-
-            previousText = item.innerText;
-        });
-    });
-
-    document.querySelectorAll('[dbg-attr="psw"]').forEach(item => {
-        let originalText;
-        let previousText;
-        item.addEventListener('focus', () => {
-            previousText = originalText = item.innerText;
-        });
-        item.addEventListener('blur', () => {
-            let name = item.attributes["dbg-bit"].value;
-            let mask = parseInt(item.attributes["dbg-mask"].value);
-            let on = item.innerText === "1";
-
-            if (name === "IFF") {
-                debugger_set_register("iff", on ? 1 : 0);
-                return;
-            }
-
-            let psw = (s.psw & ~mask) | ((on ? mask : 0));
-            let reg_af = (s.regs[7] << 8) | psw;
-
-            debugger_set_register("af", reg_af);
-        });
-
-        item.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                e.srcElement.blur()
-            }
-            else if (e.key === 'Escape') {
-                e.preventDefault();
-                e.srcElement.innerText = originalText;
-                e.srcElement.blur();
-            }
-        });
-
-        item.addEventListener('input', function(e) {
-            if (item.innerText.length > 1) {
-                item.innerText = item.innerText.slice(item.innerText.length - 1, item.innerText.length);
-
-                if (item.innerText.length && "01".indexOf(item.innerText[0]) < 0) {
-                    item.innerText = previousText;
-                }
-
-                // move caret to the end
-                const range = document.createRange();
-                range.selectNodeContents(item);
-                range.collapse(false);
-                const sel = window.getSelection();
-                console.log(sel);
-                sel.removeAllRanges();
-                sel.addRange(range);
-
-                previousText = item.innerText;
-            }
-        });
-    });
-
-    render_code_window(code_addr);
-}
-
-function render_code_window(set_addr)
-{
-    if (set_addr !== undefined) {
-        debug.reference_addr = set_addr;
-        dasm_scroller.scrollToLine(debug.addr_to_line(set_addr) - 4);
-    }
-    else {
-        dasm_scroller.updateVisibleItems();
-    }
-}
-
 function debuggerResponse(data)
 {
     switch (data.what) {
         case "stopped":
-            debugger_stopped = true;
+            debug.stopped = true;
             cpu_state = data.cpu_state;
             console.log("debugger stopped pc=", Util.hex16(cpu_state.pc), cpu_state);
             show_debugger_line(cpu_state.pc);
-            update_debugger_controls();
-            refresh_debugger_window(cpu_state, cpu_state.pc);
+            debug.update_controls();
+            debug.refresh_window(cpu_state, cpu_state.pc);
             break;
         case "ok":
-            debugger_stopped = true;
+            debug.stopped = true;
             cpu_state = data.cpu_state;
             console.log("debugger ok pc=", Util.hex16(cpu_state.pc), cpu_state);
-            update_debugger_controls();
-            refresh_debugger_window(cpu_state);
+            debug.update_controls();
+            debug.refresh_window(cpu_state);
             break;
     }
-}
-
-// collect all breakpoints from all editor sessions
-function debugger_collect_breakpoints()
-{
-    let addrs = [];
-    for (let file of Object.keys(sessions)) {
-        let s = sessions[file];
-        let breakpoints = s.getBreakpoints();
-        for (let line in breakpoints) {
-            let addr = s.gutter_contents[line].addr;
-            addrs.push(addr);
-        }
-    } 
-    for (let addr in debugger_extra_breakpoints) {
-        addrs.push(parseInt(addr));
-    }
-
-    return addrs;
-}
-
-function debugger_set_breakpoints(target)
-{
-    let addrs = debugger_collect_breakpoints();
-    target.postMessage({cmd: "debugger", subcmd: "del-breakpoints", addrs: []}, location.href);
-    target.postMessage({cmd: "debugger", subcmd: "set-breakpoints", addrs: addrs}, location.href);
-}
-
-function debugger_set_register(regname, value)
-{
-    let iframe = $("#emulator-iframe");
-    let target = iframe ? iframe.contentWindow : null;
-    if (!target) return false;
-
-    if (!isNaN(value) && value >= 0 && value <= 0xffff) {
-        target.postMessage({cmd: "debugger", subcmd: "set-register", regname: regname, value: value});
-        return true;
-    }
-    return false;
-}
-
-function debugger_write_byte(addr, value)
-{
-    let iframe = $("#emulator-iframe");
-    let target = iframe ? iframe.contentWindow : null;
-    if (!target) return false;
-
-    if (!isNaN(value) && value >= 0 && value <= 0xff) {
-        target.postMessage({cmd: "debugger", subcmd: "write-byte", addr: addr, value: value});
-        return true;
-    }
-    return false;
 }
 
 function debugger_target()
 {
     let iframe = $("#emulator-iframe");
     return iframe ? iframe.contentWindow : null;
-}
-
-function debugger_toggle_breakpoint(addr)
-{
-    let [file, row] = find_addr_line(addr, true);
-    if (file) {
-        return session_toggle_breakpoint(sessions[file], row);
-    }
-
-    let target = debugger_target();
-    if (!target) return;
-
-    // breakpoint outside available source
-    if (debugger_extra_breakpoints[addr]) {
-        target.postMessage({cmd: "debugger", subcmd: "del-breakpoints", addrs: [addr]});
-        delete debugger_extra_breakpoints[addr];
-    }
-    else {
-        debugger_extra_breakpoints[addr] = 1;
-        target.postMessage({cmd: "debugger", subcmd: "set-breakpoints", addrs: [addr]});
-    }
 }
 
 function session_set_breakpoint(session, line)
@@ -2235,20 +1532,3 @@ function session_clear_breakpoint(session, line)
     return true;
 }
 
-function debugger_show(show)
-{
-    if (show) {
-        $("#debugger-sheet").classList.remove("hidden")
-        $("#debugger-controls").classList.remove("hidden")
-    }
-    else {
-        $("#debugger-sheet").classList.add("hidden");
-        $("#debugger-controls").classList.add("hidden")
-    }
-    update_debugger_controls();
-}
-
-function debugger_visible()
-{
-    return !$("#debugger-sheet").classList.contains("hidden");
-}

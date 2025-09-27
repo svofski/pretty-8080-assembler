@@ -163,3 +163,20 @@ Util.format_hexes = function(data, len, padding=12)
     }
     return hexes.padEnd(padding, " ");
 }
+
+
+Util.dump_line = function(addr, bytes)
+{
+    addr = addr & 0xfff0;
+    let txt = Util.hex16(addr) + ": ";
+    let chars = '';
+    for (let n = 0; n < 16; ++n) {
+        txt += Util.hex8(bytes[addr + n]);
+        txt += n == 7 ? '-' : ' ';
+        chars += Util.char8(bytes[addr+n]);
+    }
+
+    return txt + "   " + chars;
+
+}
+
