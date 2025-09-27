@@ -26,6 +26,19 @@ class VirtualScroll
             // fill the existing ones
             for (let i in existing) {
                 existing[i].innerHTML = visibleData[i];
+                if (existing[i].querySelector("[highlight]")) {
+                    existing[i].classList.add("highlight");
+                }
+                else {
+                    existing[i].classList.remove("highlight");
+                }
+
+                if (existing[i].querySelector("[pc]")) {
+                    existing[i].classList.add("pcline");
+                }
+                else {
+                    existing[i].classList.remove("pcline");
+                }
             }
         }
         else 

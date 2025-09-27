@@ -871,10 +871,9 @@ span#wav-dl:hover {
     flex-direction: column;
     white-space: pre;
     font-family: monospace;
-    //padding: 4px 4px;
+    position: relative;
     min-height: 0;     /* <-- allow shrinking inside flex parent */
     overflow: auto;    /* <-- enable scrolling instead of expanding */
-
     --dump-padding-h: 8px;
 }
 
@@ -1012,6 +1011,8 @@ span#wav-dl:hover {
   cursor: pointer;
   border-radius: 5px;
   z-index: 1;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.25s ease;
 }
 
 #nav-menu::before {
@@ -1023,6 +1024,12 @@ span#wav-dl:hover {
     right: 0;
     color: var(--debug-menu-bg);
     z-index: -1;
+    opacity: 1;
+}
+
+#nav-menu.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .menu-like {
@@ -1030,6 +1037,10 @@ span#wav-dl:hover {
 
 .menu-like.nav {
     padding-right: 4px;
+}
+
+.menu-like.nav.hidden {
+    display: none;
 }
 
 .menu-like.nav:hover {
@@ -1073,15 +1084,38 @@ span#wav-dl:hover {
     font-family: monospace;
     display: block;
 }
+.dbgwin-insn {
+    font-family: monospace;
+    flex: 1;
+}
+.dbgwin-anno {
+    transform: scaleX(0.75);
+    transform-origin: left center;
+    opacity: 0.6;
+    flex: 2;
+    margin-left: 4px;
+}
+.dbgwin-anno:hover {
+    opacity: 0.9;
+}
+
+
 /* row of disasm in virtual scroller */
 .code-row {
     will-change: transform;
     contain: content;
+    display: flex;
 }
-.dbg-dasm-current {
+
+.code-row.highlight {
+    background-color: #46a;
+}
+
+.code-row.pcline {
     background-color: #eee;
     color: black;
 }
+
 .dbg-dasm-breakpoint {
     /*background-color: #e44;*/
     /*color: white;*/

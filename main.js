@@ -73,6 +73,7 @@ function Asmcache() {
     this.binFileName = "";
     this.labels = [];
     this.xref_by_file = {};
+    this.addr_to_label = {};
 }
 var asmcache = new Asmcache();
 
@@ -81,6 +82,12 @@ function updateReferences(xref, xref_by_file, labels, org) {
     asmcache.xref_by_file = xref_by_file;
     asmcache.labels = labels;
     asmcache.org = org || 256;
+
+    asmcache.addr_to_label = {};
+    for (let label in labels) {
+        let addr = labels[label];
+        asmcache.addr_to_label[addr] = label;
+    }
 }
 
 var listing_listener_added = {};
@@ -142,7 +149,8 @@ function getReferencingLines(lineno) {
 }
 
 function getLabelForAddr(addr) {
-    return Object.keys(asmcache.labels).find(key => asmcache.labels[key] === addr);
+    //return Object.keys(asmcache.labels).find(key => asmcache.labels[key] === addr);
+    return asmcache.addr_to_label[addr];
 }
 
 var last_src = null;
@@ -1028,6 +1036,24 @@ function loaded() {
     attach_debugger_controls();
     attach_divider_stuff();
 
+
+    window.addEventListener('popstate', (event) => {
+        console.log("popstate:", event, event.state);
+        if (event.state) {
+            if (event.state.dasm_scroller_startIndex !== undefined) {
+                if (dasm_scroller) {
+                    dasm_scroller.scrollToLine(event.state.dasm_scroller_startIndex);
+                }
+                event.preventDefault();
+            }
+        }
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
     cock(100);
 }
 
@@ -1510,6 +1536,15 @@ function show_debugger_line(addr)
     }
 }
 
+function can_show_editor_for_addr(addr)
+{
+    let [file, line] = find_addr_line(addr);
+    if (file && line >= 0) {
+        return true;
+    }
+    return false;
+}
+
 function show_editor_for_addr(addr)
 {
     let [file, line] = find_addr_line(addr);
@@ -1556,48 +1591,53 @@ function create_inplace_overlay(left, top, width, metrics)
 
 function create_nav_overlay(left, top, oncode_click, ondata_click, onedit_click)
 {
-    let old = $("#nav-menu");
-    if (old) {
-        old.parentElement.removeChild(old);
+    let overlay = $("#nav-menu");
+    let code, data, edit;
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "nav-menu";
+
+        code = document.createElement("div");
+        code.id = "nav-menu-code";
+        code.className = "menu-like nav";
+        code.innerText = "→CODE";
+        overlay.appendChild(code);
+
+        data = document.createElement("div");
+        data.id = "nav-menu-data";
+        data.className = "menu-like nav";
+        data.innerText = "→DATA";
+        overlay.appendChild(data);
+
+        edit = document.createElement("div");
+        edit.id = "nav-menu-edit";
+        edit.className = "menu-like nav";
+        edit.innerText = "→EDIT";
+        overlay.appendChild(edit);
     }
-    let overlay = document.createElement("div");
-    overlay.id = "nav-menu";
+    else {
+        code = $("#nav-menu-code");
+        data = $("#nav-menu-data");
+        edit = $("#nav-menu-edit");
+    }
+
     overlay.style.left = (left - 4) + "px";
     overlay.style.top = (top - 4) + "px";
 
-    let code = document.createElement("div");
-    code.className = "menu-like nav";
     code.onclick = oncode_click;
-    code.innerText = "→CODE";
-    overlay.appendChild(code);
-
-    let data = document.createElement("div");
-    data.className = "menu-like nav";
     data.onclick = ondata_click;
-    data.innerText = "→DATA";
-    overlay.appendChild(data);
 
-    let edit = document.createElement("div");
-    edit.className = "menu-like nav";
-    edit.onclick = onedit_click;
-    edit.innerText = "→EDIT";
-    overlay.appendChild(edit);
-    return [overlay, code, data, edit];
-}
-
-function create_label_overlay(left, top, label)
-{
-    let old = $("#nav-label");
-    if (old) {
-        old.parentElement.removeChild(old);
+    if (onedit_click) {
+        edit.onclick = onedit_click;
+        edit.classList.remove("hidden");
     }
-    let overlay = document.createElement("div");
-    overlay.id = "nav-label";
-    overlay.style.left = (left - 4) + "px";
-    overlay.style.top = (top - 4) + "px";
-    overlay.innerText = label;
+    else {
+        edit.classList.add("hidden");
+    }
 
-    return overlay;
+    overlay.classList.remove("hidden");
+
+    return [overlay, code, data, edit];
 }
 
 const MODE_ADDR = 0;
@@ -1715,6 +1755,7 @@ function attach_hex_validator(input, mode)
 }
 
 // input address
+let nav_menu_addr = -1;
 let close_nav_timer;
 let close_nav = function() {
     if (close_nav_timer) {
@@ -1724,23 +1765,11 @@ let close_nav = function() {
 
     let menu = $("#nav-menu");
     if (menu && menu.parentElement) {
-        menu.parentElement.removeChild(menu);
+        menu.classList.add("hidden");
     }
-};
 
-let hover_label_addr = -1;
-let hover_label_timer = null;
-let close_label_timer;
-let close_label = function() {
-    if (close_label_timer) {
-        clearTimeout(close_label_timer);
-        close_label_timer = null;
-    }
-    let label = $("#nav-label");
-    if (label && label.parentElement) {
-        label.parentElement.removeChild(label);
-    }
-}
+    nav_menu_addr = -1;
+};
 
 function attach_dbg_code_inplace()
 {
@@ -1782,72 +1811,80 @@ function attach_dbg_code_inplace()
     };
 
     let jump_code = function(addr) {
+        {
+            let state = {dasm_scroller_startIndex: dasm_scroller.startIndex};
+            history.replaceState(state, '', '');
+        }
+
         render_code_window(addr);
+        close_nav();
+
+        let state = {dasm_scroller_startIndex: dasm_scroller.startIndex};
+        history.pushState(state, '', '');
+        console.log("history: push state=", state);
     };
 
     let jump_data = function(addr) {
         debugger_scroll_mem_to(addr);
+        close_nav();
     };
 
     let jump_edit = function(addr) {
         show_editor_for_addr(addr);
+        close_nav();
     };
 
-    let open_nav = function(row, col, addr) {
-        let dbg_code = $("#dbg-code");
-        const metrics = Util.getCharMetrics(dbg_code);
-        const left = padding.left + col * metrics.w;
-        const top  = /*padding.top +*/ row * metrics.h;
+    let open_nav = function(x, y, addr) {
+        if (close_nav_timer) {
+            if (nav_menu_addr === addr) return;
+            close_nav();
+        }
+        let dbg_sheet = $("#debugger-sheet");
+
+        let edit_click = can_show_editor_for_addr(addr) ? ()=>jump_edit(addr) : null; 
+
         let [menu, code_btn, data_btn, edit_btn] = 
-            create_nav_overlay(left, top, 
+            create_nav_overlay(x, y, 
                 ()=>jump_code(addr), 
                 ()=>jump_data(addr),
-                ()=>jump_edit(addr));
-        dbg_code.appendChild(menu);
+                edit_click);
+        dbg_sheet.appendChild(menu);
 
         close_nav_timer = setTimeout(close_nav, 5000);
         menu.addEventListener('mouseleave', close_nav);
+
+        nav_menu_addr = addr;
+
+        dasm_scroller.scroller.removeEventListener('scroll', close_nav);
+        dasm_scroller.scroller.addEventListener('scroll', close_nav);
     };
-
-    let open_label = function(row, col, addr, text) {
-        let dbg_code = $("#dbg-code");
-        const metrics = Util.getCharMetrics(dbg_code);
-        const left = padding.left + col * metrics.w;
-        const top  = /*padding.top +*/ row * metrics.h;
-        let label = create_label_overlay(left, top, text);
-        dbg_code.appendChild(label);
-
-        close_label_timer = setTimeout(close_label, 5000);
-        label.addEventListener('mouseleave', close_label);
-    };
-
 
     let get_hexual = function(e) {
         let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
         let element = dasm_scroller.getItemAtRow(row);
-        if (!element) return [null, null];
-        let item = element.innerText;
-
-        let x1 = -1, x2 = -1;
-        for (let i = 0; i < 6; ++i) {
-            if (x1 == -1 && item[col - i] == ' ') {
-                x1 = col - i;
-            }
-            if (x2 == -1 && (col + i >= item.length || item[col + i] == ' ')) {
-                x2 = col + i;
-            }
-        }
-        if (x1 >= 0 && x2 >= 0) {
-            let addr_like = item.slice(x1, x2 + 1).trim();
-            if (!addr_like) return [null, null];
-
-            if (addr_like.length == 4 || addr_like.length == 2) {
-                let value = Util.parseHexStrict(addr_like);
-                if (!isNaN(value)) return [addr_like, value];
-            }
+        if (!element || element.childNodes.length === 0) return [null, null];
+        let refaddr = element.childNodes[0].attributes["refaddr"];
+        if (refaddr) {
+            return [refaddr.value, Util.parseHexStrict(refaddr.value)];
         }
         return [null, null];
     };
+
+    let get_navxy = function(e) {
+        let parentbox = $("#debugger-sheet").getBoundingClientRect();
+        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
+        let element = dasm_scroller.getItemAtRow(row);
+        if (element && element.childNodes[0]) {
+            let bbox = element.childNodes[0].getBoundingClientRect();
+            bbox.x -= parentbox.x;
+            bbox.y -= parentbox.y;
+            let x = bbox.x + bbox.width + 12;
+            let y = bbox.y;
+            return [x, y];
+        }
+
+        return [-1, -1];
+    }
 
     let dbg_code_inplace = function(e) {
         let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
@@ -1861,7 +1898,8 @@ function attach_dbg_code_inplace()
         else {
             let [hexual, addr] = get_hexual(e);
             if (hexual && hexual.length == 4) {
-                open_nav(row, 31, addr);
+                let [x, y] = get_navxy(e);
+                open_nav(x, y, addr);
             }
             else {
                 setTimeout(close_nav, 250);
@@ -1869,34 +1907,7 @@ function attach_dbg_code_inplace()
         }
     };
 
-    let hover = function(e) {
-        let [row, col] = Util.getClickRowCol(e, dbg_code, 0, padding.top);
-        let addr = debug.line_to_addr(row);
-        if (col > 7) {
-            let [hexual, addr] = get_hexual(e);
-            if (hexual && hexual.length == 4) {
-                if (hover_label_addr != addr) {
-                    close_label();
-                    hover_label_addr = -1;
-                    clearTimeout(hover_label_timer);
-                }
-                if (hover_label_addr == -1) {
-                    hover_label_timer = setTimeout(() => {
-                        let label = getLabelForAddr(addr);
-                        if (label) {
-                            open_label(row, col, addr, label);
-                        }
-                    }, 500);
-                    hover_label_addr = addr;
-                }
-
-                //console.log('hovering over ref to: ', getLabelForAddr(addr));
-            }
-        }
-    };
-    
     dbg_code.addEventListener("mousedown", dbg_code_inplace);
-    dbg_code.addEventListener("mousemove", hover);
 }
 
 function refresh_debugger_window(s, code_addr)

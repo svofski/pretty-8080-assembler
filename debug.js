@@ -112,7 +112,7 @@ class DasmDataSource
     dass_db(pc, data, len)
     {
         let hexes = Util.format_hexes(data, len);
-        let db = `<div class="dbgwin-text">  ${Util.hex16(pc)}: ${hexes}DB ${hexes}</div>`;
+        let db = `<div class="dbgwin-insn">  ${Util.hex16(pc)}: ${hexes}DB ${hexes}</div>`;
         return [db, pc + len];
     }
 
@@ -125,11 +125,41 @@ class DasmDataSource
     
         let hexes = Util.format_hexes(data, dass.length);
     
-        let cur = cpu_state.pc === pc ? "dbg-dasm-current" : "";
+        //let cur = cpu_state.pc === pc ? "dbg-dasm-current" : "";
+
+        let pcline = cpu_state.pc === pc ? ' pc="true"' : '';
+        let cur = "";
         if (breakpoints.indexOf(pc & 0xffff) != -1) {
             cur += " dbg-dasm-breakpoint";
         }
-        let text = `<div class="dbgwin-text ${cur}">  ${Util.hex16(pc)}: ${hexes}${dass.text}</div>`;
+
+        let parts = dass.text.split(' ');
+        let addrtxt = parts[parts.length - 1];
+        let label, refaddr;
+        if (addrtxt.length === 4) {
+            let addr = Util.parseHexStrict(addrtxt);
+            if (!isNaN(addr)) {
+                refaddr = addrtxt;
+                label = getLabelForAddr(addr);
+                if (!label) {
+                    label = getLabelForAddr(addr - 1);
+                    if (label) {
+                        label = label + "+1";
+                    }
+                }
+            }
+        }
+        label = label || "";
+
+        let reftext = "";
+        if (refaddr !== undefined) {
+            reftext = ` refaddr="${refaddr}"`;
+        }
+
+        if (pc === this.debug.reference_addr) {
+            reftext +=' highlight="true"';
+        }
+        let text = `<div class="dbgwin-insn ${cur}"${reftext}${pcline}>  ${Util.hex16(pc)}: ${hexes}${dass.text}</div><div class="dbgwin-anno">${label}</div>`;
     
         pc = pc + dass.length;
     
