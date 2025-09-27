@@ -1017,7 +1017,7 @@ span#wav-dl:hover {
 #nav-menu::before {
     content: "◀";
     position: absolute;
-    left: -1.3ch;
+    left: -1.0ch;
     top: 0.5ch;
     bottom: 0;
     right: 0;
