@@ -670,6 +670,45 @@ function run_emu80(bytes, filename, platform)
     debug.update_controls(); // need to call it if frame was already loaded
 }
 
+function inputConfigResponse(data)
+{
+    console.log("emulator input help: ", data);
+    let keys = $("#emu-help");
+    keys.innerHTML = "";
+
+    for (let key of data.data) {
+        let div = document.createElement("div");
+        div.className = "button-like";
+        div.addEventListener('mousedown', (e) => {
+            emulator_key_down(key.keycode);
+        });
+        div.addEventListener('mouseup', (e) => {
+            emulator_key_up(key.keycode);
+        });
+        div.innerText = `${key.name_guest}: ${key.name_host}`;
+
+        keys.appendChild(div);
+    }
+}
+
+function emulator_key_down(keycode)
+{
+    let target = debugger_target();
+    if (target) {
+        target.postMessage({cmd: "input", subcmd: "keydown", keycode: keycode});
+        target.focus();
+    }
+}
+
+function emulator_key_up(keycode)
+{
+    let target = debugger_target();
+    if (target) {
+        target.postMessage({cmd: "input", subcmd: "keyup", keycode: keycode});
+        target.focus();
+    }
+}
+
 function run_vector06js(bytes, filename) {
     program_load = (iframe) => //, bytes, filename) =>
     {
@@ -683,6 +722,7 @@ function run_vector06js(bytes, filename) {
 
         const file = new File([bytes], filename, { type: "application/octet-stream" });
         debug.set_breakpoints(iframe.contentWindow);
+        iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, location.href); // request help
         iframe.contentWindow.postMessage({cmd: "loadfile", file}, location.href);
     };
 
@@ -928,6 +968,9 @@ function windowMessageListener(e)
     }
     else if (e.data.type === "debugger") {
         debuggerResponse(e.data);
+    }
+    else if (e.data.type === "input") {
+        inputConfigResponse(e.data);
     }
 }
 
