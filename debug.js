@@ -502,19 +502,19 @@ class Debug
         let dbg_code = $("#dbg-code");
         const padding = Util.get_computed_padding(dbg_code);
 
-        let open_inplace = function(row, col, addr) {
+        this.open_inplace = function(row, col, addr) {
             let dbg_code = $("#dbg-code");
             const metrics = Util.getCharMetrics(dbg_code);
             const left = padding.left + col * metrics.w;
             const top  = /*padding.top +*/ row * metrics.h;
 
-            let overlay = this.create_inplace_overlay(left, top, 5, metrics);
+            let overlay = Debug.create_inplace_overlay(left, top, 5, metrics);
             dbg_code.appendChild(overlay);
 
             setTimeout(function() {
                 overlay.focus();
                 overlay.value = Util.hex16(addr);
-                this.attach_hex_validator(overlay, Debug.MODE_ADDR);
+                Debug.attach_hex_validator(overlay, Debug.MODE_ADDR);
 
                 overlay.addEventListener('blur', () => {
                     dbg_code.removeChild(overlay);
@@ -525,7 +525,8 @@ class Debug
                         overlay.blur();
                         $("#dbg-code").focus();
                         let newaddr = Util.parseHexStrict(overlay.value);
-                        debug.render_code_window(newaddr);
+                        //debug.render_code_window(newaddr);
+                        debug.jump_code(newaddr);
                     }
                     if (e.key === 'Escape') {
                         e.preventDefault();
