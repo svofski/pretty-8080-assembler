@@ -525,8 +525,7 @@ class Debug
                         overlay.blur();
                         $("#dbg-code").focus();
                         let newaddr = Util.parseHexStrict(overlay.value);
-                        //debug.render_code_window(newaddr);
-                        debug.jump_code(newaddr);
+                        debug.jump_code(newaddr); // updates history
                     }
                     if (e.key === 'Escape') {
                         e.preventDefault();

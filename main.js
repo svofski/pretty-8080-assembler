@@ -643,7 +643,7 @@ function run_emu80(bytes, filename, platform)
 
     if (!iframe) {
         iframe = document.createElement("iframe");
-        let src_url = `${location.href}/emu80-build/emuframe.html?platform=${platform}`;
+        let src_url = `${Util.url_without_query()}/emu80-build/emuframe.html?platform=${platform}`;
 
         iframe.src = src_url;
         iframe.id = "emulator-iframe";
@@ -710,6 +710,8 @@ function emulator_key_up(keycode)
 }
 
 function run_vector06js(bytes, filename) {
+    let url = Util.url_without_query();
+
     program_load = (iframe) => //, bytes, filename) =>
     {
         const emu_version = iframe.contentDocument.title;
@@ -722,8 +724,8 @@ function run_vector06js(bytes, filename) {
 
         const file = new File([bytes], filename, { type: "application/octet-stream" });
         debug.set_breakpoints(iframe.contentWindow);
-        iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, location.href); // request help
-        iframe.contentWindow.postMessage({cmd: "loadfile", file}, location.href);
+        iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, url); // request help
+        iframe.contentWindow.postMessage({cmd: "loadfile", file}, url);
     };
 
 
@@ -742,7 +744,7 @@ function run_vector06js(bytes, filename) {
 
     if (!iframe) {
         iframe = document.createElement("iframe");
-        let src_url = `${location.href}/vector06js?i+`;
+        let src_url = `${url}/vector06js?i+`;
         iframe.src = src_url;
         iframe.id = "emulator-iframe";
         container.appendChild(iframe);
@@ -1400,6 +1402,7 @@ function i18n() {
 
 function attach_debugger_controls()
 {
+    let url = Util.url_without_query();
     document.querySelectorAll('[id^="dbg-"][id$="-btn"]')
         .forEach(item => {
             item.classList.add("button-like");
@@ -1407,7 +1410,7 @@ function attach_debugger_controls()
             if (subcmd) {
                 item.onclick = (e) => {
                     let iframe = $("#emulator-iframe");
-                    iframe.contentWindow.postMessage({cmd: "debugger", subcmd: subcmd}, location.href);
+                    iframe.contentWindow.postMessage({cmd: "debugger", subcmd: subcmd}, url);
 
                     editor.session.removeMarker(debugger_position_marker);
                     debug.stopped = false;

@@ -180,3 +180,7 @@ Util.dump_line = function(addr, bytes)
 
 }
 
+Util.url_without_query = function()
+{
+    return window.location.protocol + "//" + window.location.host + window.location.pathname;
+};
