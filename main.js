@@ -614,6 +614,8 @@ function set_emulator_help(str)
 
 function run_emu80(bytes, filename, platform)
 {
+    let url = Util.url_without_query();
+
     program_load = (iframe, filename) =>
     {
         const emu_version = iframe.contentDocument.title;
@@ -625,6 +627,8 @@ function run_emu80(bytes, filename, platform)
         }
 
         const file = new File([bytes], filename, { type: "application/octet-stream" });
+        debug.set_breakpoints(iframe.contentWindow);
+        iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, url); // request help
         emu80run(file);
     };
 
