@@ -945,6 +945,7 @@ span#wav-dl:hover {
   border-left: 1px solid #888;
   border-right: 1px solid #888;
   border-top: 1px solid #888;
+  width: 78ch;
 }
 #dbg-mem {
   flex: 1;             /* fills bottom-pane */
@@ -957,6 +958,7 @@ span#wav-dl:hover {
   border-bottom: 1px solid #888;
   cursor: pointer;
   position:relative;
+  width: 78ch;
 }
 
 .scroller-container {

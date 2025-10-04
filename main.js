@@ -612,11 +612,35 @@ function set_emulator_help(str)
     }
 }
 
+// updates emulator aspect and sets initial divider position
+function update_aspect(iframe, set_divider)
+{
+    if (current_emulator === "vector") {
+        $("#emulator-container").style.aspectRatio = "4/3";
+    }
+    else {
+        const canvas = iframe.contentDocument.getElementById("canvas");
+        let width = canvas.width;
+        let height = canvas.height;
+        $("#emulator-container").style.aspectRatio = width + "/" + height;
+    }
+
+    if (set_divider) {
+        // adjust divider to debugger width
+        if (options.emulator_docked) {
+            let left = 1 - debug.get_preferred_width() / window.innerWidth;
+            divider_set(0);
+            divider_set(left * 100);
+        }
+    }
+};
+
+
 function run_emu80(bytes, filename, platform)
 {
     let url = Util.url_without_query();
 
-    program_load = (iframe, filename) =>
+    program_load = (iframe, first_time = false) =>
     {
         const emu_version = iframe.contentDocument.title;
         set_emulator_version(emu_version);
@@ -631,6 +655,9 @@ function run_emu80(bytes, filename, platform)
         iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, url); // request help
         iframe.contentWindow.postMessage({cmd: "loadfile", file}, url);
 
+        if (first_time) {
+            update_aspect(iframe, true);
+        }
     };
 
     let emulator_pane = document.getElementById("emulator");
@@ -659,8 +686,11 @@ function run_emu80(bytes, filename, platform)
         set_emulator_help("");
     }
     else {
-        program_load(iframe, filename);
+        program_load(iframe);
     }
+
+    // emu80 does not yet support step out
+    debug.force_disable_button("dbg-step-out-btn", true);
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
@@ -673,13 +703,12 @@ function run_emu80(bytes, filename, platform)
         // update aspect ratio
         const canvas = iframe.contentDocument.getElementById("canvas");
         const resizeObserver = new ResizeObserver((entries) => {
-            let width = canvas.width;
-            let height = canvas.height;
-            $("#emulator-container").style.aspectRatio = width + "/" + height;
+            update_aspect(iframe, false);
         });
         resizeObserver.observe(canvas);
 
         debug.show(true);
+
     };
     debug.update_controls(); // need to call it if frame was already loaded
 }
@@ -726,7 +755,7 @@ function emulator_key_up(keycode)
 function run_vector06js(bytes, filename) {
     let url = Util.url_without_query();
 
-    program_load = (iframe) => //, bytes, filename) =>
+    program_load = (iframe, first_time = false) => //, bytes, filename) =>
     {
         const emu_version = iframe.contentDocument.title;
         set_emulator_version(emu_version);
@@ -740,6 +769,10 @@ function run_vector06js(bytes, filename) {
         debug.set_breakpoints(iframe.contentWindow);
         iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, url); // request help
         iframe.contentWindow.postMessage({cmd: "loadfile", file}, url);
+
+        if (first_time) {
+            update_aspect(iframe, true);
+        }
     };
 
 
@@ -772,8 +805,8 @@ function run_vector06js(bytes, filename) {
 
     window.parent.fullscreen = () => {};
 
-    // reset aspect ratio if it was modified by other platforms (see emu80 resizeObserver)
-    $("#emulator-container").style.aspectRatio = "4/3";
+    // remove step-out force disable after emu80
+    debug.force_disable_button("dbg-step-out-btn", false);
 
 
     iframe.onload = function() {
@@ -981,7 +1014,7 @@ function windowMessageListener(e)
 {
     let iframe = $("#emulator-iframe");
     if (e.data.type === "ready" && iframe && iframe.contentWindow) {
-        program_load(iframe);
+        program_load(iframe, true);
     }
     else if (e.data.type === "tape_stopped") {
         enableBobinage(false);

@@ -53,6 +53,13 @@ function attach_divider_stuff()
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
     });
+}
 
+function divider_set(left_percent)
+{
+    const left = $("#ta");
+    const right = $("#emulator");
 
+    left.style.flex = `0 0 ${left_percent}%`;
+    right.style.flex = `1 1 0`;
 }

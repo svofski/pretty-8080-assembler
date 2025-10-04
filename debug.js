@@ -358,6 +358,17 @@ class Debug
         }
     }
 
+    forced_disable = {};
+    force_disable_button(id, force)
+    {
+        if (force) {
+            this.forced_disable[id] = true;
+        }
+        else {
+            delete this.forced_disable[id];
+        }
+    }
+
     update_controls()
     {
         let visible = this.visible();
@@ -379,6 +390,11 @@ class Debug
                         item.classList.remove("disabled");
                     }
                 }
+
+                if (this.forced_disable[item.id]) {
+                    item.classList.add("disabled");
+                }
+
             });
         if (this.stopped) {
             $("#debugger-sheet").classList.remove("disabled");
@@ -744,6 +760,13 @@ class Debug
     
         this.nav_menu_addr = -1;
     };
+
+    get_preferred_width()
+    {
+        let mem = $("#dbg-mem");
+        const metrics = Util.getCharMetrics(mem);
+        return metrics.w * 83;
+    }
 };
 
 
