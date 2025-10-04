@@ -371,12 +371,11 @@ span.t2:hover { background:#ffff7d; }
 }
 
 #emulator.docked::before {
-    //display: none;
     width: 100%;
     height: 100%;
     left: initial;
     right: initial;
-    background-image: url('debugger-bowser.png');
+    background-image: url('debugger-bowser.jpg');
     filter: opacity(5%) grayscale(80%);
     z-index: -5;
 }
