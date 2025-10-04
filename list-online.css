@@ -393,7 +393,7 @@ span.t2:hover { background:#ffff7d; }
 #emulator-box {
     display: flex;
     flex-direction: column;
-    max-width: 100vh;
+    max-width: 100vw;
     width: 100%;
     margin: auto;
     overflow: hidden;
