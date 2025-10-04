@@ -630,6 +630,7 @@ function run_emu80(bytes, filename, platform)
         debug.set_breakpoints(iframe.contentWindow);
         iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, url); // request help
         iframe.contentWindow.postMessage({cmd: "loadfile", file}, url);
+
     };
 
     let emulator_pane = document.getElementById("emulator");
@@ -668,6 +669,16 @@ function run_emu80(bytes, filename, platform)
                 close_emulator_cb && close_emulator_cb();
             }
         });
+
+        // update aspect ratio
+        const canvas = iframe.contentDocument.getElementById("canvas");
+        const resizeObserver = new ResizeObserver((entries) => {
+            let width = canvas.width;
+            let height = canvas.height;
+            $("#emulator-container").style.aspectRatio = width + "/" + height;
+        });
+        resizeObserver.observe(canvas);
+
         debug.show(true);
     };
     debug.update_controls(); // need to call it if frame was already loaded
@@ -761,6 +772,9 @@ function run_vector06js(bytes, filename) {
 
     window.parent.fullscreen = () => {};
 
+    // reset aspect ratio if it was modified by other platforms (see emu80 resizeObserver)
+    $("#emulator-container").style.aspectRatio = "4/3";
+
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
@@ -769,6 +783,7 @@ function run_vector06js(bytes, filename) {
                 close_emulator_cb && close_emulator_cb();
             }
         });
+
         debug.show(true);
     };
     debug.update_controls(); // need to call it if frame was already loaded

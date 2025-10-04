@@ -413,7 +413,6 @@ span.t2:hover { background:#ffff7d; }
 }
 
 #emulator.docked #emulator-container {
-    aspect-ratio: 4/3;
     height: initial;
 }
 
