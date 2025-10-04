@@ -684,6 +684,7 @@ function run_emu80(bytes, filename, platform)
         current_emulator = platform;
         set_emulator_version("Loading...");
         set_emulator_help("");
+        $("#spinner-holder").classList.remove("hidden");
     }
     else {
         program_load(iframe);
@@ -709,6 +710,7 @@ function run_emu80(bytes, filename, platform)
 
         debug.show(true);
 
+        $("#spinner-holder").classList.add("hidden");
     };
     debug.update_controls(); // need to call it if frame was already loaded
 }

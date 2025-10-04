@@ -29,6 +29,7 @@ Rev.L: Worker + Base64
 <link href="list-online.css" rel="stylesheet" type="text/css" media="screen"/>
 <link href="ace-extras.css" rel="stylesheet" type="text/css" media="screen"/>
 <link href="divider.css" rel="stylesheet" type="text/css" media="screen"/>
+<link href="loading.css" rel="stylesheet" type="text/css" media="screen"/>
 <script src="divider.js" type="text/javascript" charset="utf-8"></script>
 <link
 <!-- styleSheets[1] -->
@@ -150,7 +151,10 @@ delay:
                     <svg id="close-icon" viewBox="0 0 2048 2048" width="10" height="10"><path fill="currentColor" transform="translate(-280, 1700.2) scale(1,-1)" d="M488-300L488-300Q403-300 341-240L341-240Q310-210 295-172Q280-134 280-94L280-94Q280-9 353 61L353 61L1010 700L353 1339Q280 1409 280 1494L280 1494Q280 1534 295 1572Q310 1610 341 1640L341 1640Q403 1700 488 1700L488 1700Q570 1700 648 1625L648 1625L1300 993L1952 1625Q2030 1700 2112 1700L2112 1700Q2197 1700 2259 1640L2259 1640Q2290 1610 2305 1572Q2320 1534 2320 1494L2320 1494Q2320 1409 2247 1339L2247 1339L1590 700L2247 61Q2320-9 2320-94L2320-94Q2320-134 2305-172Q2290-210 2259-240L2259-240Q2197-300 2112-300L2112-300Q2030-300 1952-225L1952-225L1300 407L648-225Q570-300 488-300Z"></path></svg>
                 </div>
             </header>
-            <div id="emulator-container"></div>
+            <div id="emulator-container">
+                <div id="spinner-holder" class="hidden">
+                    <div class="lds-default"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div></div>
+
             <footer id="debugger-controls" class="hidden">
                 &nbsp;
                 <div id="dbg-pause-btn"       debug_subcmd="pause"       title="Run/stop">⏯</div>
