@@ -359,6 +359,7 @@ span.t2:hover { background:#ffff7d; }
     flex: 1 1 0%;
     width: initial;
     flex-direction: column;
+    min-width: 0;
 }
 
 #emulator.docked.visible {

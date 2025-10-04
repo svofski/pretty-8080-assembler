@@ -629,7 +629,7 @@ function run_emu80(bytes, filename, platform)
         const file = new File([bytes], filename, { type: "application/octet-stream" });
         debug.set_breakpoints(iframe.contentWindow);
         iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, url); // request help
-        emu80run(file);
+        iframe.contentWindow.postMessage({cmd: "loadfile", file}, url);
     };
 
     let emulator_pane = document.getElementById("emulator");
@@ -652,6 +652,7 @@ function run_emu80(bytes, filename, platform)
         iframe.src = src_url;
         iframe.id = "emulator-iframe";
         container.appendChild(iframe);
+        initEmu80Iframe(iframe);
         current_emulator = platform;
         set_emulator_version("Loading...");
         set_emulator_help("");
@@ -659,8 +660,6 @@ function run_emu80(bytes, filename, platform)
     else {
         program_load(iframe, filename);
     }
-
-    emu80OnNewFrame(iframe);
 
     iframe.onload = function() {
         iframe.contentWindow.focus();
