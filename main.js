@@ -576,6 +576,7 @@ function run_emulator(bytes, filename, tapeformat, start_addr)
         editor.focus();
         closedEmulator();
         setTimeout(() => attach_divider_stuff(), 100);
+        debug.stopped = false;
     };
 
     let close_btn = document.getElementById("close");
@@ -619,10 +620,14 @@ function update_aspect(iframe, set_divider)
         $("#emulator-container").style.aspectRatio = "4/3";
     }
     else {
-        const canvas = iframe.contentDocument.getElementById("canvas");
-        let width = canvas.width;
-        let height = canvas.height;
-        $("#emulator-container").style.aspectRatio = width + "/" + height;
+        if (iframe && iframe.contentDocument) {
+            const canvas = iframe.contentDocument.getElementById("canvas");
+            if (canvas) {
+                let width = canvas.width;
+                let height = canvas.height;
+                $("#emulator-container").style.aspectRatio = width + "/" + height;
+            }
+        }
     }
 
     if (set_divider) {
