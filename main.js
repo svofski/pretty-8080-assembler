@@ -1435,7 +1435,7 @@ function i18n() {
     let ryba = getProjectFromUrl();
     if (ryba) {
         let extrafiles = ryba.slice(2);
-        load_ryba(document.URL.split('?')[0] + ryba[1], extrafiles);
+        load_ryba(ryba[1], extrafiles);
     }
 
     var m_header = messages[0];
