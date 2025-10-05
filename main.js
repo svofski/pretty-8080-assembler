@@ -1467,9 +1467,7 @@ function attach_debugger_controls()
             let subcmd = item.attributes.debug_subcmd && item.attributes.debug_subcmd.value;
             if (subcmd) {
                 item.onclick = (e) => {
-                    let iframe = $("#emulator-iframe");
-                    iframe.contentWindow.postMessage({cmd: "debugger", subcmd: subcmd}, url);
-
+                    debug.command(subcmd, url);
                     editor.session.removeMarker(debugger_position_marker);
                     debug.stopped = false;
                     debug.update_controls();

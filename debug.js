@@ -15,6 +15,14 @@ class Debug
         this.dasm_data_source = new DasmDataSource('code-row', this);
     }
 
+    // pause/step-in/step-over/step-out
+    command(subcmd, url)
+    {
+        let target = debugger_target();
+        if (!target) return;
+        target.postMessage({cmd: "debugger", subcmd: subcmd}, url);
+    }
+
     update_line_map()
     {
         let line_map = [0];
