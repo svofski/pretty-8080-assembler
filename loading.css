@@ -1,6 +1,6 @@
 #spinner-holder {
     position: absolute;
-    color: white;
+    color: #8888;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);

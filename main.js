@@ -650,6 +650,8 @@ function run_emu80(bytes, filename, platform)
             set_emulator_help(meta.content);
         }
 
+        $("#spinner-holder").classList.add("hidden");
+
         const file = new File([bytes], filename, { type: "application/octet-stream" });
         debug.set_breakpoints(iframe.contentWindow);
         iframe.contentWindow.postMessage({cmd: "input", subcmd: "help"}, url); // request help
@@ -709,8 +711,6 @@ function run_emu80(bytes, filename, platform)
         resizeObserver.observe(canvas);
 
         debug.show(true);
-
-        $("#spinner-holder").classList.add("hidden");
     };
     debug.update_controls(); // need to call it if frame was already loaded
 }
