@@ -524,6 +524,12 @@ function tapeformat_to_emu80_platform(tf)
         case "micro80-bin":
         case "mikro80-bin":
             return "mikro80";
+        case "ut88-bin":
+            return "ut88";
+        case "kr04-bin":
+            return "kr04";
+        case "palmira-bin":
+            return "palmira";
         case "okean-bin":
         case "okeah-bin":
             //return "okean240";
@@ -1238,6 +1244,10 @@ var rybas =
     "partner": ["Партнер 01.01", "hello-partner.asm"],
 
     "mikro80": ["Микро-80", "hello-micro80.asm"],
+    
+    "ut88": ["ЮТ-88", "hello-ut88.asm"],
+    "kr04": ["Электроника КР-04", "hello-kr04.asm"],
+    "palmira": ["Пальмира", "hello-palmira.asm"],
     
     "vector06c": ["Вектор-06ц", "hello-v06c.asm"],
 

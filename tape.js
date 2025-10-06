@@ -18,9 +18,17 @@ var TapeFormat = function(fmt, forfile) {
         case 'mikro80-bin':
         case 'okeah-bin':
         case 'okean-bin':
+        case 'partner-bin':
+        case 'kr04-bin':
+        case 'palmira-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
-            this.speed = 12;
+            this.speed = 8;
+            break;
+        case 'ut88-bin':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'ut88';
+            this.speed = 8;
             break;
         case 'mikrosha-bin':
         case 'microsha-bin':
@@ -30,13 +38,8 @@ var TapeFormat = function(fmt, forfile) {
         case 'necro-bin':
         case 'nekro-bin':
             this.format = TapeFormat.prototype.nekrosha;
-            this.variant = 'mikrosha';
-            this.speed = 12;
-            break;
-        case 'partner-bin':
-            this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
-            this.speed = 8;
+            this.speed = 12;
             break;
         case 'v06c-rom':
             this.format = TapeFormat.prototype.v06c_rom;
@@ -100,6 +103,9 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     var csm_hi = 0;
     var csm_lo = 0;
 
+    // ut88-style checksum
+    var csu = 0;
+
     var dptr = 0;
     if (!this.forfile) {
         for (var i = 0; i < 256; ++i) {
@@ -127,11 +133,19 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
         } else {
             csm_hi ^= octet;
         }
+
+        csu += octet;
+        csu &= 0xffff;
     }
+
+    var csu_hi = (csu & 0xff00) >> 8;
+    var csu_lo = csu & 0xff;
 
     console.log('checksum rk=', Util.hex8(cs_hi&0xff), Util.hex8(cs_lo&0xff));
     console.log('checksum microsha=', Util.hex8(csm_hi&0xff),
             Util.hex8(csm_lo&0xff));
+    console.log('checksum ut88=', Util.hex8(csu_hi),
+            Util.hex8(csu_lo));
 
     if (this.variant === 'mikrosha') {
         data[dptr++] = csm_hi & 0xff;
@@ -142,9 +156,14 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     }
     data[dptr++] = 0xe6;
 
-    /* rk86 checksum */
+    /* rk86 or ut88 checksum */
+    if (this.variant !== 'ut88') {
     data[dptr++] = cs_hi & 0xff;
     data[dptr++] = cs_lo & 0xff;
+    } else {
+        data[dptr++] = csu_hi;
+        data[dptr++] = csu_lo;
+    }
     var end = dptr;
     data[dptr++] = 0;
     data[dptr++] = 0;
