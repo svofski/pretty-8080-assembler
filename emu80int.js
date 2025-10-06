@@ -42,6 +42,13 @@ function initEmu80Iframe(iframe)
 }
 
 
+// should be called when closing emu80 iframe
+function destroyEmu80Iframe()
+{
+    emu80Stopped = false;
+}
+
+
 // load and run the file
 async function emu80run(file)
 {
