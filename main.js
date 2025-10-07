@@ -530,6 +530,10 @@ function tapeformat_to_emu80_platform(tf)
             return "kr04";
         case "palmira-bin":
             return "palmira";
+        case "orion-rko":
+        case "orion-ord":
+        case "orion-bru":
+            return "orion";
         case "okean-bin":
         case "okeah-bin":
             //return "okean240";
@@ -1254,6 +1258,8 @@ var rybas =
     "krista": ["Криста", "hello-krista.asm"],
 
     "specialist": ["Специалист", "hello-spec.asm"],
+
+    "orion": ["Орион-128", "hello-orion.asm"],
 
     "okean": ["Океан-240 🌊", "hello-okean240.asm"],
 

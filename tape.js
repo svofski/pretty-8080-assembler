@@ -75,6 +75,17 @@ var TapeFormat = function(fmt, forfile) {
             this.speed = 9;
             this.variant = "name-header";
             break;
+        case 'orion-rko':
+            this.format = TapeFormat.prototype.orion;
+            this.speed = 9;
+            this.variant = "rko";
+            break;
+        case 'orion-ord':
+        case 'orion-bru':
+            this.format = TapeFormat.prototype.orion;
+            this.speed = 9;
+            this.variant = "ord";
+            break;
     }
     this.makewav = TapeFormat.prototype.makewav;
     return this;
@@ -500,6 +511,103 @@ TapeFormat.prototype.specialist = function(mem, org, name) {
     } else {
         this.data = data;
     }
+
+    return this;
+};
+
+
+TapeFormat.prototype.orion = function(mem, org, name) {
+    var data = new Uint8Array(mem.length + 256 + 128 + name.length);
+
+    // rk-style checksum
+    var cs_hi = 0;
+    var cs_lo = 0;
+
+    const aligned_length = (mem.length + 15) >> 4 << 4;
+    const padding = 15 - (mem.length + 15) & 15;
+
+    console.log(aligned_length, padding);
+
+    var dptr = 0;
+    if (!this.forfile) {
+        for (var i = 0; i < 256; ++i) {
+            data[dptr++] = 0;
+        }
+
+        data[dptr++] = 0xe6;
+    }
+
+
+    let name_len = name.length;
+    if (name_len > 8)
+        name_len = 8;
+
+    if (this.variant === "rko" || !this.forfile) {
+        for (var i = 0; i < name_len; ++i)
+            data[dptr++] = name.charCodeAt(i);
+
+        for (var i = 0; i < 8 - name_len; ++i)
+            data[dptr++] = 0x20;
+
+        for (var i = 0; i < 64; ++i)
+            data[dptr++] = 0;
+
+        data[dptr++] = 0xe6;
+
+        data[dptr++] = 0;
+        data[dptr++] = 0;
+
+        data[dptr++] = ((aligned_length + 16) >> 8) & 0xff;
+        data[dptr++] = (aligned_length + 16) & 0xff;
+    }
+
+    const beg_for_cs = dptr;
+
+    for (var i = 0; i < name_len; ++i)
+        data[dptr++] = name.charCodeAt(i);
+
+    for (var i = 0; i < 8 - name_len; ++i)
+        data[dptr++] = 0x20;
+
+    data[dptr++] = org & 0xff;
+    data[dptr++] = (org >> 8) & 0xff;
+
+    data[dptr++] = aligned_length & 0xff;
+    data[dptr++] = (aligned_length >> 8) & 0xff;
+
+    data[dptr++] = 0;
+    data[dptr++] = 0;//0xff;
+    data[dptr++] = 0;//0xff;
+    data[dptr++] = 0;//0xff;
+
+    for (var i = 0; i < mem.length; ++i)
+        data[dptr++] = mem[i];
+
+    for (var i = 0; i < padding; ++i)
+        data[dptr++] = 0;
+
+    for (let i = beg_for_cs; i < dptr; i++) {
+        let octet = data[i];
+        cs_lo += octet;
+        if (i < dptr - 1) {
+            cs_hi += octet + ((cs_lo >> 8) & 0xff);
+        }
+        cs_lo &= 0xff;
+    }
+
+    if (this.variant === "rko" || !this.forfile) {
+        console.log('checksum=', Util.hex8(cs_hi&0xff), Util.hex8(cs_lo&0xff));
+
+        for (let i = 0; i < 3; i++)
+            data[dptr++] = 0;
+
+        data[dptr++] = 0xe6;
+
+        data[dptr++] = cs_hi & 0xff;
+        data[dptr++] = cs_lo & 0xff;
+    }
+
+    this.data = data.slice(0, dptr);
 
     return this;
 };
