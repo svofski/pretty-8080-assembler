@@ -6,7 +6,7 @@ prompt  equ 0F86Ch
 puts    equ 0F818h
 getc    equ 0F803h
 
-    lxi hl, msg
+    lxi h, msg
     call puts
     call getc
     jmp prompt

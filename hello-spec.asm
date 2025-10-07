@@ -6,7 +6,7 @@
     prompt  equ 0C800h
     puts    equ 0C818h
 
-    lxi hl, msg
+    lxi h, msg
     call puts
     jmp prompt
 
