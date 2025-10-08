@@ -1273,8 +1273,8 @@ var rybas =
     "circleellip": ["Вектор-06ц: эллипс", "circleClipAndEllip.asm"],
     "arkmus": ["Вектор-06ц: музон из Арканоида", "arkmus.asm"],
     "text80-color": ["Вектор-06ц: цветной текст 80 символов", "text80-color.asm"],
-    "basic": ["Бейсик Вектор-06ц", "hello.asc"],
-    "basic-rybov": ["Бейсик Вектор-06ц: multipart", "rybov.asc", "rybov-data.asc"]
+    "basic": ["Бейсик Вектор-06ц: Hello, world!", "hello.asc"],
+    "basic-rybov": ["Бейсик Вектор-06ц: показ рыбов", "rybov.asc", "rybov-data.asc"]
 };
 
 function load_ryba(url,extrafiles) 
