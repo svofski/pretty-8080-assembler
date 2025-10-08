@@ -562,24 +562,56 @@ span#wav-dl:hover {
     cursor: pointer;
     padding: 0.5em;
     margin: 0.5em;
+    position: relative;
 }
 
-#ryba-popup {
+.ryba-item.more::after {
+    content: "▶";
+    position: absolute;
+    left: 98%;
+    top: 0;
+    transform: translate(0%, 15%);
+    color: maroon;
+}
+.ryba-item.more:hover::after {
+}
+
+
+.ryba-popup {
     border:5px solid #ffff7d;
     background:#ffff7d;
     font-size:90%;
     font-family:Monaco, Lucida Console, monospace;
-    opacity:0.9;
     max-width:30em;
     overflow:hidden;
     position:fixed;
     z-index: 200;
     border-radius: .5rem;
+    box-shadow: 0px 0px 0px 1px #0008;
+}
+
+.ryba-popup.hidden {
+    display: none;
+}
+
+.ryba-popup.submenu {
+    background: #ffff6d;
+    border-color: #ffff6d;
+    z-index: 201;
+}
+
+.ryba-popup.submenu::before {
+    content: "<";
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-10px, 0);
 }
 
 .ryba-item:hover {
     background-color: maroon;
     color: white;
+    border-radius: .2rem;
 }
 
 .error_marker {

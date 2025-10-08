@@ -1253,7 +1253,7 @@ var rybas =
     "kr04": ["Электроника КР-04", "hello-kr04.asm"],
     "palmira": ["Пальмира", "hello-palmira.asm"],
     
-    "vector06c": ["Вектор-06ц", "hello-v06c.asm"],
+    "vector06c": ["Вектор-06ц: Hello, world!", "hello-v06c.asm"],
 
     "krista": ["Криста", "hello-krista.asm"],
 
@@ -1367,28 +1367,110 @@ function getFishfulToken(e)
     return null;
 }
 
-function create_ryba_menu()
+function build_hierarchy_rybov()
 {
-    var menu = document.createElement("div");
-    menu.setAttribute("id", "ryba-popup");
-    for (var k in rybas) {
-        console.log("ryba ", k, rybas[k][0], rybas[k][1]);
-        var item = document.createElement("div");
-        item.setAttribute("class", "ryba-item");
-        item.innerText = rybas[k][0];
-        let extrafiles = rybas[k].slice(2);
+    let platforms = {};
+
+    for (let flatkey in rybas) {
+        let r = rybas[flatkey];
+        //console.log(r);
+        let platform = r[0].split(':')[0];
+        if (platforms[platform] === undefined) {
+            platforms[platform] = [r];
+        }
+        else {
+            platforms[platform].push(r);
+        }
+    }
+
+    console.log("hierarchy rybov", platforms);
+
+    return platforms;
+}
+
+function create_menu_item(descr)
+{
+    let item = document.createElement("div");
+    item.setAttribute("class", "ryba-item");
+    item.innerText = descr[0];
+
+    if (descr[1].length) {
+        let extrafiles = descr.slice(2);
         (function(href, extrafiles) {
             item.onclick = function() {
-                menu.parentElement.removeChild(menu);
+                popupDestructor(null);
                 load_ryba(href, extrafiles);
             };
-        })(rybas[k][1], extrafiles);
-        menu.onmouseleave = function() {
-            popupDestructor(null);
-        };
-
-       menu.appendChild(item);
+        })(descr[1], extrafiles);
     }
+
+    return item;
+}
+
+function create_submenu(list)
+{
+    let submenu = document.createElement("div");
+    submenu.className = "ryba-popup submenu hidden";
+    for (let descr of list) {
+        let parts = descr[0].split(':');
+        if (parts.length > 1) {
+            descr[0] = parts[1];
+        }
+        let item = create_menu_item(descr);
+        submenu.appendChild(item);
+    }
+    return submenu;
+}
+
+function create_ryba_menu()
+{
+    let hierarchy = build_hierarchy_rybov();
+    let shown_submenu;
+
+    var menu = document.createElement("div");
+    menu.setAttribute("id", "ryba-popup");
+    menu.className = "ryba-popup";
+    for (var platform in hierarchy) {
+        //console.log("ryba ", k, rybas[k][0], rybas[k][1]);
+        let rybas = hierarchy[platform];
+        let item;
+        if (rybas.length === 1) {
+            item = create_menu_item(rybas[0]);
+            item.addEventListener("mouseenter", () => {
+                if (shown_submenu) {
+                    shown_submenu.classList.add("hidden");
+                    shown_submenu = null;
+                }
+            });
+        }
+        else {
+            item = create_menu_item([platform, "", ""]);
+            item.classList.add("more");
+            let submenu = create_submenu(rybas);
+            item.appendChild(submenu);
+
+            item.addEventListener("mouseenter", () => {
+                item.parentElement.parentElement.appendChild(submenu);
+
+                let r = item.getBoundingClientRect();
+                let item_padding = parseFloat(window.getComputedStyle(item).padding);
+                let menu_border = parseFloat(window.getComputedStyle(menu).border);
+                submenu.style = `left: ${r.right + item_padding + menu_border}px; top: ${r.top - item_padding - menu_border}px;`;
+
+                submenu.classList.remove("hidden");
+                shown_submenu = submenu;
+            });
+        }
+
+        menu.appendChild(item);
+    }
+
+    menu.onmouseleave = function(e) {
+        let other = e.relatedTarget;
+        if (!other.classList.contains("ryba-popup")) {
+            popupDestructor(null);
+        }
+    };
     
     var text = document.getElementById("source");
     (function(text, menu) {

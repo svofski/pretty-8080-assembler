@@ -515,12 +515,11 @@ function popupDestructor(e)
 {
     document.getElementById("tabContextMenu").style.display = "none";
     document.getElementById("shawarmaMenu").style.display = "none";
-    let ryba_menu = document.getElementById("ryba-popup");
-    if (ryba_menu) {
-        if (ryba_menu.parentElement) {
-            ryba_menu.parentElement.removeChild(ryba_menu);
+    document.querySelectorAll(".ryba-popup").forEach(item => {
+        if (item.parentElement) {
+            item.parentElement.removeChild(item);
         }
-    }
+    });
     document.removeEventListener("click", popupDestructor);
 }
 

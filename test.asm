@@ -1,4 +1,4 @@
-        ; 🐟  check out other examples by clicking on the fish
+        ; 🐟  click on the fish to see the examples menu
         ; 8080 assembler code
         .project test.com
         .tape v06c-rom
