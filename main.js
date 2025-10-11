@@ -292,7 +292,7 @@ function gotoError()
 var autotranslate = false;
 
 function keypress(e) {
-    cock(100);
+    cock(250);
 }
 
 function cock(timeout) {
