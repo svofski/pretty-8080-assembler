@@ -328,7 +328,7 @@ I8080_disasm = function (binary) {
     case 0xe0: cmd = "RPO";   length = 1; break;
     case 0xe1: cmd = "POP";   length = 1; arg1 = "H"; break;
     case 0xe2: cmd = "JPO";   length = 3; arg1 = imm16; branch = true; break;
-    case 0xe3: cmd = "XTXL";  length = 1; break;
+    case 0xe3: cmd = "XTHL";  length = 1; break;
     case 0xe4: cmd = "CPO";   length = 3; arg1 = imm16; branch = true; break;
     case 0xe5: cmd = "PUSH";  length = 1; arg1 = "H"; break;
     case 0xe6: cmd = "ANI";   length = 2; arg1 = imm8; break;
