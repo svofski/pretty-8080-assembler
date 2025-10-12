@@ -38,7 +38,7 @@ var TapeFormat = function(fmt, forfile) {
         case 'necro-bin':
         case 'nekro-bin':
             this.format = TapeFormat.prototype.nekrosha;
-            this.variant = 'rk';
+            this.variant = 'mikrosha';
             this.speed = 12;
             break;
         case 'v06c-rom':
@@ -164,28 +164,21 @@ TapeFormat.prototype.nekrosha = function(mem, org, name) {
     } else {
         data[dptr++] = 0;
         data[dptr++] = 0;
-    }
-    data[dptr++] = 0xe6;
 
-    /* rk86 or ut88 checksum */
-    if (this.variant !== 'ut88') {
-    data[dptr++] = cs_hi & 0xff;
-    data[dptr++] = cs_lo & 0xff;
-    } else {
-        data[dptr++] = csu_hi;
-        data[dptr++] = csu_lo;
+        data[dptr++] = 0xe6;
+
+        /* rk86 or ut88 checksum */
+        if (this.variant !== 'ut88') {
+            data[dptr++] = cs_hi & 0xff;
+            data[dptr++] = cs_lo & 0xff;
+        } else {
+            data[dptr++] = csu_hi;
+            data[dptr++] = csu_lo;
+        }
     }
-    var end = dptr;
-    data[dptr++] = 0;
-    data[dptr++] = 0;
-    data[dptr++] = 0;
-    data[dptr++] = 0;
-    data[dptr++] = 0;
-    if (this.forfile) {
-        this.data = data.slice(0, end);
-    } else {
-        this.data = data;
-    }
+
+    this.data = data.slice(0, dptr);
+
     return this;
 };
 
