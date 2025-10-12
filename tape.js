@@ -458,19 +458,21 @@ TapeFormat.prototype.specialist = function(mem, org, name) {
 
     var dptr = 0;
     if (!this.forfile) {
-        if (this.variant === "name-header") {
-            for (var i = 0; i < 256; ++i) {
-                data[dptr++] = 0;
-            }
-            data[dptr++] = 0xe6;
-            data[dptr++] = 0xd9;
-            data[dptr++] = 0xd9;
-            data[dptr++] = 0xd9;
-
-            for (var i = 0; i < name.length; ++i) {
-                data[dptr++] = name.charCodeAt(i);
-            }
+        for (var i = 0; i < 256; ++i) {
+            data[dptr++] = 0;
         }
+        data[dptr++] = 0xe6;
+    }
+
+    if (this.variant === "name-header") {
+        data[dptr++] = 0xd9;
+        data[dptr++] = 0xd9;
+        data[dptr++] = 0xd9;
+
+        let file_name = TapeFormat.prototype.make_internal_file_name(name, 16, false);
+        data.set(file_name, dptr);
+        dptr += file_name.length;
+        data[dptr++] = 0;
 
         for (var i = 0; i < 768; ++i) {
             data[dptr++] = 0;
@@ -500,17 +502,7 @@ TapeFormat.prototype.specialist = function(mem, org, name) {
     data[dptr++] = cs_lo & 0xff;
     data[dptr++] = cs_hi & 0xff;
 
-    var end = dptr;
-
-    for (var i = dptr; i < mem.length; ++i) {
-        mem[i] = 0;
-    }
-
-    if (this.forfile) {
-        this.data = data.slice(0, end);
-    } else {
-        this.data = data;
-    }
+    this.data = data.slice(0, dptr);
 
     return this;
 };
@@ -525,8 +517,6 @@ TapeFormat.prototype.orion = function(mem, org, name) {
 
     const aligned_length = (mem.length + 15) >> 4 << 4;
     const padding = 15 - (mem.length + 15) & 15;
-
-    console.log(aligned_length, padding);
 
     var dptr = 0;
     if (!this.forfile) {
