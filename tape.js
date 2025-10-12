@@ -5,6 +5,7 @@ var TapeFormat = function(fmt, forfile) {
     this.variant = null;
     this.speed = 12;
     this.forfile = forfile || false; /* true if no leaders, no sync bytes */
+    this.makewav = TapeFormat.prototype.makewav;
     switch (fmt) {
         case 'rk-bin':
         case 'rk86-bin':
@@ -86,8 +87,12 @@ var TapeFormat = function(fmt, forfile) {
             this.speed = 9;
             this.variant = "ord";
             break;
+        case 'pk8000-cas':
+            this.format = TapeFormat.prototype.cas;
+            this.speed = 5;
+            this.makewav = TapeFormat.prototype.makewav_msx;
+            break;
     }
-    this.makewav = TapeFormat.prototype.makewav;
     return this;
 }
 
@@ -207,6 +212,68 @@ TapeFormat.prototype.biphase = function(data, halfperiod) {
         }
     }
     return w;
+};
+
+TapeFormat.prototype.makewav_msx = function()
+{
+    const halfperiod = this.speed || 5; // half period of 2400 Hz
+
+    n_bits = 8000  // long pilot
+           + 1200  // pause 1 s
+           + 2000  // short pilot
+           + (data.length - 16) * 11; // minus 2 signatures, 1 start + 8 data + 2 stop per byte
+
+    var w = new Uint8Array(n_bits * 4 * halfperiod); // one bit is 4 halfperiods long
+
+    let dptr = 0;
+
+    dptr = TapeFormat.prototype.msx_pilot(w, dptr, 16000, halfperiod);
+    dptr = TapeFormat.prototype.msx_data(w, dptr, this.data.subarray(8, 0x20), halfperiod);
+    for (let i = 0; i < 4800 * halfperiod; i++)
+        w[dptr++] = 0x80;
+    dptr = TapeFormat.prototype.msx_pilot(w, dptr, 4000, halfperiod);
+    dptr = TapeFormat.prototype.msx_data(w, dptr, this.data.subarray(0x28, this.data.length), halfperiod);
+
+    if (w.length != dptr) console.log('Data size mismatch: ', w.length, dptr)
+
+    var params = {sampleRate:22050, channels: 1};
+    wav = new Wav(params);
+    wav.setBuffer(w);
+    var stream = wav.getBuffer(dptr + WAV_HEADER_SIZE * 2);
+    return stream;
+}
+
+TapeFormat.prototype.msx_pilot = function(w, dptr, periods, halfperiod) {
+    for (let i = 0; i < periods; i++) {
+        let phase = 255 - 32;
+        for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
+        phase = phase ^ 255;
+        for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
+    }
+    return dptr;
+};
+
+TapeFormat.prototype.msx_data = function(w, dptr, data, halfperiod) {
+    for (var i = 0, end = data.length; i < end; i++) {
+        let octet = (data[i] << 1) | 0x600;
+        for (var b = 0; b < 11; ++b, octet >>= 1) {
+            let phase = 255 - 32;
+            if (octet & 1) {
+                for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
+                phase ^= 255;
+                for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
+                phase ^= 255;
+                for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
+                phase ^= 255;
+                for (var q = 0; q < halfperiod; ++q) w[dptr++] = phase;
+            } else {
+                for (var q = 0; q < halfperiod * 2; ++q) w[dptr++] = phase;
+                phase ^= 255;
+                for (var q = 0; q < halfperiod * 2; ++q) w[dptr++] = phase;
+            }
+        }
+    }
+    return dptr;
 };
 
 /* 4[ 25[00] 25[55] ]  record preamble
@@ -582,6 +649,48 @@ TapeFormat.prototype.orion = function(mem, org, name) {
     }
 
     this.data = data.slice(0, dptr);
+
+    return this;
+};
+
+TapeFormat.prototype.cas = function(mem, org, name) {
+    const signature = [0x1f, 0xa6, 0xde, 0xba, 0xcc, 0x13, 0x7d, 0x74]
+
+    let data = new Uint8Array(mem.length + 46);
+    let dptr = 0
+
+    data.set(signature, dptr)
+    dptr += 8
+
+    for (let i = 0; i < 10; i++)
+        data[dptr++] = 0xd0;
+
+    let file_name = TapeFormat.prototype.make_internal_file_name(name, 6);
+    data.set(file_name, dptr);
+    dptr += 6;
+
+    for (let i = 0; i < 8; i++)
+        data[dptr++] = 0;
+
+    data.set(signature, dptr)
+    dptr += 8
+
+    org &= 0xffff;
+
+    data[dptr++] = org & 0xff;
+    data[dptr++] = org >> 8;
+
+    const end = org + mem.length - 1;
+
+    data[dptr++] = end & 0xff;
+    data[dptr++] = end >> 8;
+
+    data[dptr++] = org & 0xff;
+    data[dptr++] = org >> 8;
+
+    data.set(mem, dptr)
+
+    this.data = data;
 
     return this;
 };
