@@ -1273,6 +1273,7 @@ var rybas =
     "circleellip": ["Вектор-06ц: эллипс", "circleClipAndEllip.asm"],
     "arkmus": ["Вектор-06ц: музон из Арканоида", "arkmus.asm"],
     "text80-color": ["Вектор-06ц: цветной текст 80 символов", "text80-color.asm"],
+    "vi53player": ["Вектор-06ц: проигрыватель музыки на ВИ53", "vi53player.zip"],
     "basic": ["Бейсик Вектор-06ц: Hello, world!", "hello.asc"],
     "basic-rybov": ["Бейсик Вектор-06ц: показ рыбов", "rybov.asc", "rybov-data.asc"]
 };
@@ -1302,12 +1303,19 @@ function load_ryba(url,extrafiles)
         let oReq = j();
         oReq.open("GET", url, true);
         oReq.responseType = "text";
+        if (url.toLowerCase().endsWith(".zip")) {
+            oReq.responseType = "arraybuffer";
+        }
 
         oReq.onload = function(oEvent) {
             window.loadryba_state = false;
             let status = oReq.status;
             if (status >= 200 && status < 300 || status === 304) {
                 const filename = url.split("/").pop();
+                if (filename && filename.toLowerCase().endsWith(".zip")) {
+                    importProject([oReq.response]);
+                    return;
+                }
                 if (project.current == null) {
                     newProject(false, filename, oReq.response);
                 }
