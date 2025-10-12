@@ -545,6 +545,9 @@ function tapeformat_to_emu80_platform(tf)
             return "orion";
         case "pk8000-cas":
             return "pk8000";
+        case "lvov-lvt":
+        case "lvov-cas":
+            return "lvov";
         case "okean-bin":
         case "okeah-bin":
             //return "okean240";
@@ -1273,6 +1276,7 @@ var rybas =
     "orion": ["Орион-128", "hello-orion.asm"],
 
     "pk8000": ["ПК-8000", "hello-pk8000.asm"],
+    "lvov": ["ПК-01 Львов", "hello-lvov.asm"],
 
     "okean": ["Океан-240 🌊", "hello-okean240.asm"],
 

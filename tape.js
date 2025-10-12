@@ -88,7 +88,13 @@ var TapeFormat = function(fmt, forfile) {
             this.variant = "ord";
             break;
         case 'pk8000-cas':
+        case 'lvov-cas':
             this.format = TapeFormat.prototype.cas;
+            this.speed = 5;
+            this.makewav = TapeFormat.prototype.makewav_msx;
+            break;
+        case 'lvov-lvt':
+            this.format = TapeFormat.prototype.lvt;
             this.speed = 5;
             this.makewav = TapeFormat.prototype.makewav_msx;
             break;
@@ -674,6 +680,45 @@ TapeFormat.prototype.cas = function(mem, org, name) {
 
     data.set(signature, dptr)
     dptr += 8
+
+    org &= 0xffff;
+
+    data[dptr++] = org & 0xff;
+    data[dptr++] = org >> 8;
+
+    const end = org + mem.length - 1;
+
+    data[dptr++] = end & 0xff;
+    data[dptr++] = end >> 8;
+
+    data[dptr++] = org & 0xff;
+    data[dptr++] = org >> 8;
+
+    data.set(mem, dptr)
+
+    this.data = data;
+
+    return this;
+};
+
+TapeFormat.prototype.lvt = function(mem, org, name) {
+    if (!this.forfile)
+        return TapeFormat.prototype.cas(mem, org, name);
+
+    const signature = [0x4c, 0x56, 0x4f, 0x56, 0x2f, 0x32, 0x2e, 0x30, 0x2f];
+
+    let data = new Uint8Array(mem.length + 22);
+    let dptr = 0
+
+    data.set(signature, dptr)
+    dptr += 9
+
+    data[dptr++] = 0xd0;
+
+
+    let file_name = TapeFormat.prototype.make_internal_file_name(name, 6);
+    data.set(file_name, dptr);
+    dptr += 6;
 
     org &= 0xffff;
 
