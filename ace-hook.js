@@ -107,9 +107,13 @@ oop.inherits(TokenTooltip, Tooltip);
 
     this.clearxrefs = function()
     {
-        if (!this.xrefs) return;
-        for (var i = 0; i < this.xrefs.length; ++i) {
-            this.editor.session.removeMarker(this.xrefs[i]);
+        // TODO: maybe check if the markers are ace_xref?
+        const prevMarkers = editor.session.getMarkers();
+        if (prevMarkers) {
+            const prevMarkersArr = Object.keys(prevMarkers);
+            for (let item of prevMarkersArr) {
+                editor.session.removeMarker(prevMarkers[item].id);
+            }
         }
     }
 
