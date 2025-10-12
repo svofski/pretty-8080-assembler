@@ -537,17 +537,11 @@ TapeFormat.prototype.orion = function(mem, org, name) {
         data[dptr++] = 0xe6;
     }
 
-
-    let name_len = name.length;
-    if (name_len > 8)
-        name_len = 8;
+    let file_name = TapeFormat.prototype.make_internal_file_name(name, 8);
 
     if (this.variant === "rko" || !this.forfile) {
-        for (var i = 0; i < name_len; ++i)
-            data[dptr++] = name.charCodeAt(i);
-
-        for (var i = 0; i < 8 - name_len; ++i)
-            data[dptr++] = 0x20;
+        data.set(file_name, dptr);
+        dptr += 8;
 
         for (var i = 0; i < 64; ++i)
             data[dptr++] = 0;
@@ -563,11 +557,8 @@ TapeFormat.prototype.orion = function(mem, org, name) {
 
     const beg_for_cs = dptr;
 
-    for (var i = 0; i < name_len; ++i)
-        data[dptr++] = name.charCodeAt(i);
-
-    for (var i = 0; i < 8 - name_len; ++i)
-        data[dptr++] = 0x20;
+    data.set(file_name, dptr);
+    dptr += 8;
 
     data[dptr++] = org & 0xff;
     data[dptr++] = (org >> 8) & 0xff;
@@ -611,3 +602,30 @@ TapeFormat.prototype.orion = function(mem, org, name) {
 
     return this;
 };
+
+TapeFormat.prototype.make_internal_file_name = function(full_name, len, space_padding = true) {
+    let new_name = new Uint8Array(len);
+
+    let max_len = full_name < len ? full_name : len;
+
+    let pos = 0;
+    while (pos < max_len) {
+        let ch = full_name.charCodeAt(pos);
+
+        if (ch === 0x2e/*'.'*/)
+            break;
+
+        if ((ch >= 0x30/*'0'*/ && ch <= 0x39/*'9'*/) || (ch >= 0x41/*'A'*/ && ch <= 0x5a/*'Z'*/) || (ch >= 0x61/*'a'*/ && ch <= 0x7a/*'z'*/) || ch === 0x20/*' '*/)
+            ch = ch >= 0x61/*'a'*/ && ch <= 0x7a/*'z'*/ ? ch - 0x20 : ch;
+        else
+            ch = 0x2d/*'-'*/;
+
+        new_name[pos++] = ch;
+    }
+
+    if (space_padding)
+        while (pos < len)
+            new_name[pos++] = 0x20;
+
+    return space_padding ? new_name : new_name.slice(0, pos);
+}
