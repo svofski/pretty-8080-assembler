@@ -65,7 +65,7 @@ function Assembler() {
     this.doHexDump = false;
     this.doIntelHex = false;
     this.targetEncoding = 'koi8-r';
-    this.project = "test";
+    this.project = "project";
 
 
     this.labels = {};
@@ -1515,6 +1515,7 @@ self.addEventListener('message', function(e) {
                     'xref_by_file':asm.tossed_xrefs,
                     'labels':asm.labels,
                     'kind':'assemble',
+                    'project':asm.project
                 });
     } 
     else if (cmd == 'getmem') {
@@ -1522,7 +1523,9 @@ self.addEventListener('message', function(e) {
             'org': asm.org,
             'binFileName': asm.getBinFileName(),
             'tapeFormat':asm.tapeFormat,
-            'download':false});
+            'download':false,
+            'project':asm.project
+        });
     } 
     else if (cmd.startsWith('getbin')) {
         let parts = cmd.split(',');
@@ -1535,7 +1538,8 @@ self.addEventListener('message', function(e) {
             'filename': asm.getBinFileName(),
             'tapeFormat':asm.tapeFormat,
             'download':'bin',
-            'extra': extra
+            'extra': extra,
+            'project':asm.project
         });
     } 
     else if (cmd == 'gethex') {
@@ -1544,7 +1548,8 @@ self.addEventListener('message', function(e) {
             'org': asm.org,
             'filename': asm.getHexFileName(),
             'hex':asm.hexText,
-            'download':'hex'
+            'download':'hex',
+            'project':asm.project
         });
     } 
     else if (cmd == 'gettap') {
@@ -1552,7 +1557,8 @@ self.addEventListener('message', function(e) {
             'org': asm.org,
             'filename': asm.getTapFileName(),
             'tapeFormat':asm.tapeFormat,
-            'download':'tap'
+            'download':'tap',
+            'project':asm.project
         });
     } 
     else if (cmd == 'getwav') {
@@ -1560,7 +1566,8 @@ self.addEventListener('message', function(e) {
             'org': asm.org,
             'binFileName': asm.getBinFileName(),
             'tapeFormat':asm.tapeFormat,
-            'download':e.data['mode']
+            'download':e.data['mode'],
+            'project':asm.project
         });
     }
 }, false);

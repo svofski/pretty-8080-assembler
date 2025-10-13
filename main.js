@@ -74,14 +74,23 @@ function Asmcache() {
     this.labels = [];
     this.xref_by_file = {};
     this.addr_to_label = {};
+    this.project = "project";
 }
 var asmcache = new Asmcache();
 
-function updateReferences(xref, xref_by_file, labels, org) {
+function updateReferences(data) //xref, xref_by_file, labels, org) {
+{
+    const labels = data['labels'];
+    const xref = data['xref'];
+    const xref_by_file = data['xref_by_file'];
+    const org = data['org'];
+    const project = data['project'];
+
     asmcache.xref = xref;
     asmcache.xref_by_file = xref_by_file;
     asmcache.labels = labels;
     asmcache.org = org || 256;
+    asmcache.project = project || "project";
 
     asmcache.addr_to_label = {};
     for (let label in labels) {
@@ -244,7 +253,7 @@ function assemble() {
                         const xref = e.data['xref'];
                         const xref_by_file = e.data['xref_by_file'];
                         const org = e.data['org'];
-                        updateReferences(xref, xref_by_file, labels, org);
+                        updateReferences(e.data);//xref, xref_by_file, labels, org);
                         autotranslate = false;
 
                         // debounce stats update

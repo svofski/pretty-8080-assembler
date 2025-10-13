@@ -439,12 +439,13 @@ function changeColor(name)
 }
 
 function exportProject() {
+    let projectname = (asmcache.project || "project") + ".zip";
     const zip = new JSZip();
     for (let f in project.files) zip.file(f, project.files[f]);
     zip.file("project.json", JSON.stringify(project));
     zip.generateAsync({
         type: "blob"
-    }).then(b => saveAs(b, "project.zip"));
+    }).then(b => saveAs(b, projectname));
 }
 
 function importProject(files) {
