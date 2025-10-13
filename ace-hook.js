@@ -112,7 +112,9 @@ oop.inherits(TokenTooltip, Tooltip);
         if (prevMarkers) {
             const prevMarkersArr = Object.keys(prevMarkers);
             for (let item of prevMarkersArr) {
-                editor.session.removeMarker(prevMarkers[item].id);
+                if (prevMarkers[item].clazz === "ace_xref") {
+                    editor.session.removeMarker(prevMarkers[item].id);
+                }
             }
         }
     }
