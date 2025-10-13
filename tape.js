@@ -703,7 +703,7 @@ TapeFormat.prototype.cas = function(mem, org, name) {
 
 TapeFormat.prototype.lvt = function(mem, org, name) {
     if (!this.forfile)
-        return TapeFormat.prototype.cas(mem, org, name);
+        return TapeFormat.prototype.cas.call(this, mem, org, name);
 
     const signature = [0x4c, 0x56, 0x4f, 0x56, 0x2f, 0x32, 0x2e, 0x30, 0x2f];
 
