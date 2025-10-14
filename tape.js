@@ -652,11 +652,12 @@ TapeFormat.prototype.orion = function(mem, org, name) {
         data[dptr++] = 0xe6;
     }
 
-    let file_name = TapeFormat.prototype.make_internal_file_name(name, 8);
+    let file_name = TapeFormat.prototype.make_internal_file_name(name, 7);
 
     if (this.variant === "rko" || !this.forfile) {
         data.set(file_name, dptr);
-        dptr += 8;
+        dptr += 7;
+        data[dptr++] = 0x24; // $
 
         for (var i = 0; i < 64; ++i)
             data[dptr++] = 0;
@@ -673,7 +674,8 @@ TapeFormat.prototype.orion = function(mem, org, name) {
     const beg_for_cs = dptr;
 
     data.set(file_name, dptr);
-    dptr += 8;
+    dptr += 7;
+    data[dptr++] = 0x24; // $
 
     data[dptr++] = org & 0xff;
     data[dptr++] = (org >> 8) & 0xff;
