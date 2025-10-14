@@ -14,7 +14,7 @@ var TapeFormat = function(fmt, forfile) {
         case '86rk-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
-            this.speed = 8;
+            this.speed = 9;
             this.ext = '.rkr'
             break;
         case 'apogee-rk':
@@ -26,7 +26,7 @@ var TapeFormat = function(fmt, forfile) {
         case 'apogej-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
-            this.speed = 8;
+            this.speed = 9;
             this.ext = '.rka'
             break;
         case 'micro80-bin':
@@ -49,28 +49,28 @@ var TapeFormat = function(fmt, forfile) {
         case 'partner-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
-            this.speed = 8;
+            this.speed = 10;
             this.ext = '.rkp'
             break;
         case 'kr04-bin':
         case 'kr04-rk':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
-            this.speed = 8;
+            this.speed = 9;
             this.ext = '.rk4'
             break;
         case 'palmira-rk':
         case 'palmira-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
-            this.speed = 8;
+            this.speed = 9;
             this.ext = '.rkl'
             break;
         case 'ut88-rku':
         case 'ut88-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'ut88';
-            this.speed = 8;
+            this.speed = 9;
             this.ext = '.rku'
             break;
         case 'microsha-rkm':
