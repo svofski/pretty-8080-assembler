@@ -6,40 +6,72 @@ var TapeFormat = function(fmt, forfile) {
     this.speed = 12;
     this.forfile = forfile || false; /* true if no leaders, no sync bytes */
     this.makewav = TapeFormat.prototype.makewav;
+    this.ext = null
     switch (fmt) {
         case 'rk86-rk':
-        case 'apogee-rk':
-        case 'apogey-rk':
-        case 'micro80-rk':
-        case 'mikro80-rk':
-        case 'kr04-rk':
-        case 'palmira-rk':
-        case 'partner-rk':
-
         case 'rk-bin':
         case 'rk86-bin':
         case '86rk-bin':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'rk';
+            this.speed = 8;
+            this.ext = '.rkr'
+            break;
+        case 'apogee-rk':
+        case 'apogey-rk':
         case 'apogee-bin':
         case 'apogee-bin':
         case 'apogey-bin':
         case 'apogay-bin':
         case 'apogej-bin':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'rk';
+            this.speed = 8;
+            this.ext = '.rka'
+            break;
         case 'micro80-bin':
         case 'mikro80-bin':
+        case 'micro80-rk':
+        case 'mikro80-rk':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'rk';
+            this.speed = 8;
+            this.ext = '.rk8'
+            break;
         case 'okeah-bin':
         case 'okean-bin':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'rk';
+            this.speed = 8;
+            this.ext = '.rk'
+            break;
+        case 'partner-rk':
         case 'partner-bin':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'rk';
+            this.speed = 8;
+            this.ext = '.rkp'
+            break;
         case 'kr04-bin':
+        case 'kr04-rk':
+            this.format = TapeFormat.prototype.nekrosha;
+            this.variant = 'rk';
+            this.speed = 8;
+            this.ext = '.rk4'
+            break;
+        case 'palmira-rk':
         case 'palmira-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'rk';
             this.speed = 8;
+            this.ext = '.rkl'
             break;
         case 'ut88-rku':
         case 'ut88-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'ut88';
             this.speed = 8;
+            this.ext = '.rku'
             break;
         case 'microsha-rkm':
         case 'mikrosha-rkm':
@@ -53,6 +85,7 @@ var TapeFormat = function(fmt, forfile) {
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'mikrosha';
             this.speed = 12;
+            this.ext = '.rkm'
             break;
         case 'v06c-rom':
             this.format = TapeFormat.prototype.v06c_rom;
@@ -79,6 +112,7 @@ var TapeFormat = function(fmt, forfile) {
             this.format = TapeFormat.prototype.specialist;
             this.speed = 9;
             this.variant = null;
+            this.ext = '.rks'
             break;
         case 'ÓÐÅÃÉÁÌÉÓÔß-nrks': // кои-8
         case 'spetsialist-nrks':
@@ -91,17 +125,25 @@ var TapeFormat = function(fmt, forfile) {
             this.format = TapeFormat.prototype.specialist;
             this.speed = 9;
             this.variant = "name-header";
+            this.ext = '.rks'
             break;
         case 'orion-rko':
             this.format = TapeFormat.prototype.orion;
             this.speed = 9;
-            this.variant = "rko";
+            this.variant = 'rko';
+            this.ext = '.rko'
             break;
         case 'orion-ord':
+            this.format = TapeFormat.prototype.orion;
+            this.speed = 9;
+            this.variant = 'ord';
+            this.ext = '.ord'
+            break;
         case 'orion-bru':
             this.format = TapeFormat.prototype.orion;
             this.speed = 9;
-            this.variant = "ord";
+            this.variant = 'ord';
+            this.ext = '.bru'
             break;
         case 'pk8000-cas':
         case 'lvov-cas':
@@ -113,6 +155,7 @@ var TapeFormat = function(fmt, forfile) {
             this.format = TapeFormat.prototype.lvt;
             this.speed = 5;
             this.makewav = TapeFormat.prototype.makewav_msx;
+            this.ext = '.lvt'
             break;
     }
     return this;

@@ -413,6 +413,8 @@ function hex2binMessageListener(e) {
                 run_emulator(stream.data, filename, tapeformat, start);
             }
             else {
+                if (stream.ext)
+                    filename = Util.replaceExt(filename, stream.ext);
                 __download(stream.data, filename, "application/octet-stream");
             }
             break;
