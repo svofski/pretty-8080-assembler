@@ -1,6 +1,6 @@
     ; 🐟 для ЮТ-88
-    .tape ut88-bin ; формат ленты
-    .project hellout88.rk 
+    .project hellout88
+    .tape ut88-rku ; формат ленты ЮТ-88
     .org 0
 prompt  equ 0F86Ch
 puts    equ 0F818h

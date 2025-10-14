@@ -1,6 +1,6 @@
     ; 🐟 для Пальмиры
-    .project hello.rk 
-    .tape palmira-bin
+    .project helloplm
+    .tape palmira-rk ; формат ленты RK-86
     .org 0
 prompt  equ 0F86Ch
 puts    equ 0F818h

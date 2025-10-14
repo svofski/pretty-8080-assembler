@@ -1,7 +1,7 @@
     ; 🐟 для ПК-01 Львов
-    .project hello.lvt
-    .tape lvov-lvt
-    ; .tape lvov-cas
+    .project hellolvov
+    .tape lvov-lvt ; формат LVT
+    ;.tape lvov-cas ; формат ленты MSX
 
     .org 8000h
 

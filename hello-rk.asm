@@ -1,6 +1,6 @@
     ; 🐟 для Радио-86РК
-    .project hello.rk 
-    .tape rk-bin
+    .project hellork
+    .tape rk86-rk ; формат ленты РК-86
     .org 0
 prompt  equ 0F86Ch
 puts    equ 0F818h

@@ -510,33 +510,52 @@ let close_emulator_cb = null;
 function tapeformat_to_emu80_platform(tf)
 {
     switch (tf) {
+        case "rk86-rk":
         case "rk-bin":
+        case 'rk86-bin':
+        case '86rk-bin':
             return "rk86";
         case "v06c-rom":
             return "vector";
         case "v06c-cload":
             return "vector";
+        case 'microsha-rkm':
+        case 'mikrosha-rkm':
         case "microsha-bin":
+        case 'mikrosha-bin':
             return "mikrosha";
+        case "apogee-rk":
+        case "apogey-rk":
+        case "apogej-rk":
         case "apogee-bin":
         case "apogey-bin":
         case "apogej-bin":
             return "apogey";
+        case 'partner-rk':
         case "partner-bin":
             return "partner";
+        case 'ÓÐÅÃÉÁÌÉÓÔß-nrks': // КОИ-8Ъ
+        case 'spetsialist-nrks':
+        case 'specialist-nrks':
+        case 'spec-nrks':
         case "ÓÐÅÃÉÁÌÉÓÔß-rks": // КОИ-8Ъ
         case "spetsialist-rks":
         case "specialist-rks":
         case "spec-rks":
             return "spec";
 
+        case 'micro80-rk':
+        case 'mikro80-rk':
         case "micro80-bin":
         case "mikro80-bin":
             return "mikro80";
+        case 'ut88-rku':
         case "ut88-bin":
             return "ut88";
+        case 'kr04-rk':
         case "kr04-bin":
             return "kr04";
+        case 'palmira-rk':
         case "palmira-bin":
             return "palmira";
         case "orion-rko":

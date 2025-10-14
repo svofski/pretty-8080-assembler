@@ -1,8 +1,8 @@
     ; 🐟 для Орион-128
-    .project hello.rko 
-    .tape orion-rko
-    ; .tape orion-ord
-    ; .tape orion-bru
+    .project hellorion
+    .tape orion-rko ; формат ленты Ориона RKO
+    ;.tape orion-ord ; формат ORDOS ORD/BRU
+    ;.tape orion-bru ; формат ORDOS ORD/BRU
 
     .org 0
 prompt  equ 0F86Ch

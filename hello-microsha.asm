@@ -1,6 +1,6 @@
     ; 🐟 для Микроши
-    .project hellosha.rk
-    .tape microsha-bin ; формат ленты 
+    .project hellosha
+    .tape microsha-rkm ; формат ленты RKM
     .org 0
 prompt  equ 0F89Dh
 puts    equ 0F818h

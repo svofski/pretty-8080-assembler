@@ -7,6 +7,15 @@ var TapeFormat = function(fmt, forfile) {
     this.forfile = forfile || false; /* true if no leaders, no sync bytes */
     this.makewav = TapeFormat.prototype.makewav;
     switch (fmt) {
+        case 'rk86-rk':
+        case 'apogee-rk':
+        case 'apogey-rk':
+        case 'micro80-rk':
+        case 'mikro80-rk':
+        case 'kr04-rk':
+        case 'palmira-rk':
+        case 'partner-rk':
+
         case 'rk-bin':
         case 'rk86-bin':
         case '86rk-bin':
@@ -26,11 +35,14 @@ var TapeFormat = function(fmt, forfile) {
             this.variant = 'rk';
             this.speed = 8;
             break;
+        case 'ut88-rku':
         case 'ut88-bin':
             this.format = TapeFormat.prototype.nekrosha;
             this.variant = 'ut88';
             this.speed = 8;
             break;
+        case 'microsha-rkm':
+        case 'mikrosha-rkm':
         case 'mikrosha-bin':
         case 'microsha-bin':
         case 'microcha-bin':
@@ -68,6 +80,10 @@ var TapeFormat = function(fmt, forfile) {
             this.speed = 9;
             this.variant = null;
             break;
+        case 'ÓÐÅÃÉÁÌÉÓÔß-nrks': // кои-8
+        case 'spetsialist-nrks':
+        case 'specialist-nrks':
+        case 'spec-nrks':
         case 'ÓÐÅÃÉÁÌÉÓÔß-mon': // кои-8 факъ е
         case 'spetsialist-mon':
         case 'specialist-mon':
