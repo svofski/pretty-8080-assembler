@@ -1637,6 +1637,7 @@ function session_toggle_breakpoint(session, row)
 
 function find_addr_line(addr, exact = false)
 {
+    let candidates = [];
     for (let file of Object.keys(sessions)) {
         let s = sessions[file];
         let gc = s.gutter_contents;
@@ -1665,10 +1666,23 @@ function find_addr_line(addr, exact = false)
         if (exact && (low >= gc.length || gc[low].addr !== addr)) 
             return [null, -1];
 
-        return [file, low];
+        candidates.push([file,low,gc[low].addr]);
     }
 
-    return [null, -1];
+    let nearest = 100500;
+    let best = [null, -1];
+    for (let i in candidates) {
+        let dist = Math.abs(candidates[i][2] - addr);
+        if (dist < nearest) {
+            nearest = dist;
+            best = [candidates[i][0], candidates[i][1]];
+        }
+        if (dist == 0) {
+            break;
+        }
+    }
+
+    return best;
 }
 
 let debugger_position_marker = null;
