@@ -773,7 +773,7 @@ class Debug
     {
         let mem = $("#dbg-mem");
         const metrics = Util.getCharMetrics(mem);
-        return metrics.w * 83;
+        return metrics.w * 83 || 600; // TODO: we're querying the metrics before they're ready
     }
 };
 
