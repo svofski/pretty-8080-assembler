@@ -1663,8 +1663,9 @@ function find_addr_line(addr, exact = false)
             ++low;
         }
 
-        if (exact && (low >= gc.length || gc[low].addr !== addr)) 
-            return [null, -1];
+        if (exact && low < gc.length && gc[low].addr === addr) {
+            return [file, low];
+        }
 
         candidates.push([file,low,gc[low].addr]);
     }
