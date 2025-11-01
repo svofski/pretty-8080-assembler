@@ -331,7 +331,9 @@ Assembler.parseRegister = function(s) {
 Assembler.prototype.tokenDBDW = function(s, addr, length, linenumber) {
     s = s.trim();
     if (s.length === 0) return 0;
-    this.useExpression([s], addr, length, linenumber);
+    if (this.resolveExpression(s, addr, length, addr, linenumber) === undefined) {
+        this.useExpression([s], addr, length, linenumber);
+    }
     this.referencesLabel(s, linenumber);
 
     return length;
@@ -1351,25 +1353,33 @@ Assembler.prototype.processLabelResolutions = function()
     }
 };
 
+Assembler.prototype.resolveExpression = function(text, value_addr, value_length, line_addr, linenumber)
+{
+    let ev = this.evaluateExpression2(text, line_addr, linenumber);
+    if (ev !== undefined) {
+        if (value_length === 1) {
+            if (ev >= -128 && ev < 256) {
+                this.setmem8(value_addr, ev & 0xff);
+                return ev & 0xff;
+            }
+        }
+        else if (value_length === 2) {
+            if (ev >= -32768 && ev < 65536) {
+                this.setmem16(value_addr, ev & 0xffff);
+                return ev & 0xffff;
+            }
+        }
+    }
+
+    return undefined;
+};
 
 Assembler.prototype.resolveExpressions = function()
 {
     this.processLabelResolutions();
     for (var i = 0; i < this.expressions.length; ++i) {
         var eobj = this.expressions[i];
-        var ev = this.evaluateExpression2(eobj.text, eobj.line_addr, eobj.linenumber);
-        if (ev !== undefined) {
-            if (eobj.length === 1) {
-                if (ev >= -128 && ev < 256) {
-                    this.setmem8(eobj.addr, ev & 0xff);
-                }
-            } 
-            else if (eobj.length === 2) {
-                if (ev >= -32768 && ev < 65536) {
-                    this.setmem16(eobj.addr, ev & 0xffff);
-                }
-            }
-        }
+        this.resolveExpression(eobj.text, eobj.addr, eobj.length, eobj.line_addr, eobj.linenumber);
     }
 };
 
