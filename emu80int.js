@@ -135,7 +135,8 @@ function emu80DbgCommand(data)
     case "set-register":
         if (emu80Stopped) {
             console.log("wasmDbgSetRegister");
-            module._wasmDbgSetRegister(data.regname, data.value);
+            const regId = {'af': 0, 'bc': 1, 'de': 2, 'hl': 3, 'sp': 4, 'pc': 5, 'iff': 6}[data.regname]
+            module._wasmDbgSetRegister(regId, data.value);
             if (data.regname === "pc") {
                 window.postMessage({type: "debugger", what: "stopped", "cpu_state": emu80GetCpuState()});
             }
@@ -147,7 +148,7 @@ function emu80DbgCommand(data)
     case "write-byte":
         if (emu80Stopped) {
             console.log("wasmDbgWriteByte");
-            module._wasmWriteByte(data.addr, data.value);
+            module._wasmDbgWriteByte(data.addr, data.value);
             emu80SendOk();
         }
         break;
